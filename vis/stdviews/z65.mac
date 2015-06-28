@@ -1,0 +1,9 @@
+/vis/viewer/set/sectionPlane on 0 0 65 cm 100 0 0
+/vis/viewer/set/style wireframe
+/vis/viewer/set/upVector 0 1 0
+/vis/verbose warnings
+/vis/drawVolume worlds
+/vis/viewer/set/targetPoint 0 0 65 cm
+/vis/viewer/set/viewpointThetaPhi 90 180
+/vis/viewer/zoomTo 20
+/vis/viewer/set/autoRefresh true
