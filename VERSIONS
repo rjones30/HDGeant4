@@ -1,0 +1,3 @@
+0.1    First (alpha) release of the package, includes complete beam line
+       and detector geometry, magnetic fields, and the built-in particle
+       gun event generator.
