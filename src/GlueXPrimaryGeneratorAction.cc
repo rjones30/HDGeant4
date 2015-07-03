@@ -14,9 +14,9 @@
 #include "G4SystemOfUnits.hh"
 #include "globals.hh"
 
-GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction(
-                                               GlueXDetectorConstruction* myDC)
-:myDetector(myDC)
+GlueXPrimaryGeneratorAction::
+GlueXPrimaryGeneratorAction(GlueXDetectorConstruction* myDC)
+ : myDetector(myDC)
 {
   G4int n_particle = 1;
   particleGun = new G4ParticleGun(n_particle);
@@ -29,6 +29,23 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction(
   particleGun->SetParticleDefinition(particle);
   particleGun->SetParticleMomentumDirection(G4ThreeVector(0.,0.1,0.3));
   particleGun->SetParticleEnergy(0.3*GeV);
+}
+
+GlueXPrimaryGeneratorAction::
+GlueXPrimaryGeneratorAction(const GlueXPrimaryGeneratorAction &src)
+ : myDetector(src.myDetector)
+{
+  GlueXPrimaryGeneratorAction copy(myDetector);
+  particleGun = copy.particleGun;
+}
+
+GlueXPrimaryGeneratorAction&
+GlueXPrimaryGeneratorAction::operator=(const GlueXPrimaryGeneratorAction &src)
+{
+  myDetector = src.myDetector;
+  GlueXPrimaryGeneratorAction copy(myDetector);
+  particleGun = copy.particleGun;
+  return *this;
 }
 
 GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()

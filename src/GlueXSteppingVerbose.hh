@@ -14,13 +14,8 @@ class GlueXSteppingVerbose;
 class GlueXSteppingVerbose : public G4SteppingVerbose 
 {
  public:
-   
-  GlueXSteppingVerbose();
- ~GlueXSteppingVerbose();
-
   void StepInfo();
   void TrackingStarted();
-
 };
 
 #endif

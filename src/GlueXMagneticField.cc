@@ -1,3 +1,4 @@
+#include <hddsCommon.hpp>
 //
 // class implementation for
 //   * GlueXUniformMagField
@@ -512,7 +513,7 @@ void GlueXComputedMagField::SetFunction(std::string function)
    if (user_opts->Find("RUNNO", runno_opts) ||
        user_opts->Find("RUNG", runno_opts))
    {
-      run_number = runno_opts[0];
+      run_number = runno_opts[1];
    }
    else {
       std::cerr << "Warning in GlueXComputedMagField::SetFunction - "
@@ -530,14 +531,14 @@ void GlueXComputedMagField::SetFunction(std::string function)
       std::map<int, std::string> map_opts;
       GlueXUserOptions::GetInstance()->Find("BFIELDTYPE", type_opts);
       GlueXUserOptions::GetInstance()->Find("BFIELDMAP", map_opts);
-      if (type_opts.size() == 0 || type_opts[0] == "CalibDB") {
+      if (type_opts.size() == 0 || type_opts[1] == "CalibDB") {
 
          // if the magnetic field is specified in control.in
          // then use that value instead of the CCDB values
  
          if (map_opts.size() > 0) {
             fJanaFieldMap = new DMagneticFieldMapFineMesh(japp, run_number,
-                                                          map_opts[0]);
+                                                          map_opts[1]);
          }
 
          // otherwise see if we can load the name of the 
@@ -569,15 +570,15 @@ void GlueXComputedMagField::SetFunction(std::string function)
 	    }
          }
       }
-      else if (type_opts[0] =="NoField") {
+      else if (type_opts[1] =="NoField") {
          fJanaFieldMap = new DMagneticFieldMapNoField(japp);
       }
-      else if (type_opts[0] == "Const") {
+      else if (type_opts[1] == "Const") {
          fJanaFieldMap = new DMagneticFieldMapConst(0.0, 0.0, 1.9);
       }
       else {
          std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                   << "unknown DMagneticFieldMap type " << type_opts[0]
+                   << "unknown DMagneticFieldMap type " << type_opts[1]
                    << ", cannot continue." << std::endl;
          exit(-1);
       }
@@ -591,14 +592,14 @@ void GlueXComputedMagField::SetFunction(std::string function)
       std::map<int, std::string> map_opts;
       GlueXUserOptions::GetInstance()->Find("PSBFIELDTYPE", type_opts);
       GlueXUserOptions::GetInstance()->Find("PSBFIELDMAP", map_opts);
-      if (type_opts.size() == 0 || type_opts[0] == "CalibDB") {
+      if (type_opts.size() == 0 || type_opts[1] == "CalibDB") {
  
          // if the magnetic field is specified in control.in
          // then use that value instead of the CCDB values
  
          if (map_opts.size() > 0) {
             fJanaFieldMapPS = new DMagneticFieldMapPS2DMap(japp, run_number,
-                                                           map_opts[0]);
+                                                           map_opts[1]);
          }
          else {
 
@@ -627,12 +628,12 @@ void GlueXComputedMagField::SetFunction(std::string function)
 	    }
          }
       }
-      else if (type_opts[0] == "Const") {
+      else if (type_opts[1] == "Const") {
          fJanaFieldMapPS = new DMagneticFieldMapPSConst(0.0, 1.64, 0.0);
       }
       else {
          std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                   << "unknown DMagneticFieldMapPS type " << type_opts[0]
+                   << "unknown DMagneticFieldMapPS type " << type_opts[1]
                    << ", cannot continue." << std::endl;
          exit(-1);
       }

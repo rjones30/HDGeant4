@@ -9,12 +9,6 @@
 #include "G4SteppingManager.hh"
 #include "G4UnitsTable.hh"
 
-GlueXSteppingVerbose::GlueXSteppingVerbose()
-{}
-
-GlueXSteppingVerbose::~GlueXSteppingVerbose()
-{} 
-
 void GlueXSteppingVerbose::StepInfo()
 {
   CopyState();

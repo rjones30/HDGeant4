@@ -14,7 +14,6 @@ class GlueXPhysicsList: public G4VUserPhysicsList
 {
   public:
     GlueXPhysicsList();
-   ~GlueXPhysicsList();
 
   protected:
     // Construct particle and physics
@@ -23,15 +22,12 @@ class GlueXPhysicsList: public G4VUserPhysicsList
  
     void SetCuts();
 
-   
-  protected:
     // these methods Construct particles 
     void ConstructBosons();
     void ConstructLeptons();
     void ConstructMesons();
     void ConstructBaryons();
 
-  protected:
   // these methods Construct physics processes and register them
     void ConstructGeneral();
     void ConstructEM();

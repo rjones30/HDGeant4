@@ -24,6 +24,8 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
 {
   public:
      GlueXDetectorConstruction(G4String hddsFile="");
+     GlueXDetectorConstruction(const GlueXDetectorConstruction &src);
+     GlueXDetectorConstruction &operator=(const GlueXDetectorConstruction &src);
     ~GlueXDetectorConstruction();
 
   public:
@@ -49,10 +51,14 @@ class GlueXParallelWorld : public G4VUserParallelWorld
    GlueXParallelWorld(G4String worldName, G4LogicalVolume *topVolume)
     : G4VUserParallelWorld(worldName), fTopVolume(topVolume)
    {}
+   GlueXParallelWorld(const GlueXParallelWorld &src);
+   GlueXParallelWorld &operator=(const GlueXParallelWorld &src);
+   ~GlueXParallelWorld();
 
    virtual void Construct(); 
 
  private:
    G4LogicalVolume *fTopVolume;
 };
+
 #endif

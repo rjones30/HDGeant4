@@ -2,3 +2,6 @@
 /tmp
 /bin
 *-orig
+*.pyc
+*.o
+*.so

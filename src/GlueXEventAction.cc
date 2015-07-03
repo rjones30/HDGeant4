@@ -12,12 +12,6 @@
 #include "G4Trajectory.hh"
 #include "G4ios.hh"
 
-GlueXEventAction::GlueXEventAction()
-{}
-
-GlueXEventAction::~GlueXEventAction()
-{}
-
 void GlueXEventAction::BeginOfEventAction(const G4Event*)
 {}
 

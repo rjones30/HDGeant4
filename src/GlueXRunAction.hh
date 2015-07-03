@@ -15,10 +15,6 @@ class G4Run;
 class GlueXRunAction : public G4UserRunAction
 {
   public:
-    GlueXRunAction();
-   ~GlueXRunAction();
-
-  public:
     void BeginOfRunAction(const G4Run*);
     void EndOfRunAction(const G4Run*);
 };

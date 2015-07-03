@@ -20,11 +20,10 @@ class GlueXUniformMagField: public G4UniformMagField
  public:
    GlueXUniformMagField(G4ThreeVector B, G4double unit,
                         const G4AffineTransform &xform);
-   ~GlueXUniformMagField();  
-
    GlueXUniformMagField(const GlueXUniformMagField &src);
    GlueXUniformMagField& operator=(const GlueXUniformMagField &src);
-      
+   ~GlueXUniformMagField();  
+
    virtual void SetMagFieldTransform(const G4AffineTransform &xform);
    virtual const G4AffineTransform& GetMagFieldTransform() const;
 
@@ -40,11 +39,10 @@ class GlueXMappedMagField: public G4MagneticField
  public:
    GlueXMappedMagField(G4double Bmax, G4double unit,
                        const G4AffineTransform &xform);
+   GlueXMappedMagField(const GlueXMappedMagField &src);
+   GlueXMappedMagField& operator=(const GlueXMappedMagField &src);
    ~GlueXMappedMagField();  
 
-   GlueXMappedMagField(const GlueXMappedMagField &src);
-   GlueXMappedMagField& operator = (const GlueXMappedMagField &src);
-      
    virtual void SetMagFieldTransform(const G4AffineTransform &xform);
    virtual const G4AffineTransform& GetMagFieldTransform() const;
  
@@ -103,10 +101,9 @@ class GlueXComputedMagField: public G4MagneticField
  public:
    GlueXComputedMagField(G4double Bmax, G4double unit,
                          const G4AffineTransform &xform);
-   ~GlueXComputedMagField();  
-      
    GlueXComputedMagField(const GlueXComputedMagField &src);
    GlueXComputedMagField& operator=(const GlueXComputedMagField &src);
+   ~GlueXComputedMagField();  
 
    void SetMagFieldTransform(const G4AffineTransform &xform);
    const G4AffineTransform& GetMagFieldTransform() const;

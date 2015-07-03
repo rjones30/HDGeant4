@@ -17,9 +17,6 @@ GlueXPhysicsList::GlueXPhysicsList():  G4VUserPhysicsList()
   SetVerboseLevel(1);
 }
 
-GlueXPhysicsList::~GlueXPhysicsList()
-{}
-
 void GlueXPhysicsList::ConstructParticle()
 {
   // In this method, static member functions should be called

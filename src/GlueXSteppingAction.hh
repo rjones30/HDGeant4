@@ -12,9 +12,6 @@
 class GlueXSteppingAction : public G4UserSteppingAction
 {
   public:
-    GlueXSteppingAction();
-   ~GlueXSteppingAction(){};
-
     void UserSteppingAction(const G4Step*);
 };
 

@@ -42,6 +42,7 @@ using namespace xercesc;
 
 #include <string.h>
 #include <libgen.h>
+#include <errno.h>
 
 #define X(str) XString(str).unicode_str()
 #define S(str) str.c_str()
@@ -102,13 +103,13 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    
    int size=100;
    char *saved_cwd = new char[size];
-   while (getcwd(saved_cwd,size) < 0)
+   while (getcwd(saved_cwd, size) == 0)
    {
       delete [] saved_cwd;
-      saved_cwd = new char[size*=2];
+      saved_cwd = new char[size *= 2];
    }
-   char *dirpath = new char[hddsFile.size()];
-   chdir(dirname(strcpy(dirpath,hddsFile.c_str())));
+   char *dirpath = new char[hddsFile.size() + 2];
+   chdir(dirname(strcpy(dirpath, hddsFile.c_str())));
    DOMDocument* document = buildDOMDocument(xmlFile,false);
    if (document == 0)
    {
@@ -118,8 +119,8 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
       return;
    }
    chdir(saved_cwd);
-   delete saved_cwd;
-   delete dirpath;
+   delete [] saved_cwd;
+   delete [] dirpath;
 
    DOMNode* docEl;
    try {
@@ -142,6 +143,16 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    fHddsBuilder.translate(rootEl);
 
    XMLPlatformUtils::Terminate();
+}
+
+GlueXDetectorConstruction::
+GlueXDetectorConstruction(const GlueXDetectorConstruction &src)
+ : fHddsBuilder(src.fHddsBuilder)
+{
+     fMaxStep = src.fMaxStep;
+     fUniformField = src.fUniformField;
+     fpMagneticField = src.fpMagneticField; // shallow copy, sharing magfield
+     fpDetectorMessenger = src.fpDetectorMessenger;  // shallow copy, sharing
 }
 
 GlueXDetectorConstruction::~GlueXDetectorConstruction()
@@ -201,6 +212,12 @@ G4LogicalVolume*
 {
    return fHddsBuilder.getWorldVolume(paraIndex);
 }
+
+GlueXParallelWorld::GlueXParallelWorld(const GlueXParallelWorld &src)
+ : G4VUserParallelWorld(src.fWorldName), fTopVolume(src.fTopVolume)
+{ }
+
+GlueXParallelWorld::~GlueXParallelWorld() { }
 
 void GlueXParallelWorld::Construct()
 {

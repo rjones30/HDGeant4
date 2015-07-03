@@ -7,9 +7,6 @@
 #include "GlueXSteppingAction.hh"
 #include "G4SteppingManager.hh"
 
-GlueXSteppingAction::GlueXSteppingAction()
-{ }
-
 void GlueXSteppingAction::UserSteppingAction(const G4Step*)
 { 
 }

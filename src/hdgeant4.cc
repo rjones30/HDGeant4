@@ -5,31 +5,40 @@
 // version: august 15, 2013
 //
 
-#include "GlueXDetectorConstruction.hh"
-#include "GlueXPhysicsList.hh"
-#include "GlueXPrimaryGeneratorAction.hh"
-#include "GlueXRunAction.hh"
-#include "GlueXEventAction.hh"
-#include "GlueXSteppingAction.hh"
-#include "GlueXSteppingVerbose.hh"
+#include <GlueXUserOptions.hh>
+#include <GlueXDetectorConstruction.hh>
+#include <GlueXPhysicsList.hh>
+#include <GlueXPrimaryGeneratorAction.hh>
+#include <GlueXRunAction.hh>
+#include <GlueXEventAction.hh>
+#include <GlueXSteppingAction.hh>
+#include <GlueXSteppingVerbose.hh>
 
-#include "G4RunManager.hh"
-#include "G4UImanager.hh"
+#include <DANA/DApplication.h>
+
+#include <G4RunManager.hh>
+#include <G4UImanager.hh>
 
 #ifdef G4VIS_USE
-#include "G4VisExecutive.hh"
+#include <G4VisExecutive.hh>
 #endif
 
 #ifdef G4UI_USE
-#include "G4UIExecutive.hh"
-#include "G4UIterminal.hh"
-#include "G4UItcsh.hh"
+#include <G4UIExecutive.hh>
+#include <G4UIterminal.hh>
+#include <G4UItcsh.hh>
 #endif
-
-#include <list>
 
 int main(int argc,char** argv)
 {
+  // Initialize the jana framework
+  DApplication dapp(argc, argv);
+  dapp.Init();
+
+  // Read user options from file control.in
+  GlueXUserOptions opts;
+  opts.ReadControl_in("control.in");
+
   // User Verbose output class
   G4VSteppingVerbose* verbosity = new GlueXSteppingVerbose;
   G4VSteppingVerbose::SetInstance(verbosity);
@@ -39,7 +48,6 @@ int main(int argc,char** argv)
 
   // Geometry initialization
   GlueXDetectorConstruction* geometry = new GlueXDetectorConstruction;
-  std::list<G4String> parallelWorlds;
   int Npara = geometry->GetParallelWorldCount();
   for (int para=1; para <= Npara; ++para) {
     G4String name = geometry->GetParallelWorldName(para);

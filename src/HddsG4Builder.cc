@@ -51,6 +51,25 @@
 extern CPUtimer timer;
 #endif
 
+HddsG4Builder::HddsG4Builder() : fWorldVolume(0) { }
+
+HddsG4Builder::HddsG4Builder(const HddsG4Builder &src)
+{
+   fWorldVolume = src.fWorldVolume;
+   fElements = src.fElements;
+   fMaterials = src.fMaterials;
+   fMagneticRegions = src.fMagneticRegions;
+   fLogicalVolumes = src.fLogicalVolumes;
+   fPhysicalVolumes = src.fPhysicalVolumes;
+   fRotations = src.fRotations;
+   fCurrentMother = src.fCurrentMother;
+   fCurrentPlacement = src.fCurrentPlacement;
+   fCurrentDivision = src.fCurrentDivision;
+   fCurrentPhiCenter = src.fCurrentPhiCenter;
+}
+
+HddsG4Builder::~HddsG4Builder() { }
+
 int HddsG4Builder::createMaterial(DOMElement* el)
 {
 #ifdef LINUX_CPUTIME_PROFILING
@@ -275,7 +294,7 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
             std::cerr
               << APP_NAME << " error: Please re-order the polyplanes"
               << " of volume " << S(nameS) << " so that the z-values"
-              << " are non-decreasing."
+              << " are non-decreasing"
               << std::endl;
             exit(1);
          }
@@ -1193,7 +1212,6 @@ void HddsG4Builder::createGetFunctions(DOMElement* el, const XString& ident)
 #endif
    CodeWriter::createGetFunctions(el,ident);
 
-#if 0
    std::vector<int> table;
    std::vector<int> start;
    start.push_back(0);
@@ -1210,14 +1228,14 @@ void HddsG4Builder::createGetFunctions(DOMElement* el, const XString& ident)
                   Refsys::fIdentifierTable[ivolu].find(ident);
       if (idlist != Refsys::fIdentifierTable[ivolu].end())
       {
-         if (ncopy != idlist->second.size())
+         if (ncopy != (int)idlist->second.size())
          {
             std::cerr
                   << APP_NAME << " warning: volume " << ivolu
                   << " has " << ncopy << " copies, but "
                   << idlist->second.size() << " " 
                   << ident << " identifiers!" << std::endl;
-            for (int idx = 0; idx < idlist->second.size(); idx++)
+            for (int idx = 0; idx < (int)idlist->second.size(); idx++)
             {
                std::cerr << idlist->second[idx]  << " ";
                if (idx/20*20 == idx)
@@ -1237,6 +1255,7 @@ void HddsG4Builder::createGetFunctions(DOMElement* el, const XString& ident)
       }
    }
 
+#if 0
    std::cout
         << std::endl
         << "      function " << funcNameStr << "()" << std::endl
@@ -1377,9 +1396,13 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
    {
       DOMElement* regionEl = (DOMElement*)regionL->item(ireg);
       DOMNodeList* mapfTagL = regionEl->getElementsByTagName(X("mappedBfield"));
+      if (mapfTagL->getLength() == 0)
+         continue;
       DOMElement* mapfEl = (DOMElement*)mapfTagL->item(0);
       XString nameS(regionEl->getAttribute(X("name")));
       XString iregionS(regionEl->getAttribute(X("HDDSregion")));
+      if (iregionS.size() == 0)
+         continue;
       int iregion = atoi(S(iregionS));
       GlueXMappedMagField *magfield = (GlueXMappedMagField*)
                                       fMagneticRegions[iregion];

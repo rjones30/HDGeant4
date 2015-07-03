@@ -19,6 +19,8 @@ class GlueXDetectorMessenger: public G4UImessenger
 {
   public:
     GlueXDetectorMessenger(GlueXDetectorConstruction*);
+    GlueXDetectorMessenger(const GlueXDetectorMessenger& src);
+    GlueXDetectorMessenger &operator=(const GlueXDetectorMessenger& src);
    ~GlueXDetectorMessenger();
     
     void SetNewValue(G4UIcommand*, G4String);

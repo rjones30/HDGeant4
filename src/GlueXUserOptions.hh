@@ -23,9 +23,9 @@ class GlueXUserOptions
 
  public:
    GlueXUserOptions();
-   ~GlueXUserOptions();
    GlueXUserOptions(const GlueXUserOptions &src);
    GlueXUserOptions &operator=(const GlueXUserOptions &src);
+   ~GlueXUserOptions();
 
    static GlueXUserOptions *GetInstance();
 

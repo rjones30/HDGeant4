@@ -17,6 +17,8 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
   public:
     GlueXPrimaryGeneratorAction(GlueXDetectorConstruction*);    
+    GlueXPrimaryGeneratorAction(const GlueXPrimaryGeneratorAction &src);
+    GlueXPrimaryGeneratorAction &operator=(const GlueXPrimaryGeneratorAction &src);
    ~GlueXPrimaryGeneratorAction();
 
   public:

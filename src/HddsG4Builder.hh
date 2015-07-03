@@ -51,6 +51,11 @@ using namespace xercesc;
 class HddsG4Builder : public CodeWriter
 {
  public:
+   HddsG4Builder();
+   HddsG4Builder(const HddsG4Builder &src);
+   HddsG4Builder &operator=(const HddsG4Builder &src);
+   ~HddsG4Builder();
+
    int createMaterial(DOMElement* el);   // generate code for materials
    int createSolid(DOMElement* el,
                    Refsys& ref);    	 // generate code for solids

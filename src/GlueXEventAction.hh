@@ -14,10 +14,6 @@ class G4Event;
 class GlueXEventAction : public G4UserEventAction
 {
   public:
-    GlueXEventAction();
-   ~GlueXEventAction();
-
-  public:
     void BeginOfEventAction(const G4Event*);
     void EndOfEventAction(const G4Event*);
 };
