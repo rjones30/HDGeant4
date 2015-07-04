@@ -20,6 +20,8 @@ c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 cINFILE 'bggen.hddm'
 TRIG 10000
+RUNG 9000 15 20
+RUNNO 9001
 
 c The BEAM card configures the built-in coherent bremsstralung photon
 c beam generator in HDGeant.  If the INFILE card is not present and BEAM

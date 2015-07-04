@@ -23,6 +23,8 @@
 # version: june 29, 2015
 #
 
+import sys
+
 from Geant4 import *
 from HDGeant4 import *
 
@@ -33,7 +35,9 @@ def init():
   dapp.Init()
   global opts
   opts = GlueXUserOptions()
-  opts.ReadControl_in("control.in")
+  if not opts.ReadControl_in("control.in"):
+    raise IOError("simulation needs control.in, init failed!")
+    sys.exit(3)
 
   # define the detector geometry
   global geom
@@ -71,5 +75,3 @@ def init():
       
   # initialize graphics
   gVisManager.Initialize()
-
-  return 0

@@ -37,7 +37,9 @@ int main(int argc,char** argv)
 
   // Read user options from file control.in
   GlueXUserOptions opts;
-  opts.ReadControl_in("control.in");
+  if (! opts.ReadControl_in("control.in")) {
+    exit(3);
+  }
 
   // User Verbose output class
   G4VSteppingVerbose* verbosity = new GlueXSteppingVerbose;

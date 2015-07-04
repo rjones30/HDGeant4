@@ -69,7 +69,6 @@ HDDSDIR := $(G4TMPDIR)/hdds
 HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
 HDDS_objects := $(patsubst $(HDDS_HOME)/%.cpp, $(HDDSDIR)/%.o, $(HDDS_sources))
 $(G4TMPDIR)/libhdds.so: $(HDDS_objects)
-	@mkdir -p $(HDDSDIR)
 	@$(CXX) -Wl,-soname,$@ -shared -o $@ $^
 
 $(G4TMPDIR)/%.o: src/G4fixes/%.cc
@@ -81,6 +80,7 @@ else
 endif
 
 $(HDDSDIR)/%.o: $(HDDS_HOME)/%.cpp
+	@mkdir -p $(HDDSDIR)
 ifdef CPPVERBOSE
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
 else
@@ -91,7 +91,8 @@ endif
 exe:
 	@mkdir -p $(G4LIBDIR)/$@
 
-g4py: $(G4LIBDIR)/../../g4py/HDGeant4/libhdgeant.so
+g4py: $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so
 
-$(G4LIBDIR)/../../g4py/HDGeant4/libhdgeant.so: $(G4LIBDIR)/libhdgeant4.so
+$(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so: $(G4LIBDIR)/libhdgeant4.so
+	@rm -f $@
 	@cd g4py/HDGeant4 && ln -s ../../tmp/*/hdgeant4/libhdgeant4.so .

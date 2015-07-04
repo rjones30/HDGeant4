@@ -96,8 +96,8 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
 
    std::ifstream fin(ctrlin);
    if (!fin.good()) {
-      std::cerr << "Error in GlueXUserOptions::ReadControl_in:"
-                << "unable to open file " << ctrlin << " for input!"
+      std::cerr << "Error in GlueXUserOptions::ReadControl_in: "
+                << "unable to open file " << ctrlin
                 << std::endl;
       return 0;
    }
