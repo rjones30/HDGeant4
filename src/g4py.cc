@@ -29,12 +29,6 @@ struct CB_G4VUserParallelWorld :
    void Construct() {
      this->get_override("Construct")(); 
    }
-
-#if 0
-   void ConstructSD() {
-     this->get_override("ConstructSD")(); 
-   }
-#endif
 };
 
 // We must wrap the DApplication class because its only constructor
@@ -141,9 +135,6 @@ BOOST_PYTHON_MODULE(libhdgeant4)
            boost::python::return_value_policy<boost::python::reference_existing_object>())
       .def("RegisterParallelWorld", &G4VUserDetectorConstruction::RegisterParallelWorld)
       .def("ConstructParallelGeometries", &G4VUserDetectorConstruction::ConstructParallelGeometries)
-#if 0
-      .def("ConstructParallelSD", &G4VUserDetectorConstruction::ConstructParallelSD)
-#endif
    ;
 
    class_<CB_G4VUserParallelWorld, CB_G4VUserParallelWorld*, boost::noncopyable>
@@ -152,9 +143,6 @@ BOOST_PYTHON_MODULE(libhdgeant4)
           boost::python::init<G4String>())
       .def("GetName", &G4VUserParallelWorld::GetName)
       .def("Construct", boost::python::pure_virtual(&G4VUserParallelWorld::Construct))
-#if 0
-      .def("ConstructSD", &G4VUserParallelWorld::ConstructSD)
-#endif
    ;
 
    class_<GlueXParallelWorld, GlueXParallelWorld*,
@@ -207,4 +195,3 @@ BOOST_PYTHON_MODULE(libhdgeant4)
           "encapsulates actions to take at start and end of each step (verbose)")
    ;
 }
-

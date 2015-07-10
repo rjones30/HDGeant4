@@ -1,7 +1,0 @@
-/vis/viewer/set/sectionPlane on 0 0 -2135 cm 0 0 1
-/vis/viewer/set/style wireframe
-/vis/verbose warnings
-/vis/drawVolume worlds
-/vis/viewer/set/targetPoint 0 0 0 cm
-/vis/viewer/zoomTo 300
-/vis/viewer/set/autoRefresh true
