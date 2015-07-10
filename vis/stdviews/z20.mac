@@ -1,3 +1,6 @@
+# Before invoking this macro, make sure you first
+# initialize the visualization system, eg.  /control/execute ../vis.mac
+
 /vis/viewer/set/sectionPlane on 0 0 20 cm 0 0 1
 /vis/viewer/set/style wireframe
 /vis/verbose warnings
@@ -6,3 +9,5 @@
 /vis/viewer/set/viewpointThetaPhi 0 0
 /vis/viewer/zoomTo 60
 /vis/viewer/set/autoRefresh true
+
+# use /vis/ogl/export z20.eps to save the image to an eps file
