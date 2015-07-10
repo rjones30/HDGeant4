@@ -1,0 +1,13 @@
+# Before invoking this macro, make sure you first
+# initialize the visualization system, eg.  /control/execute ../vis.mac
+
+/vis/geometry/set/visibility DET1 -1 0
+/vis/viewer/set/sectionPlane on 0 0 0 cm 1 0 0
+/vis/viewer/set/style wireframe
+/vis/verbose warnings
+/vis/drawVolume worlds
+/vis/viewer/set/targetPoint 0 0 -2300 cm
+/vis/viewer/zoomTo 30
+/vis/viewer/set/autoRefresh true
+
+# use /vis/ogl/export z-2300.eps to save the image to an eps file
