@@ -31,7 +31,10 @@ G4LIB_USE_GDML = 1
 CPPVERBOSE = 1
 #G4DEBUG = 1
 
-CORELIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
+G4fixes_sources := $(wildcard src/G4fixes/*.cc)
+HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
+
+DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
@@ -43,33 +46,29 @@ CORELIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -L$(ROOTSYS)/lib -lCore -lPhysics -lTree -lHist -lGeom \
            -L$(CLHEP_LIB_DIR) -lCLHEP
 
+G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
+
+INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
+INTYLIBS += -fPIC -I$(HDDS_HOME) -I/usr/local/xerces/include
+INTYLIBS += -L/usr/local/xerces/lib -lxerces-c
+INTYLIBS += -L$(G4TMPDIR) -lhdds -lG4fixes
+INTYLIBS += -lboost_python
+INTYLIBS += -L $(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
+
 .PHONY: all
 all: hdds fixes exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
 
-CXXFLAGS = -g -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
-INTYLIBS += -Wl,--whole-archive $(CORELIBS) -Wl,--no-whole-archive
-#INTYLIBS += $(wildcard $(HALLD_HOME)/src/.$(BMS_OSNAME)/libraries/HDGEOMETRY/*.o)
-INTYLIBS += -fPIC -I$(HDDS_HOME) -I/usr/local/xerces/include $(HDDSLIBS)
-INTYLIBS += -L/usr/local/xerces/lib -lxerces-c
-INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -lboost_python
-
-G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
-INTYLIBS += -L $(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
-
-G4fix_sources := $(wildcard src/G4fixes/*.cc)
-G4fix_objects := $(patsubst src/G4fixes/%.cc, $(G4TMPDIR)/%.o, $(G4fix_sources))
-
-fixes: $(G4fix_objects)
+fixes: $(G4TMPDIR)/libG4fixes.so
 hdds:  $(G4TMPDIR)/libhdds.so
 
-HDDSDIR := $(G4TMPDIR)/hdds
-HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
-HDDS_objects := $(patsubst $(HDDS_HOME)/%.cpp, $(HDDSDIR)/%.o, $(HDDS_sources))
-$(G4TMPDIR)/libhdds.so: $(HDDS_objects)
-	@$(CXX) -Wl,-soname,$@ -shared -o $@ $^
+CXXFLAGS = -g -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+
+G4fixes_objects := $(patsubst src/G4fixes/%.cc, $(G4TMPDIR)/%.o, $(G4fixes_sources))
+$(G4TMPDIR)/libG4fixes.so: $(G4fixes_objects) $(G4TMPDIR)/G4fixes.o
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
+	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
 $(G4TMPDIR)/%.o: src/G4fixes/%.cc
 ifdef CPPVERBOSE
@@ -79,6 +78,7 @@ else
 	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
 endif
 
+HDDSDIR := $(G4TMPDIR)/hdds
 $(HDDSDIR)/%.o: $(HDDS_HOME)/%.cpp
 	@mkdir -p $(HDDSDIR)
 ifdef CPPVERBOSE
@@ -88,11 +88,19 @@ else
 	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
 endif
 
+$(G4TMPDIR)/libhdds.so: $(patsubst $(HDDS_HOME)/%.cpp, $(HDDSDIR)/%.o, $(HDDS_sources))
+	@$(CXX) -Wl,-soname,$@ -shared -o $@ $^
+
 exe:
 	@mkdir -p $(G4LIBDIR)/$@
 
-g4py: $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so
+g4py: $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so \
+      $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so
 
 $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so: $(G4LIBDIR)/libhdgeant4.so
 	@rm -f $@
 	@cd g4py/HDGeant4 && ln -s ../../tmp/*/hdgeant4/libhdgeant4.so .
+
+$(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so: $(G4LIBDIR)/libG4fixes.so
+	@rm -f $@
+	@cd g4py/G4fixes && ln -s ../../tmp/*/hdgeant4/libG4fixes.so .

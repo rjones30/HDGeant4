@@ -17,7 +17,7 @@
 # usage example:
 #   $ python
 #   >>> import hdgeant4
-#   >>> hdgeant4.init()
+#   >>> hdgeant4.stdviews()
 #
 # author: richard.t.jones at uconn.edu
 # version: june 29, 2015
@@ -25,10 +25,15 @@
 
 import sys
 
+from G4fixes import *
 from Geant4 import *
 from HDGeant4 import *
 
 def init():
+  '''
+  Initialize the jana framework and the Geant4 toolkit runtime,
+  and load the geometry and magnetic field definitions for GlueX.
+  '''
   # initialize the jana framework
   global dapp
   dapp = DApplication()
@@ -75,3 +80,17 @@ def init():
       
   # initialize graphics
   gVisManager.Initialize()
+
+def stdviews():
+  '''
+  Generate standard views of the simulation geometry and save
+  them as graphics files.
+  '''
+  ui = gUImanager.GetUIpointer()
+  ui.ApplyCommand("/control/execute vis1.mac")
+  for view in "z65", :
+    ui.ApplyCommand("/control/execute ../vis/stdviews/" + view + ".mac")
+    ui.ApplyCommand("/vis/ogl/export " + view + ".eps")
+
+# Automatic actions at startup
+init()
