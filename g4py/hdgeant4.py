@@ -18,6 +18,8 @@
 #   $ python
 #   >>> import hdgeant4
 #   >>> hdgeant4.stdviews()
+#   >>> hdgeant4.gUImanager.ApplyCommand("/vis/viewer/zoomTo 50")
+#   >>> hdgeant4.gUImanager.ApplyCommand("/vis/ogl/export pic.eps")
 #
 # author: richard.t.jones at uconn.edu
 # version: june 29, 2015
@@ -88,7 +90,9 @@ def stdviews():
   '''
   ui = gUImanager.GetUIpointer()
   ui.ApplyCommand("/control/execute vis1.mac")
-  for view in "z65", :
+  for view in "z-2340", "z-2300", "z-1750", "z-950", "z0", \
+              "z15", "z20", "z65", "z100", "z160", "z170", \
+              "z200", "z380", "z412", "z630", "z700":
     ui.ApplyCommand("/control/execute ../vis/stdviews/" + view + ".mac")
     ui.ApplyCommand("/vis/ogl/export " + view + ".eps")
 
