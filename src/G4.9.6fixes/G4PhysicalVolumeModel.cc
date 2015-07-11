@@ -513,11 +513,12 @@ void G4PhysicalVolumeModel::DescribeAndDescend
   G4DisplacedSolid *pClipper;
   if ((pClipper = dynamic_cast<G4DisplacedSolid*>(pIntersector)))
   {
-    G4AffineTransform clipAT;
+    G4AffineTransform clipAT(pClipper->GetTransform());
     G4AffineTransform currAT(fpCurrentTransform->getRotation().inverse(),
-                             -fpCurrentTransform->getTranslation());
-    clipAT.InverseProduct(currAT,pClipper->GetTransform());
-    G4DisplacedSolid pClipped("temporary_to_clip",pSol,clipAT);
+                             fpCurrentTransform->getTranslation());
+    G4AffineTransform combAT;
+    combAT.Product(currAT,clipAT);
+    G4DisplacedSolid pClipped("temporary_to_clip",pSol,combAT);
     G4VisExtent clipper(pClipper->GetConstituentMovedSolid()->GetExtent());
     G4VisExtent clipped(pClipped.GetExtent());
     thisToBeBypassed = (clipper.GetXmax() < clipped.GetXmin())
@@ -530,11 +531,12 @@ void G4PhysicalVolumeModel::DescribeAndDescend
 
   if ((pClipper = dynamic_cast<G4DisplacedSolid*>(pSubtractor)))
   {
-    G4AffineTransform clipAT;
+    G4AffineTransform clipAT(pClipper->GetTransform());
     G4AffineTransform currAT(fpCurrentTransform->getRotation().inverse(),
-                             -fpCurrentTransform->getTranslation());
-    clipAT.InverseProduct(currAT,pClipper->GetTransform());
-    G4DisplacedSolid pClipped("temporary_to_clip",pSol,clipAT);
+                             fpCurrentTransform->getTranslation());
+    G4AffineTransform combAT;
+    combAT.Product(currAT,clipAT);
+    G4DisplacedSolid pClipped("temporary_to_clip",pSol,combAT);
     G4VisExtent clipper(pClipper->GetConstituentMovedSolid()->GetExtent());
     G4VisExtent clipped(pClipped.GetExtent());
     thisToBeBypassed = (clipper.GetXmax() > clipped.GetXmax())
