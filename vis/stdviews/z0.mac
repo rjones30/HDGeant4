@@ -1,6 +1,8 @@
 # Before invoking this macro, make sure you first
 # initialize the visualization system, eg.  /control/execute ../vis.mac
 
+/vis/viewer/set/autoRefresh false
+/vis/viewer/set/sectionPlane off
 /vis/viewer/set/sectionPlane on 0 0 0 cm 0 1 0
 /vis/viewer/set/style wireframe
 /vis/viewer/set/upVector 1 0 0
