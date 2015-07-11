@@ -685,7 +685,7 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
                                                  fLogicalVolumes[newvol],
                                                  moms->second,
                                                  axis, ndiv, width, offset);
-      //fLogicalVolumes[newvol]->SetVisAttributes(new G4VisAttributes(false));
+      fLogicalVolumes[newvol]->SetVisAttributes(new G4VisAttributes(false));
 #ifdef DEBUG_PLACEMENT 
       std::cout << ndiv << " copies of division " << str.str() 
                 << "->" << fLogicalVolumes[newvol]->GetName()
@@ -772,7 +772,7 @@ int HddsG4Builder::createDivision(XString& divStr, Refsys& ref)
    vpair_t myvol(myvoluI,moms->first.second);
    G4Material* material = moms->second->GetMaterial();
    fLogicalVolumes[myvol] = new G4LogicalVolume(solid,material,S(divStr));
-   //fLogicalVolumes[myvol]->SetVisAttributes(new G4VisAttributes(false));
+   fLogicalVolumes[myvol]->SetVisAttributes(new G4VisAttributes(false));
    vpair_t mydiv(myvoluI,0);
    fPhysicalVolumes[mydiv] = new G4PVDivision(S(divStr),
                                               fLogicalVolumes[myvol],
