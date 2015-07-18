@@ -11,11 +11,11 @@
 #include <GlueXUserOptions.hh>
 #include <GlueXDetectorConstruction.hh>
 #include <GlueXPrimaryGeneratorAction.hh>
-#include <GlueXPhysicsList.hh>
 #include <GlueXRunAction.hh>
 #include <GlueXEventAction.hh>
 #include <GlueXSteppingAction.hh>
 #include <GlueXSteppingVerbose.hh>
+#include <GlueXPhysicsList.hh>
 
 // We must wrap an abstract C++ type so python 
 // knows how to override pure virtual methods.
@@ -123,7 +123,9 @@ BOOST_PYTHON_MODULE(libhdgeant4)
    ;
 
    class_<GlueXDetectorConstruction, GlueXDetectorConstruction*,
-          boost::python::bases<G4VUserDetectorConstruction> >("GlueXDetectorConstruction")
+          boost::python::bases<G4VUserDetectorConstruction> >
+          ("GlueXDetectorConstruction",
+           "sets up the GlueX detector geometry and fields for simulation")
       .def(boost::python::init<G4String>())
       .def("Construct", &GlueXDetectorConstruction::Construct,
            boost::python::return_value_policy<boost::python::reference_existing_object>())
@@ -156,7 +158,8 @@ BOOST_PYTHON_MODULE(libhdgeant4)
    class_<GlueXPhysicsList, GlueXPhysicsList*,
           boost::python::bases<G4VUserPhysicsList> >
          ("GlueXPhysicsList",
-          "collection of all physics processes to include in the simulation")
+          "a custom physics list for GlueX simulation",
+           boost::python::init<GlueXDetectorConstruction*>())
    ;
 
    class_<GlueXPrimaryGeneratorAction, GlueXPrimaryGeneratorAction*,
@@ -165,7 +168,7 @@ BOOST_PYTHON_MODULE(libhdgeant4)
           "the generator of interaction events to be simulated",
            boost::python::init<GlueXDetectorConstruction*>())
    ;
-      
+
    class_<GlueXEventAction, GlueXEventAction*,
           boost::python::bases<G4UserEventAction> >
          ("GlueXEventAction",
