@@ -8,7 +8,7 @@ G4TARGET := $(name)
 G4EXLIB := true
 G4LIB_BUILD_SHARED := true
 
-CPPFLAGS += -I$(HDDS_HOME) -I./src 
+CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
 CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I/usr/include/Qt
@@ -21,6 +21,7 @@ CPPFLAGS += -DUSE_SSE2
 #CPPFLAGS += -DDEBUG_SECTIONPLANE_ZAVE
 #CPPFLAGS += -DCHECK_OVERLAPS_MM=1e-4
 CPPFLAGS += -DBYPASS_DRAWING_CLIPPED_VOLUMES
+CPPFLAGS += -DLAYERED_GEOMETRY_PICKING_EXTENSIONS
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 #CPPFLAGS += -DDEBUG_PLACEMENT
 CPPFLAGS += -DBP_DEBUG
@@ -59,6 +60,7 @@ INTYLIBS += -L $(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shar
 all: hdds fixes exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
+LDLIBS2 := -lG4fixes $(LDLIBS2)
 
 fixes: $(G4TMPDIR)/libG4fixes.so
 hdds:  $(G4TMPDIR)/libhdds.so
