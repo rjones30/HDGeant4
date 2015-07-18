@@ -187,6 +187,15 @@ G4VPhysicalVolume* GlueXDetectorConstruction::Construct()
    worldvol->SetName("World");
    std::cout << " configured as " << worldvol->GetName() << std::endl;
    worldvol->SetVisAttributes(new G4VisAttributes(false));
+
+   // Geant4 requires that EM field managers be set on the geometry AFTER
+   // everything has been placed. HddsG4Builder constructs the geometry
+   // top-down, so afterward we need to go back and get/set them all again.
+
+   PropagateFieldManagers(worldvol);
+   for (int para = 0; para < GetParallelWorldCount(); ++para) {
+      PropagateFieldManagers(GetParallelWorldVolume(para));
+   }
    return new G4PVPlacement(0, G4ThreeVector(), worldvol, "World", 0, 0, 0);
 }
 
@@ -221,12 +230,32 @@ GlueXParallelWorld::~GlueXParallelWorld() { }
 
 void GlueXParallelWorld::Construct()
 {
-   G4String name = GetName();
-   name.erase(0,9);
-   name.replace(0,6,"World:");
-   std::cout << "Additional geometry layer configured as "
-             << name << std::endl;
    G4VPhysicalVolume* ghostWorld = GetWorld();
    G4LogicalVolume* worldLogical = ghostWorld->GetLogicalVolume();
-   new G4PVPlacement(0,G4ThreeVector(),fTopVolume,name,worldLogical,false,0);
+   for (int child = fTopVolume->GetNoDaughters() - 1; child >= 0; --child) {
+      G4VPhysicalVolume* pvol = fTopVolume->GetDaughter(child);
+      fTopVolume->RemoveDaughter(pvol);
+      worldLogical->AddDaughter(pvol);
+   }
+   if (worldLogical->GetNoDaughters()) {
+      std::cout << "Additional geometry layer configured as "
+                << ghostWorld->GetName() << std::endl;
+   }
+   else {
+      std::cout << "Additional geometry layer configured as "
+                << ghostWorld->GetName() << " is EMPTY!" << std::endl
+                << "This is probably due to a geometry bug -- "
+                << "PLEASE REPORT THIS TO THE AUTHORS" << std::endl;
+   }
+}
+
+void GlueXDetectorConstruction::PropagateFieldManagers(G4LogicalVolume *vol)
+{
+   G4FieldManager *fmgr = vol->GetFieldManager();
+   if (fmgr) {
+      vol->SetFieldManager(fmgr, false);
+      for (int child = 0; child < vol->GetNoDaughters(); ++child) {
+         PropagateFieldManagers(vol->GetDaughter(child)->GetLogicalVolume());
+      }
+   }
 }
