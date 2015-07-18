@@ -304,15 +304,15 @@ G4ThreeVector GlueXMappedMagField::GetMagField(const G4double point[4],
    double u[3];
    if (fGridtype == 1)
    {
-      u[0] = p[0] * cm;
-      u[1] = p[1] * cm;
-      u[2] = p[2] * cm;
+      u[0] = p[0] / cm;
+      u[1] = p[1] / cm;
+      u[2] = p[2] / cm;
    }
    else if (fGridtype == 2)
    {
-      u[0] = sqrt(p[0] * p[0] + p[1] * p[1]) * cm;
+      u[0] = sqrt(p[0] * p[0] + p[1] * p[1]) / cm;
       u[1] = atan2(p[1], p[0]);
-      u[2] = p[2] * cm;
+      u[2] = p[2] / cm;
    }
    else
    {
@@ -677,7 +677,7 @@ G4ThreeVector GlueXComputedMagField::GetMagField(const G4double point[4],
    // into local map coordinates for lookup, and then the field is rotated
    // back into user coordinates and returned in the requested units.
  
-   G4ThreeVector p(point[0], point[1], point[2]);
+   G4ThreeVector p(point[0] / cm, point[1] / cm, point[2] / cm);
    fXfinv.ApplyPointTransform(p);
    double B[3] = {0,0,0};
    DMagneticFieldMap *mapso =
