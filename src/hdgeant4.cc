@@ -7,12 +7,12 @@
 
 #include <GlueXUserOptions.hh>
 #include <GlueXDetectorConstruction.hh>
-#include <GlueXPhysicsList.hh>
 #include <GlueXPrimaryGeneratorAction.hh>
 #include <GlueXRunAction.hh>
 #include <GlueXEventAction.hh>
 #include <GlueXSteppingAction.hh>
 #include <GlueXSteppingVerbose.hh>
+#include <GlueXPhysicsList.hh>
 
 #include <DANA/DApplication.h>
 
@@ -60,19 +60,15 @@ int main(int argc,char** argv)
   runManager->SetUserInitialization(geometry);
 
   // Physics process initialization
-  G4VUserPhysicsList* physics = new GlueXPhysicsList;
-  runManager->SetUserInitialization(physics);
+  runManager->SetUserInitialization(new GlueXPhysicsList(geometry));
    
+  // Event generator initialization
+  runManager->SetUserAction(new GlueXPrimaryGeneratorAction(geometry));
+
   // User actions initialization
-  G4VUserPrimaryGeneratorAction* event_gen = 
-                                 new GlueXPrimaryGeneratorAction(geometry);
-  runManager->SetUserAction(event_gen);
-  G4UserRunAction* run_action = new GlueXRunAction;
-  runManager->SetUserAction(run_action);
-  G4UserEventAction* event_action = new GlueXEventAction;
-  runManager->SetUserAction(event_action);
-  G4UserSteppingAction* stepping_action = new GlueXSteppingAction;
-  runManager->SetUserAction(stepping_action);
+  runManager->SetUserAction(new GlueXRunAction);
+  runManager->SetUserAction(new GlueXEventAction);
+  runManager->SetUserAction(new GlueXSteppingAction);
 
   // Initialize G4 kernel
   runManager->Initialize();
@@ -93,14 +89,14 @@ int main(int argc,char** argv)
   else {           // interactive mode, define UI session
 #ifdef G4UI_USE
  #ifdef G4UI_USE_EXECUTIVE
-    G4UIExecutive* ui = new G4UIExecutive(argc,argv);
+    G4UIExecutive* ui = new G4UIExecutive(argc,argv,"qt");
  #else
     G4UIterminal* ui = new G4UIterminal(new G4UItcsh);
  #endif
-    ui->SessionStart();
  #ifdef G4VIS_USE
     UImanager->ApplyCommand("/control/execute vis.mac");     
  #endif
+    ui->SessionStart();
     delete ui;
 #endif
   }

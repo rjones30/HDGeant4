@@ -7,31 +7,16 @@
 #ifndef GlueXPhysicsList_h
 #define GlueXPhysicsList_h 1
 
-#include "G4VUserPhysicsList.hh"
+#include <GlueXDetectorConstruction.hh>
+
+#include <G4VUserPhysicsList.hh>
+#include <QGSP_FTFP_BERT.hh>
 #include "globals.hh"
 
-class GlueXPhysicsList: public G4VUserPhysicsList
+class GlueXPhysicsList: public QGSP_FTFP_BERT
 {
-  public:
-    GlueXPhysicsList();
-
-  protected:
-    // Construct particle and physics
-    void ConstructParticle();
-    void ConstructProcess();
- 
-    void SetCuts();
-
-    // these methods Construct particles 
-    void ConstructBosons();
-    void ConstructLeptons();
-    void ConstructMesons();
-    void ConstructBaryons();
-
-  // these methods Construct physics processes and register them
-    void ConstructGeneral();
-    void ConstructEM();
-    void AddStepMax();
+ public:
+   GlueXPhysicsList(GlueXDetectorConstruction *geometry);
 };
 
 #endif
