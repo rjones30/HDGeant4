@@ -612,17 +612,19 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
    G4VSolid *solid = fLogicalVolumes[oldvol]->GetSolid()->Clone();
    G4String name(fLogicalVolumes[vpair_t(volume_id,0)]->GetName());
    std::stringstream str;
-   str << name << ":" << layer;
+   str << name << "::" << layer;
    solid->SetName(str.str());
    G4Material *material = fLogicalVolumes[oldvol]->GetMaterial();
+   G4FieldManager *fieldmgr = fLogicalVolumes[oldvol]->GetFieldManager();
    if (layer > max_layer)
    {
-      fLogicalVolumes[newvol] = new G4LogicalVolume(solid,material,str.str());
+      fLogicalVolumes[newvol] = new G4LogicalVolume(solid,material,
+                                                    str.str(),fieldmgr);
       fLogicalVolumes[oldvol]->SetMaterial(0);
    }
    else
    {
-      fLogicalVolumes[newvol] = new G4LogicalVolume(solid,0,str.str());
+      fLogicalVolumes[newvol] = new G4LogicalVolume(solid,0,str.str(),fieldmgr);
    }
 
    // If this is the top-level (world) volume then it cannot be
@@ -933,7 +935,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
          G4MagIntegratorStepper *stepper = new G4ExactHelixStepper(eqn);
          G4ChordFinder *cfinder = new G4ChordFinder(fld, 0.01, stepper);
          G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, true);
+         moms->second->SetFieldManager(mgr, false);
       }
       else if (uniBfieldL->getLength() > 0)
       {
@@ -952,7 +954,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
          G4MagIntegratorStepper *stepper = new G4ExactHelixStepper(eqn);
          G4ChordFinder *cfinder = new G4ChordFinder(fld, 0.01, stepper);
          G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, true);
+         moms->second->SetFieldManager(mgr, false);
       }
       else if (mapBfieldL->getLength() > 0)
       {
@@ -981,7 +983,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
             cfinder->SetDeltaChord(max_miss);
          }
          G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, true);
+         moms->second->SetFieldManager(mgr, false);
       }
       else if (compBfieldL->getLength() > 0)
       {
@@ -1011,7 +1013,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
             cfinder->SetDeltaChord(max_miss);
          }
          G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, true);
+         moms->second->SetFieldManager(mgr, false);
       }
    }
 
