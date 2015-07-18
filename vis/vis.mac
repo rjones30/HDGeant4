@@ -1,5 +1,5 @@
 #
-# vis.mac - startup macro for geant4 visualization system
+# vis.mac - example macro for geant4 visualization system
 #           when runing in interactive mode
 #
 # Sets default verbosity
@@ -7,7 +7,7 @@
 /run/verbose 2
 #
 # Use this open statement to create an OpenGL view:
-/vis/open OGL 600x600+10+50
+/vis/open OGLSX 600x600+10+50
 #
 # Use this open statement to create a .prim file suitable for
 # viewing in DAWN:
@@ -25,6 +25,7 @@
 # trajectories are established:
 /vis/ogl/set/displayListLimit 150000
 /vis/viewer/set/autoRefresh false
+/vis/viewer/set/background white
 /vis/verbose errors
 #
 # Draw desired view of geometry:
