@@ -10,6 +10,7 @@
 /vis/drawVolume worlds
 /vis/viewer/set/targetPoint 0 0 0 cm
 /vis/viewer/zoomTo 20
+/vis/viewer/set/picking true
 /vis/viewer/set/autoRefresh true
 
 # use /vis/ogl/export z0.eps to save the image to an eps file

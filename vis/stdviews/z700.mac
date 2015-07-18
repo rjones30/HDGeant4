@@ -11,6 +11,7 @@
 /vis/viewer/set/targetPoint 0 0 700 cm
 /vis/viewer/set/viewpointThetaPhi 90 180
 /vis/viewer/zoomTo 15
+/vis/viewer/set/picking true
 /vis/viewer/set/autoRefresh true
 
 # use /vis/ogl/export z700.eps to save the image to an eps file
