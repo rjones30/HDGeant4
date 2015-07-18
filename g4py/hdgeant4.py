@@ -58,9 +58,9 @@ def init():
 
   # initialize physics processes
   global plist
-  plist = GlueXPhysicsList()
+  plist = GlueXPhysicsList(geom)
   gRunManager.SetUserInitialization(plist)
-   
+
   # initialize event generators
   global gen
   gen = GlueXPrimaryGeneratorAction(geom)
@@ -80,9 +80,6 @@ def init():
   # initialize G4 kernel
   gRunManager.Initialize()
       
-  # initialize graphics
-  gVisManager.Initialize()
-
 def stdviews():
   '''
   Generate standard views of the simulation geometry and save
