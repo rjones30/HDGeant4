@@ -680,10 +680,10 @@ G4ThreeVector GlueXComputedMagField::GetMagField(const G4double point[4],
    G4ThreeVector p(point[0] / cm, point[1] / cm, point[2] / cm);
    fXfinv.ApplyPointTransform(p);
    double B[3] = {0,0,0};
-   DMagneticFieldMap *mapso =
-                     dynamic_cast <DMagneticFieldMap* const> (fJanaFieldMap);
-   DMagneticFieldMapPS *mapps =
-                     dynamic_cast <DMagneticFieldMapPS* const> (fJanaFieldMap);
+   DMagneticFieldMap *mapso = fJanaFieldMap;
+                     //dynamic_cast <DMagneticFieldMap* const> (fJanaFieldMap);
+   DMagneticFieldMapPS *mapps = fJanaFieldMapPS;
+                     //dynamic_cast <DMagneticFieldMapPS* const> (fJanaFieldMapPS);
    if (mapso)
       mapso->GetField(p[0], p[1], p[2], B[0], B[1], B[2]);
    else if (mapps)
