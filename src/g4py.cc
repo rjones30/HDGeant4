@@ -17,6 +17,9 @@
 #include <GlueXSteppingVerbose.hh>
 #include <GlueXPhysicsList.hh>
 
+#include <G4SystemOfUnits.hh>
+#include <G4OpenGLViewer.hh>
+
 // We must wrap an abstract C++ type so python 
 // knows how to override pure virtual methods.
 
@@ -55,6 +58,23 @@ int (GlueXUserOptions::*GlueXUserOptions_Find_int)
     (const char *name, GlueXUserOptions_int_map &value) const
     = &GlueXUserOptions::Find;
 
+// Add a python utility function to fake a user "picking" click
+// on a particular 3D location in the geometry, to enable probing
+// the contents of the geometry and magnetic fields from the
+// python command prompt. Of course, the same code can be used
+// from a C++ user function if so desired.
+
+void pickPoint3D(G4double x_cm, G4double y_cm, G4double z_cm)
+{
+   // Act as if the user had "picked" on point x,y,z (specified in cm)
+   // from within a graphical view in the OGLSX visualization system.
+
+   G4OpenGLViewerPickMap map;
+   G4ThreeVector v(x_cm * cm, y_cm * cm, z_cm * cm);
+   map.setPickCoordinates3D(v);
+   std::cout << map.print();
+}
+
 // Create a python module containing all of the G4 user classes
 // that are needed to run the HDGeant simulation from python.
 // Here it is named libhdgeant4 (happens to also be the name of
@@ -65,6 +85,7 @@ BOOST_PYTHON_MODULE(libhdgeant4)
 {
    using boost::python::class_;
    using boost::python::enum_;
+   using boost::python::def;
 
    class_<CB_DApplication, CB_DApplication*>
          ("DApplication", 
@@ -197,4 +218,6 @@ BOOST_PYTHON_MODULE(libhdgeant4)
          ("GlueXSteppingVerbose",
           "encapsulates actions to take at start and end of each step (verbose)")
    ;
+
+   def("pickPoint3D", pickPoint3D);
 }
