@@ -17,6 +17,7 @@
 # usage example:
 #   $ python
 #   >>> import hdgeant4
+#   >>> hdgeant4.pick_point3D(0,0,65)
 #   >>> hdgeant4.stdviews()
 #   >>> hdgeant4.gUImanager.ApplyCommand("/vis/viewer/zoomTo 50")
 #   >>> hdgeant4.gUImanager.ApplyCommand("/vis/ogl/export pic.eps")
@@ -92,6 +93,16 @@ def stdviews():
               "z200", "z380", "z412", "z630", "z700":
     ui.ApplyCommand("/control/execute ../vis/stdviews/" + view + ".mac")
     ui.ApplyCommand("/vis/ogl/export " + view + ".eps")
+
+def checkBfield(infile):
+  '''
+  Checks the magnetic field at a user-selected set of points 
+  listed as 3D coordinates (cm) in a 3-column input text file.
+  '''
+  G4GeometryManager.GetInstance().CloseGeometry()
+  for line in open(infile):
+    coord = line.split()
+    pickPoint3D(float(coord[0]), float(coord[1]), float(coord[2]))
 
 # Automatic actions at startup
 init()
