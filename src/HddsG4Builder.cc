@@ -20,7 +20,6 @@
 #include <G4Sphere.hh>
 #include <G4Polycone.hh>
 #include <G4Polyhedra.hh>
-#include <G4FieldManager.hh>
 #include <G4SystemOfUnits.hh>
 #include <G4Mag_UsualEqRhs.hh>
 #include <G4MagIntegratorStepper.hh>
@@ -415,8 +414,9 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
    }
 
    vpair_t newvol(ivolu,0);
+   G4FieldManager* fieldmgr = fFieldManagers[ref.fRegionID];
    fLogicalVolumes[newvol] = new G4LogicalVolume(solid,fMaterials[imate],
-                                                 S(nameS));
+                                                 S(nameS),fieldmgr);
    G4Material* mate = fMaterials[imate];
    double dens = mate->GetDensity();
    double dmod = (int)(dens*97.345/(g/cm3)) % 20;
@@ -494,7 +494,6 @@ int HddsG4Builder::createVolume(DOMElement* el, Refsys& ref)
 
    if (fPending)
    {
-      XString nameS(el->getAttribute(X("name")));
       XString myvoluS(el->getAttribute(X("HDDSvolu")));
       XString motherS(fRef.fMother->getAttribute(X("HDDSvolu")));
       int myvoluI = atoi(S(myvoluS));
@@ -503,10 +502,6 @@ int HddsG4Builder::createVolume(DOMElement* el, Refsys& ref)
                            fRef.fOrigin[1]*cm,
                            fRef.fOrigin[2]*cm);
       int irot = fRef.fRotation;
-      std::map<vpair_t,G4LogicalVolume*>::iterator mine;
-      std::map<vpair_t,G4LogicalVolume*>::iterator moms;
-      mine = fLogicalVolumes.find(vpair_t(myvoluI,0));
-      moms = addNewLayer(motherI,fRef.fRelativeLayer);
 
       // Apply fix-up in case we are placing the volume inside a phi division
       // because of a flaw in the way geant4 handles this special case.
@@ -518,26 +513,43 @@ int HddsG4Builder::createVolume(DOMElement* el, Refsys& ref)
          rot->rotateZ(-fCurrentPhiCenter[motherI]);
          origin.rotateZ(fCurrentPhiCenter[motherI]);
       }
-      vpair_t mycopy(myvoluI,icopy);
-      fPhysicalVolumes[mycopy] = new G4PVPlacement(rot, origin,
-                                                   mine->second,S(nameS),
-                                                   moms->second,0,icopy);
+
+      std::map<vpair_t,G4LogicalVolume*>::iterator mine;
+      for (mine = fLogicalVolumes.find(vpair_t(myvoluI,0));
+           mine != fLogicalVolumes.end() && mine->first.first == myvoluI;
+           ++mine)
+      {
+         int ilayer = mine->first.second;
+         std::map<vpair_t,G4LogicalVolume*>::iterator moms;
+         moms = addNewLayer(motherI,fRef.fRelativeLayer + ilayer);
+         G4PVPlacement *pvol = new G4PVPlacement(rot, origin,
+                                                 mine->second,
+                                                 mine->second->GetName(),
+                                                 moms->second,0,icopy);
 #ifdef CHECK_OVERLAPS_MM
-      fPhysicalVolumes[mycopy]->CheckOverlaps(1000,CHECK_OVERLAPS_MM);
+         pvol->CheckOverlaps(1000,CHECK_OVERLAPS_MM);
 #endif
-      fCurrentPlacement[myvoluI] = fPhysicalVolumes.find(mycopy);
-      fCurrentMother[myvoluI] = moms;
 #ifdef DEBUG_PLACEMENT
-      std::cout << "volume " << nameS 
-                << "->" << mine->second->GetName()
-                << "->" << mine->second->GetSolid()->GetName()
-                << " being placed in mother " << moms->second->GetName()
-                << "->" << moms->second->GetSolid()->GetName() << " at "
-                << fRef.fOrigin[0]*cm << ","
-                << fRef.fOrigin[1]*cm << "," 
-                << fRef.fOrigin[2]*cm
-                << std::endl;
+         XString nameS(el->getAttribute(X("name")));
+         std::cout << "volume " << nameS 
+                   << "->" << mine->second->GetName()
+                   << "->" << mine->second->GetSolid()->GetName()
+                   << " being placed in mother " << moms->second->GetName()
+                   << "->" << moms->second->GetSolid()->GetName() << " at "
+                   << fRef.fOrigin[0]*cm << ","
+                   << fRef.fOrigin[1]*cm << "," 
+                   << fRef.fOrigin[2]*cm
+                   << std::endl;
 #endif
+
+         if (ilayer == 0) {
+            vpair_t mycopy(myvoluI,icopy);
+            fPhysicalVolumes[mycopy] = pvol;
+            fCurrentPlacement[myvoluI] = fPhysicalVolumes.find(mycopy);
+            fCurrentMother[myvoluI] = moms;
+         }
+      }
+
       fPending = false;
    }
 
@@ -586,8 +598,8 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
    }
 
    // The volume does not exist yet on the specified layer, so we
-   // want to create a clone of the existing copy on layer 0 and
-   // place it on the specified layer.  Before that can happen,
+   // want to create a reflection of the existing layer 0 volume
+   // and place it on the specified layer.  Before that can happen,
    // the volume's mother must exist on the specified layer.
    // Use recursion to ensure that this is always true.
  
@@ -618,12 +630,16 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
    G4FieldManager *fieldmgr = fLogicalVolumes[oldvol]->GetFieldManager();
    if (layer > max_layer)
    {
+std::cout << "cloning " << fLogicalVolumes[oldvol]->GetName() << " to " << str.str()
+          << " with field manager " << fieldmgr << std::endl;
       fLogicalVolumes[newvol] = new G4LogicalVolume(solid,material,
                                                     str.str(),fieldmgr);
       fLogicalVolumes[oldvol]->SetMaterial(0);
    }
    else
    {
+std::cout << "cloning " << fLogicalVolumes[oldvol]->GetName() << " to " << str.str()
+          << " with field manager " << fieldmgr << std::endl;
       fLogicalVolumes[newvol] = new G4LogicalVolume(solid,0,str.str(),fieldmgr);
    }
 
@@ -648,14 +664,15 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
       placement = fCurrentPlacement[volume_id];
       G4PVPlacement *player0 = (G4PVPlacement*)placement->second;
       vpair_t mycopy(volume_id,placement->first.second);
-      fPhysicalVolumes[mycopy] = new G4PVPlacement(player0->GetRotation(),
-                                                   player0->GetTranslation(),
-                                                   fLogicalVolumes[newvol],
-                                                   str.str(),
-                                                   moms->second,0,
-                                                   placement->first.second);
+      G4PVPlacement *playerN;
+      playerN = new G4PVPlacement(player0->GetRotation(),
+                                  player0->GetTranslation(),
+                                  fLogicalVolumes[newvol],
+                                  str.str(),
+                                  moms->second,0,
+                                  placement->first.second);
 #ifdef CHECK_OVERLAPS_MM
-      fPhysicalVolumes[mycopy]->CheckOverlaps(1000,CHECK_OVERLAPS_MM);
+      playerN->CheckOverlaps(1000,CHECK_OVERLAPS_MM);
 #endif
 #ifdef DEBUG_PLACEMENT 
       std::cout << "volume " << str.str() 
@@ -683,10 +700,11 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
       // axis returned by GetReplicationData is sometimes wrong!
       axis = division0->GetDivisionAxis();
       vpair_t mydiv(volume_id,division->first.second);
-      fPhysicalVolumes[mydiv] = new G4PVDivision(str.str(),
-                                                 fLogicalVolumes[newvol],
-                                                 moms->second,
-                                                 axis, ndiv, width, offset);
+      G4PVDivision *divisionN;
+      divisionN = new G4PVDivision(str.str(),
+                                   fLogicalVolumes[newvol],
+                                   moms->second,
+                                   axis, ndiv, width, offset);
       fLogicalVolumes[newvol]->SetVisAttributes(new G4VisAttributes(false));
 #ifdef DEBUG_PLACEMENT 
       std::cout << ndiv << " copies of division " << str.str() 
@@ -773,7 +791,9 @@ int HddsG4Builder::createDivision(XString& divStr, Refsys& ref)
    vpair_t mothvol(moms->first);
    vpair_t myvol(myvoluI,moms->first.second);
    G4Material* material = moms->second->GetMaterial();
-   fLogicalVolumes[myvol] = new G4LogicalVolume(solid,material,S(divStr));
+   G4FieldManager* fieldmgr = fFieldManagers[ref.fRegionID];
+   fLogicalVolumes[myvol] = new G4LogicalVolume(solid,material,
+                                                S(divStr),fieldmgr);
    fLogicalVolumes[myvol]->SetVisAttributes(new G4VisAttributes(false));
    vpair_t mydiv(myvoluI,0);
    fPhysicalVolumes[mydiv] = new G4PVDivision(S(divStr),
@@ -934,8 +954,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
          G4Mag_EqRhs *eqn = new G4Mag_UsualEqRhs(fld);
          G4MagIntegratorStepper *stepper = new G4ExactHelixStepper(eqn);
          G4ChordFinder *cfinder = new G4ChordFinder(fld, 0.01, stepper);
-         G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, false);
+         fFieldManagers[iregion] = new G4FieldManager(fld, cfinder);
       }
       else if (uniBfieldL->getLength() > 0)
       {
@@ -953,8 +972,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
          G4Mag_EqRhs *eqn = new G4Mag_UsualEqRhs(fld);
          G4MagIntegratorStepper *stepper = new G4ExactHelixStepper(eqn);
          G4ChordFinder *cfinder = new G4ChordFinder(fld, 0.01, stepper);
-         G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, false);
+         fFieldManagers[iregion] = new G4FieldManager(fld, cfinder);
       }
       else if (mapBfieldL->getLength() > 0)
       {
@@ -982,8 +1000,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
             double max_miss = rmin * (1 - cos(maxArcStep / 2));
             cfinder->SetDeltaChord(max_miss);
          }
-         G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, false);
+         fFieldManagers[iregion] = new G4FieldManager(fld, cfinder);
       }
       else if (compBfieldL->getLength() > 0)
       {
@@ -1012,8 +1029,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
             double max_miss = rmin * (1 - cos(maxArcStep / 2));
             cfinder->SetDeltaChord(max_miss);
          }
-         G4FieldManager *mgr = new G4FieldManager(fld, cfinder);
-         moms->second->SetFieldManager(mgr, false);
+         fFieldManagers[iregion] = new G4FieldManager(fld, cfinder);
       }
    }
 

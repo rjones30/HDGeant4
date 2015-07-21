@@ -27,6 +27,7 @@ using namespace xercesc;
 #include <G4Element.hh>
 #include <G4Material.hh>
 #include <G4MagneticField.hh>
+#include <G4FieldManager.hh>
 #include <G4LogicalVolume.hh>
 #include <G4RotationMatrix.hh>
 #include <G4PVPlacement.hh>
@@ -84,12 +85,26 @@ class HddsG4Builder : public CodeWriter
    addNewLayer(int volume_id, int layer); // generate code for geometry layers
 
    int fWorldVolume;
+
+   // many-to-one maps from volume id to attribute pointer
    std::map<int,G4Element*> fElements;
    std::map<int,G4Material*> fMaterials;
    std::map<int,G4MagneticField*> fMagneticRegions;
-   std::map<vpair_t,G4LogicalVolume*> fLogicalVolumes;
-   std::map<vpair_t,G4VPhysicalVolume*> fPhysicalVolumes;
+   std::map<int,G4FieldManager*> fFieldManagers;
    std::map<int,G4RotationMatrix*> fRotations;
+
+   // one-to-one map from (volume id, layer index) to logical volume,
+   // keeps track of each named volume as it is initially populated
+   // (layer=0), and then any subsequent reflections, indexed by layer
+   std::map<vpair_t,G4LogicalVolume*> fLogicalVolumes;
+
+   // one-to-one map from (volume id, copy number) to physical volume,
+   // keeps track of each named volume as it is initially placed,
+   // whatever the layer; placement of reflections is not stored here
+   std::map<vpair_t,G4VPhysicalVolume*> fPhysicalVolumes;
+
+   // iterator arrays indexed by volume id into the above tables of
+   // logical and physical volumes, about the current working state
    typedef std::map<int,std::map<vpair_t,G4LogicalVolume*>::iterator> 
            LogicalVolume_map_iter;
    typedef std::map<int,std::map<vpair_t,G4VPhysicalVolume*>::iterator> 
