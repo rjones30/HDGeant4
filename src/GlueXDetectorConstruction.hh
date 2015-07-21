@@ -37,9 +37,6 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      G4String GetParallelWorldName(int paraIndex);
      G4LogicalVolume* GetParallelWorldVolume(int paraIndex);
      
-  protected:
-     void PropagateFieldManagers(G4LogicalVolume* vol);
-
   private:
      G4double fMaxStep;		// maximum step size for tracking
      G4double fUniformField;  	// optional uniform field (for testing)

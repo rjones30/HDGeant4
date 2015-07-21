@@ -187,15 +187,6 @@ G4VPhysicalVolume* GlueXDetectorConstruction::Construct()
    worldvol->SetName("World");
    std::cout << " configured as " << worldvol->GetName() << std::endl;
    worldvol->SetVisAttributes(new G4VisAttributes(false));
-
-   // Geant4 requires that EM field managers be set on the geometry AFTER
-   // everything has been placed. HddsG4Builder constructs the geometry
-   // top-down, so afterward we need to go back and get/set them all again.
-
-   PropagateFieldManagers(worldvol);
-   for (int para = 0; para < GetParallelWorldCount(); ++para) {
-      PropagateFieldManagers(GetParallelWorldVolume(para));
-   }
    return new G4PVPlacement(0, G4ThreeVector(), worldvol, "World", 0, 0, 0);
 }
 
@@ -246,16 +237,5 @@ void GlueXParallelWorld::Construct()
                 << ghostWorld->GetName() << " is EMPTY!" << std::endl
                 << "This is probably due to a geometry bug -- "
                 << "PLEASE REPORT THIS TO THE AUTHORS" << std::endl;
-   }
-}
-
-void GlueXDetectorConstruction::PropagateFieldManagers(G4LogicalVolume *vol)
-{
-   G4FieldManager *fmgr = vol->GetFieldManager();
-   if (fmgr) {
-      vol->SetFieldManager(fmgr, false);
-      for (int child = 0; child < vol->GetNoDaughters(); ++child) {
-         PropagateFieldManagers(vol->GetDaughter(child)->GetLogicalVolume());
-      }
    }
 }
