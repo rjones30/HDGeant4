@@ -1498,8 +1498,9 @@ G4String G4OpenGLViewerPickMap::print() {
   std::vector<G4VPhysicalVolume*>::iterator iter = 
                                             tmanager->GetWorldsIterator();
   for (int world = tmanager->GetNoWorlds() - 1; world >= 0; --world) {
-    G4VPhysicalVolume *pvol = tmanager->GetNavigator(iter[world])->
-                      LocateGlobalPointAndSetup(fCoordinates,0,false);
+    G4Navigator *navigator = tmanager->GetNavigator(iter[world]);
+    G4VPhysicalVolume *pvol = navigator->
+                              LocateGlobalPointAndSetup(fCoordinates,0,false);
     if (!pvol)
       continue;
     G4LogicalVolume *lvol = pvol->GetLogicalVolume();
@@ -1508,11 +1509,20 @@ G4String G4OpenGLViewerPickMap::print() {
     G4Material *mat = lvol->GetMaterial();
     if (!mat)
       continue;
+    G4TouchableHistory *hist = navigator->CreateTouchableHistory();
+    std::ostringstream pvpath;
+    pvpath << "/" << navigator->GetWorldVolume()->GetName() << ":0";
+    for (int depth = hist->GetHistoryDepth() - 1; depth >= 0; --depth) {
+       pvpath << "/" << hist->GetVolume(depth)->GetName()
+              << ":" << hist->GetVolume(depth)->GetCopyNo();
+    }
+   
     txt << "(" << fCoordinates[0] / cm 
         << "," << fCoordinates[1] / cm
         << "," << fCoordinates[2] / cm << ")"
         << " found in " << pvol->GetName() << " copy " << pvol->GetCopyNo()
         << " of " << lvol->GetName() << " with " << std::endl
+        << "   complete path: " << pvpath.str() << std::endl
         << "   layer " << world << " material: " << mat->GetName() << std::endl;
     G4FieldManager *fman = lvol->GetFieldManager();
     if (fman) {
