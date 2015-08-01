@@ -15,18 +15,18 @@ CPPFLAGS += -I/usr/include/Qt
 CPPFLAGS += -I/usr/include/python2.6
 CPPFLAGS += -DUSE_SSE2
 #CPPFLAGS += -I/usr/include/Qt
-#CPPFLAGS += -DMOD_SPONCE
 #CPPFLAGS += -DLINUX_CPUTIME_PROFILING=1
-#CPPFLAGS += -DDEBUG_SECTIONPLANE
-#CPPFLAGS += -DDEBUG_SECTIONPLANE_ZAVE
 #CPPFLAGS += -DCHECK_OVERLAPS_MM=1e-4
 CPPFLAGS += -DBYPASS_DRAWING_CLIPPED_VOLUMES
 CPPFLAGS += -DLAYERED_GEOMETRY_PICKING_EXTENSIONS
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
-#CPPFLAGS += -DDEBUG_PLACEMENT
-CPPFLAGS += -DBP_DEBUG
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
+#CPPFLAGS += -DBP_DEBUG
+#CPPFLAGS += -DMOD_SPONCE
+#CPPFLAGS += -DDEBUG_PLACEMENT
+#CPPFLAGS += -DDEBUG_SECTIONPLANE
+#CPPFLAGS += -DDEBUG_SECTIONPLANE_ZAVE
 
 G4LIB_USE_GDML = 1
 CPPVERBOSE = 1
@@ -57,15 +57,20 @@ INTYLIBS += -lboost_python
 INTYLIBS += -L $(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
-all: hdds fixes exe lib bin g4py
+all: hdds cobrems fixes exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
 LDLIBS2 := -lG4fixes $(LDLIBS2)
 
+cobrems: $(G4TMPDIR)/libcobrems.so
 fixes: $(G4TMPDIR)/libG4fixes.so
 hdds:  $(G4TMPDIR)/libhdds.so
 
 CXXFLAGS = -g -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+
+$(G4TMPDIR)/libcobrems.so: src/CobremsGenerator.cc
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
+	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
 G4fixes_objects := $(patsubst src/G4fixes/%.cc, $(G4TMPDIR)/%.o, $(G4fixes_sources))
 $(G4TMPDIR)/libG4fixes.so: $(G4fixes_objects) $(G4TMPDIR)/G4fixes.o
@@ -97,7 +102,8 @@ exe:
 	@mkdir -p $(G4LIBDIR)/$@
 
 g4py: $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so \
-      $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so
+      $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so \
+      $(G4LIBDIR)/../../../g4py/Cobrems/libcobrems.so
 
 $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so: $(G4LIBDIR)/libhdgeant4.so
 	@rm -f $@
@@ -106,3 +112,7 @@ $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so: $(G4LIBDIR)/libhdgeant4.so
 $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so: $(G4LIBDIR)/libG4fixes.so
 	@rm -f $@
 	@cd g4py/G4fixes && ln -s ../../tmp/*/hdgeant4/libG4fixes.so .
+
+$(G4LIBDIR)/../../../g4py/Cobrems/libcobrems.so: $(G4LIBDIR)/libcobrems.so 
+	@rm -f $@
+	@cd g4py/Cobrems && ln -s ../../tmp/*/hdgeant4/libcobrems.so .
