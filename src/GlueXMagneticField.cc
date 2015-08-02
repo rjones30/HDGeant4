@@ -1,4 +1,3 @@
-#include <hddsCommon.hpp>
 //
 // class implementation for
 //   * GlueXUniformMagField

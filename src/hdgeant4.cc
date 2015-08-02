@@ -63,7 +63,7 @@ int main(int argc,char** argv)
   runManager->SetUserInitialization(new GlueXPhysicsList(geometry));
    
   // Event generator initialization
-  runManager->SetUserAction(new GlueXPrimaryGeneratorAction(geometry));
+  runManager->SetUserAction(new GlueXPrimaryGeneratorAction());
 
   // User actions initialization
   runManager->SetUserAction(new GlueXRunAction);

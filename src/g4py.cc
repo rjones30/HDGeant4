@@ -187,7 +187,7 @@ BOOST_PYTHON_MODULE(libhdgeant4)
           boost::python::bases<G4VUserPrimaryGeneratorAction> >
          ("GlueXPrimaryGeneratorAction",
           "the generator of interaction events to be simulated",
-           boost::python::init<GlueXDetectorConstruction*>())
+           boost::python::init<>())
    ;
 
    class_<GlueXEventAction, GlueXEventAction*,
