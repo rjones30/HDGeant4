@@ -630,16 +630,12 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
    G4FieldManager *fieldmgr = fLogicalVolumes[oldvol]->GetFieldManager();
    if (layer > max_layer)
    {
-std::cout << "cloning " << fLogicalVolumes[oldvol]->GetName() << " to " << str.str()
-          << " with field manager " << fieldmgr << std::endl;
       fLogicalVolumes[newvol] = new G4LogicalVolume(solid,material,
                                                     str.str(),fieldmgr);
       fLogicalVolumes[oldvol]->SetMaterial(0);
    }
    else
    {
-std::cout << "cloning " << fLogicalVolumes[oldvol]->GetName() << " to " << str.str()
-          << " with field manager " << fieldmgr << std::endl;
       fLogicalVolumes[newvol] = new G4LogicalVolume(solid,0,str.str(),fieldmgr);
    }
 
