@@ -49,23 +49,80 @@ class CobremsGenerator {
    void setTargetThetax(double thetax);
    void setTargetThetay(double thetay);
    void setTargetThetaz(double thetaz);
+   void setPhotonEnergyMin(double Emin_GeV);
    void RotateTarget(double thetax, double thetay, double thetaz);
-   void setCollimatedFlux(bool flag);
-   void setPolarizedFlux(bool flag);
+   void setCollimatedFlag(bool flag);
+   void setPolarizedFlag(bool flag);
 
-   double getBeamEnergy() { return fBeamEnergy; }
-   double getBeamErms() { return fBeamErms; }
-   double getBeamEmittance() { return fBeamEmittance; }
-   double getCollimatorSpotrms() { return fCollimatorSpotrms; }
-   double getCollimatorDistance() { return fCollimatorDistance; }
-   double getCollimatorDiameter() { return fCollimatorDiameter; }
-   double getTargetThickness() { return fTargetThickness; }
-   std::string getTargetCrystal() { return fTargetCrystal.name; }
-   double getTargetThetax() { return fTargetThetax; }
-   double getTargetThetay() { return fTargetThetay; }
-   double getTargetThetaz() { return fTargetThetaz; }
-   bool getCollimatedFlux() { return fCollimatedFlux; }
-   bool getPolarizedFlux() { return fPolarizedFlux; }
+   double getBeamEnergy() {
+      return fBeamEnergy; // (GeV)
+   }
+   double getBeamErms() {
+      return fBeamErms; // (GeV)
+   }
+   double getBeamEmittance() {
+      return fBeamEmittance; // (m rad)
+   }
+   double getCollimatorSpotrms() {
+      return fCollimatorSpotrms; // (m)
+   }
+   double getCollimatorDistance() {
+      return fCollimatorDistance; // (m)
+   }
+   double getCollimatorDiameter() {
+      return fCollimatorDiameter; // (m)
+   }
+   double getTargetThickness() {
+      return fTargetThickness; // (m)
+   }
+   std::string getTargetCrystal() {
+      return fTargetCrystal.name;
+   }
+   int getTargetCrystalNsites() {
+      return fTargetCrystal.nsites;
+   }
+   double getTargetCrystalAtomicNumber() {
+      return fTargetCrystal.Z;
+   }
+   double getTargetCrystalAtomicWeight() {
+      return fTargetCrystal.A;  // (amu)
+   }
+   double getTargetCrystalDensity() {
+      return fTargetCrystal.density; // (g/cm^3)
+   }
+   double getTargetCrystalLatticeConstant() {
+      return fTargetCrystal.lattice_constant; // (m)
+   }
+   double getTargetCrystalRadiationLength() {
+      return fTargetCrystal.radiation_length; // (m)
+   }
+   double getTargetCrystalDebyeWallerConst() {
+      return fTargetCrystal.Debye_Waller_const; // (1/GeV^2)
+   }
+   double getTargetCrystalMosaicSpread() {
+      return fTargetCrystal.mosaic_spread; // (rad)
+   }
+   double getTargetCrystalBetaFF() {
+      return fTargetCrystal.betaFF; // (1/GeV^2)
+   }
+   double getTargetThetax() {
+      return fTargetThetax; // (rad)
+   }
+   double getTargetThetay() {
+      return fTargetThetay; // (rad)
+   }
+   double getTargetThetaz() {
+      return fTargetThetaz; // (rad)
+   }
+   double getPhotonEnergyMin() {
+      return fPhotonEnergyMin; // (GeV)
+   }
+   bool getCollimatedFlag() {
+      return fCollimatedFlag;
+   }
+   bool getPolarizedFlag() {
+      return fPolarizedFlag;
+   }
 
    double getTargetRadiationLength_PDG();
    double getTargetRadiationLength_Schiff();
@@ -105,6 +162,10 @@ class CobremsGenerator {
    static const double me;
    static const double alpha;
    static const double hbarc;
+
+   // statistical record from last sum over reciprocal lattice
+   std::vector<double> fQ2theta2;
+   std::vector<double> fQ2weight;
 
  private:
    // description of the radiator crystal lattice, here configured for diamond
@@ -157,12 +218,11 @@ class CobremsGenerator {
    double fCollimatorDiameter;         // m
 
    // flags to select kind of flux to be computed
-   bool fCollimatedFlux;
-   bool fPolarizedFlux;
+   bool fCollimatedFlag;
+   bool fPolarizedFlag;
 
-   // statistical record from last sum over reciprocal lattice
-   std::vector<double> fQ2theta2;
-   std::vector<double> fQ2weight;
+   // parameters controlling Monte Carlo generation of photons
+   double fPhotonEnergyMin;            // GeV
 };
 
 inline void CobremsGenerator::setBeamEmittance(double emit_m_r) {
@@ -205,12 +265,16 @@ inline void CobremsGenerator::setTargetThetaz(double thetaz) {
    fTargetThetaz = thetaz;
 }
 
-inline void CobremsGenerator::setCollimatedFlux(bool flag) {
-   fCollimatedFlux = flag;
+inline void CobremsGenerator::setPhotonEnergyMin(double Emin_GeV) {
+   fPhotonEnergyMin = Emin_GeV;
 }
 
-inline void CobremsGenerator::setPolarizedFlux(bool flag) {
-   fPolarizedFlux = flag;
+inline void CobremsGenerator::setCollimatedFlag(bool flag) {
+   fCollimatedFlag = flag;
+}
+
+inline void CobremsGenerator::setPolarizedFlag(bool flag) {
+   fPolarizedFlag = flag;
 }
 
 inline void CobremsGenerator::resetTargetOrientation() {

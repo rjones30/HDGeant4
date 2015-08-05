@@ -6,9 +6,8 @@
 #   $ python
 #   >>> from ROOT import *
 #   >>> import cobrems
-#   >>> cobrems.setBeamEnergy(12)
-#   >>> cobrems.setCoherentEdge(8.7)
-#   >>> cobrems.plotCollimatedSpectrum()
+#   >>> cobrems.init(E0=12, Epeak=8.7)
+#   >>> cobrems.plotTotal(0)
 #
 # author: richard.t.jones at uconn.edu
 # version: july 29, 2015
@@ -99,7 +98,7 @@ def init(**kwargs):
       elif arg == "coldiam":
          global coldiam
          coldiam = value
-         generator.setCollimatorDiameter(diam)
+         generator.setCollimatorDiameter(coldiam)
       elif arg == "radt":
          global radt
          radt = value
@@ -136,8 +135,8 @@ def init(**kwargs):
          return
 
    generator.printBeamlineInfo()
-   generator.setCollimatedFlux(true)
-   generator.setPolarizedFlux(false)
+   generator.setCollimatedFlag(true)
+   generator.setPolarizedFlag(false)
 
    # plot the acceptance curve
    global acceptF1
@@ -199,13 +198,13 @@ def plotCoherent(collimated=1):
    x1 = Emax / E0
    xvals = array('d', nbins * [0])
    yvals = array('d', nbins * [0])
-   colFlag = generator.getCollimatedFlux()
-   generator.setCollimatedFlux(collimated)
-   generator.setPolarizedFlux(false)
+   colFlag = generator.getCollimatedFlag()
+   generator.setCollimatedFlag(collimated)
+   generator.setPolarizedFlag(false)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
       yvals[i] = dRcdx([xvals[i]])
-   generator.setCollimatedFlux(colFlag)
+   generator.setCollimatedFlag(colFlag)
    generator.applyBeamCrystalConvolution(nbins, xvals, yvals)
 
    # convert the result to a spectrum vs photon energy
@@ -230,13 +229,13 @@ def plotIncoherent(collimated=1):
    x1 = Emax / E0
    xvals = array('d', nbins * [0])
    yvals = array('d', nbins * [0])
-   colFlag = generator.getCollimatedFlux()
-   generator.setCollimatedFlux(collimated)
-   generator.setPolarizedFlux(false)
+   colFlag = generator.getCollimatedFlag()
+   generator.setCollimatedFlag(collimated)
+   generator.setPolarizedFlag(false)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
       yvals[i] = dRidx([xvals[i]])
-   generator.setCollimatedFlux(colFlag)
+   generator.setCollimatedFlag(colFlag)
    generator.applyBeamCrystalConvolution(nbins, xvals, yvals)
 
    # convert the result to a spectrum vs photon energy
@@ -262,13 +261,13 @@ def plotTotal(collimated=1):
    x1 = Emax / E0
    xvals = array('d', nbins * [0])
    yvals = array('d', nbins * [0])
-   colFlag = generator.getCollimatedFlux()
-   generator.setCollimatedFlux(collimated)
-   generator.setPolarizedFlux(false)
+   colFlag = generator.getCollimatedFlag()
+   generator.setCollimatedFlag(collimated)
+   generator.setPolarizedFlag(false)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
       yvals[i] = dRtdx([xvals[i]])
-   generator.setCollimatedFlux(colFlag)
+   generator.setCollimatedFlag(colFlag)
    generator.applyBeamCrystalConvolution(nbins, xvals, yvals)
 
    # convert the result to a spectrum vs photon energy
@@ -295,15 +294,15 @@ def plotPolarization(collimated=1):
    xvals = array('d', nbins * [0])
    yvals = array('d', nbins * [0])
    ypols = array('d', nbins * [0])
-   colFlag = generator.getCollimatedFlux()
-   generator.setCollimatedFlux(collimated)
+   colFlag = generator.getCollimatedFlag()
+   generator.setCollimatedFlag(collimated)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
-      generator.setPolarizedFlux(true)
+      generator.setPolarizedFlag(true)
       ypols[i] = dRcdx([xvals[i]])
-      generator.setPolarizedFlux(false)
+      generator.setPolarizedFlag(false)
       yvals[i] = dRtdx([xvals[i]])
-   generator.setCollimatedFlux(colFlag)
+   generator.setCollimatedFlag(colFlag)
    generator.applyBeamCrystalConvolution(nbins, xvals, yvals)
    generator.applyBeamCrystalConvolution(nbins, xvals, ypols)
 

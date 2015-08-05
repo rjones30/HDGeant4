@@ -77,8 +77,9 @@ CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
    fTargetThetaz = 0; // radians
    setTargetCrystal("diamond");
    setCoherentEdge(Epeak_GeV);
-   setPolarizedFlux(false);
-   setCollimatedFlux(true);
+   fPhotonEnergyMin = 0.120; // GeV
+   setPolarizedFlag(false);
+   setCollimatedFlag(true);
 
 #if COBREMS_GENERATOR_VERBOSITY > 0
    std::cout << std::endl
@@ -552,9 +553,9 @@ double CobremsGenerator::Rate_dNcdxdp(double x, double phi)
 {
    // Returns the coherent bremsstrahlung probabililty density differential
    // in x (scaled photon energy) and phi (azimuthal emission angle) for
-   // fixed photon energy k = x*fBeamEnergy and phi. If fPolarizedFlux is
+   // fixed photon energy k = x*fBeamEnergy and phi. If fPolarizedFlag is
    // false (0, default) then the total yield is returned, otherwise it is
-   // only the polarized fraction. If fCollimatedFlux is false (0) then
+   // only the polarized fraction. If fCollimatedFlag is false (0) then
    // the total yield is returned, otherwise only the part that passes the
    // collimator is counted (default).
 
@@ -635,8 +636,8 @@ double CobremsGenerator::Rate_dNcdxdp(double x, double phi)
                    ((1 - x) / pow(x * (1 + theta2), 2)) *
                    ((1 + pow(1 - x, 2)) - 8 * (theta2 / pow(1 + theta2, 2) * 
                                               (1 - x) * pow(cos(phi), 2))) *
-                   ((fCollimatedFlux)? Acceptance(theta2) : 1) *
-                   ((fPolarizedFlux)? Polarization(x, theta2) : 1);
+                   ((fCollimatedFlag)? Acceptance(theta2) : 1) *
+                   ((fPolarizedFlag)? Polarization(x, theta2) : 1);
             fQ2theta2.push_back(theta2);
             fQ2weight.push_back(sum);
          }
@@ -729,7 +730,7 @@ double CobremsGenerator::Rate_dNidxdt2(double x, double theta2)
    // in x (scaled photon energy) and theta^2 at fixed photon energy 
    // k = x*fBeamEnergy and production angle theta. Argument theta2 is equal
    // to theta^2 expressed in units of (me/fBeamEnergy)^2. If internal flag
-   // fCollimatedFlux is false (0) then the total yield is returned,
+   // fCollimatedFlag is false (0) then the total yield is returned,
    // otherwise only the part that passes the collimator is counted (default).
  
    double delta = 1.02;
@@ -747,7 +748,7 @@ double CobremsGenerator::Rate_dNidxdt2(double x, double theta2)
                        (log(MSchiff) - 2 * delta * Z / (Z + zeta)) +
                         16 * theta2 * (1 - x) / pow(1 + theta2, 4) -
                         pow(2 - x, 2) / pow(1 + theta2, 2) ) *
-                   ((fCollimatedFlux)? Acceptance(theta2) : 1);
+                   ((fCollimatedFlag)? Acceptance(theta2) : 1);
    return dNidxdt2;
 }
 
@@ -1020,7 +1021,7 @@ double CobremsGenerator::Sigma2MS_Hanson(double thickness_m)
    return theta2max * (B - 1.2) / 2;
 }
 
-#if BOOST_PYTHON_WRAPPING
+#ifdef BOOST_PYTHON_WRAPPING
 
 void CobremsGenerator::pyApplyBeamCrystalConvolution(int nbins, pyobject xarr,
                                                                 pyobject yarr)
@@ -1074,16 +1075,25 @@ BOOST_PYTHON_MODULE(libcobrems)
       .def("getCollimatorDiameter", &CobremsGenerator::getCollimatorDiameter)
       .def("getTargetThickness", &CobremsGenerator::getTargetThickness)
       .def("getTargetCrystal", &CobremsGenerator::getTargetCrystal)
+      .def("getTargetCrystalNsites", &CobremsGenerator::getTargetCrystalNsites)
+      .def("getTargetCrystalAtomicNumber", &CobremsGenerator::getTargetCrystalAtomicNumber)
+      .def("getTargetCrystalAtomicWeight", &CobremsGenerator::getTargetCrystalAtomicWeight)
+      .def("getTargetCrystalDensity", &CobremsGenerator::getTargetCrystalDensity)
+      .def("getTargetCrystalLatticeConstant", &CobremsGenerator::getTargetCrystalLatticeConstant)
+      .def("getTargetCrystalRadiationLength", &CobremsGenerator::getTargetCrystalRadiationLength)
+      .def("getTargetCrystalDebyeWallerConst", &CobremsGenerator::getTargetCrystalDebyeWallerConst)
+      .def("getTargetCrystalMosaicSpread", &CobremsGenerator::getTargetCrystalMosaicSpread)
+      .def("getTargetCrystalBetaFF", &CobremsGenerator::getTargetCrystalBetaFF)
       .def("getTargetThetax", &CobremsGenerator::getTargetThetax)
       .def("getTargetThetay", &CobremsGenerator::getTargetThetay)
       .def("getTargetThetaz", &CobremsGenerator::getTargetThetaz)
       .def("getTargetRadiationLength_PDG", &CobremsGenerator::getTargetRadiationLength_PDG)
       .def("getTargetRadiationLength_Schiff", &CobremsGenerator::getTargetRadiationLength_Schiff)
       .def("getTargetDebyeWallerConstant", &CobremsGenerator::getTargetDebyeWallerConstant)
-      .def("getCollimatedFlux", &CobremsGenerator::getCollimatedFlux)
-      .def("setCollimatedFlux", &CobremsGenerator::setCollimatedFlux)
-      .def("getPolarizedFlux", &CobremsGenerator::getPolarizedFlux)
-      .def("setPolarizedFlux", &CobremsGenerator::setPolarizedFlux)
+      .def("getCollimatedFlag", &CobremsGenerator::getCollimatedFlag)
+      .def("setCollimatedFlag", &CobremsGenerator::setCollimatedFlag)
+      .def("getPolarizedFlag", &CobremsGenerator::getPolarizedFlag)
+      .def("setPolarizedFlag", &CobremsGenerator::setPolarizedFlag)
       .def("applyBeamCrystalConvolution", &CobremsGenerator::pyApplyBeamCrystalConvolution)
       .def("printBeamlineInfo", &CobremsGenerator::printBeamlineInfo)
       .def("printTargetCrystalInfo", &CobremsGenerator::printTargetCrystalInfo)
