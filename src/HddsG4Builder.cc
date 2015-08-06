@@ -945,11 +945,11 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
       if (noBfieldL->getLength() > 0)
       {
          fMagneticRegions[iregion] = 0;
-         G4ThreeVector Bvec(0,0,0);
+         G4ThreeVector Bvec(0,0,1e-99);
          G4UniformMagField *fld = new G4UniformMagField(Bvec);
          G4Mag_EqRhs *eqn = new G4Mag_UsualEqRhs(fld);
          G4MagIntegratorStepper *stepper = new G4ExactHelixStepper(eqn);
-         G4ChordFinder *cfinder = new G4ChordFinder(fld, 0.01, stepper);
+         G4ChordFinder *cfinder = new G4ChordFinder(fld, 1e+99, stepper);
          fFieldManagers[iregion] = new G4FieldManager(fld, cfinder);
       }
       else if (uniBfieldL->getLength() > 0)

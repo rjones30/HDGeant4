@@ -340,7 +340,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    if (fGunParticleDeltaTheta > 0)
       thetap += (G4UniformRand() - 0.5) * fGunParticleDeltaTheta;
    if (fGunParticleDeltaPhi > 0)
-      thetap += (G4UniformRand() - 0.5) * fGunParticleDeltaPhi;
+      phip += (G4UniformRand() - 0.5) * fGunParticleDeltaPhi;
    G4ThreeVector mom(p * sin(thetap) * cos(phip),
                      p * sin(thetap) * sin(phip),
                      p * cos(thetap));
