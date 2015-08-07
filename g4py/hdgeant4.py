@@ -54,7 +54,7 @@ def init():
     name = geom.GetParallelWorldName(para)
     topvol = geom.GetParallelWorldVolume(para)
     pworld = GlueXParallelWorld(name, topvol)
-    geom.RegisterParallelWorld(pworld);
+    geom.RegisterParallelWorld(pworld)
   gRunManager.SetUserInitialization(geom)
 
   # initialize physics processes
@@ -64,8 +64,8 @@ def init():
 
   # initialize event generators
   global gen
-  gen = GlueXPrimaryGeneratorAction(geom)
-  gRunManager.SetUserAction(gen);
+  gen = GlueXPrimaryGeneratorAction()
+  gRunManager.SetUserAction(gen)
 
   # initialize run/event/step actions
   global runact
