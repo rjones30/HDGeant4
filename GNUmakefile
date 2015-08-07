@@ -44,17 +44,17 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -L$(JANA_HOME)/lib -lJANA \
            -L$(CCDB_HOME)/lib -lccdb \
            -L$(EVIOROOT)/lib -levioxx -levio \
-           -L$(ROOTSYS)/lib -lCore -lPhysics -lTree -lHist -lGeom \
-           -L$(CLHEP_LIB_DIR) -lCLHEP
+           -L$(ROOTSYS)/lib -lCore -lPhysics -lTree -lHist -lGeom 
+#           -L$(CLHEP_LIB_DIR) -lCLHEP
 
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I/usr/local/xerces/include
-INTYLIBS += -L/usr/local/xerces/lib -lxerces-c
+INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds -lG4fixes
 INTYLIBS += -lboost_python
-INTYLIBS += -L $(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
+INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
 all: hdds cobrems fixes exe lib bin g4py
