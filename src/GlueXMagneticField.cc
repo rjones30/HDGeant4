@@ -96,6 +96,8 @@ G4ThreeVector GlueXUniformMagField::GetMagField(G4double unit) const
    // desired units, eg. tesla.
 
    G4ThreeVector B = GetConstantFieldValue();
+   if (B[2] == 0)
+      B[2] = 1e-99; // avoid divide-by-zero by excluding |B|=0
    return B *= unit;
 }
 
@@ -315,7 +317,7 @@ G4ThreeVector GlueXMappedMagField::GetMagField(const G4double point[4],
    }
    else
    {
-      return G4ThreeVector();
+      return G4ThreeVector(0, 0, 1e-99);
    }
 
    double B[3] = {0,0,0};
@@ -379,6 +381,8 @@ G4ThreeVector GlueXMappedMagField::GetMagField(const G4double point[4],
       Bvec.setRhoPhiZ(B[0], B[1], B[2]);
    }
    fXform.ApplyAxisTransform(Bvec);
+   if (Bvec[2] == 0)
+      Bvec[2] = 1e-99; // avoid divide-by-zero by excluding |B|=0
    return Bvec *= fUnit / unit;
 }
 
@@ -689,6 +693,8 @@ G4ThreeVector GlueXComputedMagField::GetMagField(const G4double point[4],
       mapps->GetField(p[0], p[1], p[2], B[0], B[1], B[2]);
    G4ThreeVector Bvec(B[0], B[1], B[2]);
    fXform.ApplyAxisTransform(Bvec);
+   if (Bvec[2] == 0)
+      Bvec[2] = 1e-99; // avoid divide-by-zero by excluding |B|=0
    return Bvec *= fUnit / unit;
 }
 
