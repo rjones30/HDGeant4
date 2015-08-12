@@ -19,6 +19,7 @@
 
 #include <G4SystemOfUnits.hh>
 #include <G4OpenGLViewer.hh>
+#include <G4TransportationManager.hh>
 
 // We must wrap an abstract C++ type so python 
 // knows how to override pure virtual methods.
@@ -73,6 +74,39 @@ void pickPoint3D(G4double x_cm, G4double y_cm, G4double z_cm)
    G4ThreeVector v(x_cm * cm, y_cm * cm, z_cm * cm);
    map.setPickCoordinates3D(v);
    std::cout << map.print();
+}
+
+// More python utility functions to access properties not reachable
+// through the standard g4py exposed interfaces.
+
+G4Navigator *GetNavigator(int world)
+{
+   // Look up the navigator by numerical index, where world=0 is the
+   // navigator on the default layer, and parallel layers are world>0
+   // returning zero if the parallel world does not exist.
+ 
+   G4TransportationManager *tmanager = G4TransportationManager::
+                                       GetTransportationManager();
+   if (world < (int)tmanager->GetNoWorlds())
+      return tmanager->GetNavigator(tmanager->GetWorldsIterator()[world]);
+   else
+      return 0;
+}
+
+bool GetGlobalExitNormal(int world, G4ThreeVector *point,
+                                    G4ThreeVector *norm)
+{
+   // Forwards the request to the GetGlobalExitNormal method of the
+   // navigator corresponding to world, and returns the unit normal
+   // vector if the method returns valid=true, otherwise returns null.
+ 
+   G4Navigator *nav = GetNavigator(world);
+   if (nav) {
+      bool valid;
+      *norm = nav->GetGlobalExitNormal(*point, &valid);
+      return valid;
+   }
+   return 0;
 }
 
 // Create a python module containing all of the G4 user classes
@@ -220,4 +254,7 @@ BOOST_PYTHON_MODULE(libhdgeant4)
    ;
 
    def("pickPoint3D", pickPoint3D);
+   def("GetNavigator", GetNavigator,
+       boost::python::return_value_policy<boost::python::reference_existing_object>());
+   def("GetGlobalExitNormal", GetGlobalExitNormal);
 }
