@@ -48,5 +48,5 @@ G4TouchableHandle GlueXPathFinder::CreateTouchableHandle()
       if (mat)
          return pathfinder->CreateTouchableHandle(world);
    }
-   return pathfinder->CreateTouchableHandle(0);
+   return G4TouchableHandle();
 }
