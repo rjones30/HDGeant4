@@ -17,15 +17,11 @@
 #include "G4VPhysicalVolume.hh"
 #include "G4TouchableHandle.hh"
 
-class GlueXPathFinder : public G4PathFinder
+class GlueXPathFinder
 {
  public:
    static G4VPhysicalVolume* GetLocatedVolume();
-   static G4TouchableHandle GetLocatedTouchable();
-
-   static GlueXPathFinder* GetInstance() {
-      return reinterpret_cast<GlueXPathFinder*>(G4PathFinder::GetInstance());
-   }
+   static G4TouchableHandle CreateTouchableHandle();
 
  private:
    GlueXPathFinder() {}

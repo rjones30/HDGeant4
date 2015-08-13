@@ -32,8 +32,7 @@ void GlueXSteppingVerbose::StepInfo()
 	     << std::setw(10) << "Process"   << G4endl;
     }
 
-    GlueXPathFinder *pathfinder = GlueXPathFinder::GetInstance();
-    G4VPhysicalVolume *pvol = pathfinder->GetLocatedVolume();
+    G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
     G4String volname = (pvol)? pvol->GetName() : "NULL";
     G4cout << std::setw( 5) << fTrack->GetCurrentStepNumber() << " "
 	<< std::setw(6) << G4BestUnit(fTrack->GetPosition().x(),"Length")
@@ -102,8 +101,7 @@ void GlueXSteppingVerbose::TrackingStarted()
 	   << std::setw(10) << "Volume"     << "  "
 	   << std::setw(10) << "Process"    << G4endl;
 
-    GlueXPathFinder *pathfinder = GlueXPathFinder::GetInstance();
-    G4VPhysicalVolume *pvol = pathfinder->GetLocatedVolume();
+    G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
     G4String volname = (pvol)? pvol->GetName() : "NULL";
     G4cout << std::setw(5) << fTrack->GetCurrentStepNumber() << " "
 	<< std::setw(6) << G4BestUnit(fTrack->GetPosition().x(),"Length")

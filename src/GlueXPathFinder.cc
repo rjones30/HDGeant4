@@ -32,7 +32,7 @@ G4VPhysicalVolume* GlueXPathFinder::GetLocatedVolume()
    return 0;
 }
 
-G4TouchableHandle GlueXPathFinder::GetLocatedTouchable()
+G4TouchableHandle GlueXPathFinder::CreateTouchableHandle()
 {
    // Search through the parallel worlds from highest to lowest
    // and return the first touchable found that has a defined
@@ -48,5 +48,5 @@ G4TouchableHandle GlueXPathFinder::GetLocatedTouchable()
       if (mat)
          return pathfinder->CreateTouchableHandle(world);
    }
-   return G4TouchableHandle();
+   return pathfinder->CreateTouchableHandle(0);
 }
