@@ -5,6 +5,7 @@
 // version: may 12, 2012
 
 #include "GlueXSteppingVerbose.hh"
+#include "GlueXPathFinder.hh"
 
 #include "G4SteppingManager.hh"
 #include "G4UnitsTable.hh"
@@ -12,25 +13,28 @@
 void GlueXSteppingVerbose::StepInfo()
 {
   CopyState();
-  
+
   G4int prec = G4cout.precision(3);
 
-  if( verboseLevel >= 1 ){
-    if( verboseLevel >= 4 ) VerboseTrack();
-    if( verboseLevel >= 3 ){
-      G4cout << G4endl;    
+  if (verboseLevel >= 1) {
+    if (verboseLevel >= 4 ) VerboseTrack();
+    if (verboseLevel >= 3) {
+      G4cout << G4endl;
       G4cout << std::setw( 5) << "#Step#"     << " "
 	     << std::setw( 6) << "X"          << "    "
-	     << std::setw( 6) << "Y"          << "    "  
+	     << std::setw( 6) << "Y"          << "    "
 	     << std::setw( 6) << "Z"          << "    "
 	     << std::setw( 9) << "KineE"      << " "
-	     << std::setw( 9) << "dEStep"     << " "  
-	     << std::setw(10) << "StepLeng"     
-	     << std::setw(10) << "TrakLeng" 
+	     << std::setw( 9) << "dEStep"     << " "
+	     << std::setw(10) << "StepLeng"
+	     << std::setw(10) << "TrakLeng"
 	     << std::setw(10) << "Volume"    << "  "
-	     << std::setw(10) << "Process"   << G4endl;	          
+	     << std::setw(10) << "Process"   << G4endl;
     }
 
+    GlueXPathFinder *pathfinder = GlueXPathFinder::GetInstance();
+    G4VPhysicalVolume *pvol = pathfinder->GetLocatedVolume();
+    G4String volname = (pvol)? pvol->GetName() : "NULL";
     G4cout << std::setw( 5) << fTrack->GetCurrentStepNumber() << " "
 	<< std::setw(6) << G4BestUnit(fTrack->GetPosition().x(),"Length")
 	<< std::setw(6) << G4BestUnit(fTrack->GetPosition().y(),"Length")
@@ -39,9 +43,9 @@ void GlueXSteppingVerbose::StepInfo()
 	<< std::setw(6) << G4BestUnit(fStep->GetTotalEnergyDeposit(),"Energy")
 	<< std::setw(6) << G4BestUnit(fStep->GetStepLength(),"Length")
 	<< std::setw(6) << G4BestUnit(fTrack->GetTrackLength(),"Length")
-	<< std::setw(10) << fTrack->GetVolume()->GetName();
+	<< std::setw(10) << volname;
 
-    const G4VProcess* process 
+    const G4VProcess* process
                       = fStep->GetPostStepPoint()->GetProcessDefinedStep();
     G4String procName = " UserLimit";
     if (process) procName = process->GetProcessName();
@@ -49,7 +53,7 @@ void GlueXSteppingVerbose::StepInfo()
     G4cout << "   " << std::setw(10) << procName;
     G4cout << G4endl;
 
-    if( verboseLevel == 2 ){
+    if (verboseLevel == 2) {
       G4int tN2ndariesTot = fN2ndariesAtRestDoIt +
 	                    fN2ndariesAlongStepDoIt +
 	                    fN2ndariesPostStepDoIt;
@@ -57,25 +61,25 @@ void GlueXSteppingVerbose::StepInfo()
 	G4cout << "\n    :----- List of secondaries ----------------"
 	       << G4endl;
         G4cout.precision(4);
-	for(size_t lp1=(*fSecondary).size()-tN2ndariesTot; 
+	for(size_t lp1=(*fSecondary).size()-tN2ndariesTot;
                         lp1<(*fSecondary).size(); lp1++){
 	  G4cout << "   "
-		 << std::setw(13)		 
-		 << (*fSecondary)[lp1]->GetDefinition()->GetParticleName()	  
+		 << std::setw(13)
+		 << (*fSecondary)[lp1]->GetDefinition()->GetParticleName()
 		 << ":  energy ="
 		 << std::setw(6)
-		 << G4BestUnit((*fSecondary)[lp1]->GetKineticEnergy(),"Energy")	 
+		 << G4BestUnit((*fSecondary)[lp1]->GetKineticEnergy(),"Energy")
 		 << "  time ="
 		 << std::setw(6)
-		 << G4BestUnit((*fSecondary)[lp1]->GetGlobalTime(),"Time");	 			 
+		 << G4BestUnit((*fSecondary)[lp1]->GetGlobalTime(),"Time");	 
 	  G4cout << G4endl;
 	}
-              
+
 	G4cout << "    :------------------------------------------\n"
 	       << G4endl;
       }
     }
-    
+
   }
   G4cout.precision(prec);
 }
@@ -84,20 +88,23 @@ void GlueXSteppingVerbose::TrackingStarted()
 {
 
   CopyState();
-G4int prec = G4cout.precision(3);
-  if( verboseLevel > 0 ){
+  G4int prec = G4cout.precision(3);
+  if (verboseLevel > 0) {
 
     G4cout << std::setw( 5) << "Step#"      << " "
            << std::setw( 6) << "X"          << "    "
-	   << std::setw( 6) << "Y"          << "    "  
+	   << std::setw( 6) << "Y"          << "    "
 	   << std::setw( 6) << "Z"          << "    "
 	   << std::setw( 9) << "KineE"      << " "
-	   << std::setw( 9) << "dEStep"     << " "  
-	   << std::setw(10) << "StepLeng"  
+	   << std::setw( 9) << "dEStep"     << " "
+	   << std::setw(10) << "StepLeng"
 	   << std::setw(10) << "TrakLeng"
 	   << std::setw(10) << "Volume"     << "  "
-	   << std::setw(10) << "Process"    << G4endl;	     
+	   << std::setw(10) << "Process"    << G4endl;
 
+    GlueXPathFinder *pathfinder = GlueXPathFinder::GetInstance();
+    G4VPhysicalVolume *pvol = pathfinder->GetLocatedVolume();
+    G4String volname = (pvol)? pvol->GetName() : "NULL";
     G4cout << std::setw(5) << fTrack->GetCurrentStepNumber() << " "
 	<< std::setw(6) << G4BestUnit(fTrack->GetPosition().x(),"Length")
 	<< std::setw(6) << G4BestUnit(fTrack->GetPosition().y(),"Length")
@@ -106,8 +113,8 @@ G4int prec = G4cout.precision(3);
 	<< std::setw(6) << G4BestUnit(fStep->GetTotalEnergyDeposit(),"Energy")
 	<< std::setw(6) << G4BestUnit(fStep->GetStepLength(),"Length")
 	<< std::setw(6) << G4BestUnit(fTrack->GetTrackLength(),"Length")
-	<< std::setw(10) << fTrack->GetVolume()->GetName()
-        << "   initStep" << G4endl;	
+	<< std::setw(10) << volname
+        << "   initStep" << G4endl;
   }
   G4cout.precision(prec);
 }
