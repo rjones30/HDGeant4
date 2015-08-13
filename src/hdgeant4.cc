@@ -42,8 +42,8 @@ int main(int argc,char** argv)
   }
 
   // User Verbose output class
-  GlueXSteppingVerbose verbosity;
-  G4VSteppingVerbose::SetInstance(&verbosity);
+  GlueXSteppingVerbose *verbosity = new GlueXSteppingVerbose();
+  G4VSteppingVerbose::SetInstance(verbosity);
   
   // Run manager handles the rest of the initialization
   G4RunManager runManager;
