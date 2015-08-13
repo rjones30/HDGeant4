@@ -125,12 +125,24 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 
    else if (user_opts->Find("KINE", kinepars))
    {
-      if (kinepars[1] > 100)
-         fGunParticleGeantType = kinepars[1] - 100;
-      else
-         fGunParticleGeantType = kinepars[1];
-      fGunParticlePDGType = ConvertGeant3ToPdg(fGunParticleGeantType);
-      fGunParticle = fParticleTable->FindParticle(fGunParticlePDGType);
+      if (kinepars[1] == 1000) {
+         fGunParticleGeantType = 0;
+         fGunParticlePDGType = 999999;
+         fGunParticle = fParticleTable->FindParticle("geantino");
+      }
+      else if (kinepars[1] == 1001) {
+         fGunParticleGeantType = 0;
+         fGunParticlePDGType = 999999;
+         fGunParticle = fParticleTable->FindParticle("chargedgeantino");
+      }
+      else {
+         if (kinepars[1] > 100)
+            fGunParticleGeantType = kinepars[1] - 100;
+         else
+            fGunParticleGeantType = kinepars[1];
+         fGunParticlePDGType = ConvertGeant3ToPdg(fGunParticleGeantType);
+         fGunParticle = fParticleTable->FindParticle(fGunParticlePDGType);
+      }
       if (fGunParticle == 0) {   
          std::cerr << "GlueXPrimaryGeneratorAction constructor error - "
                    << "Unknown GEANT particle type: " << kinepars[1] 
