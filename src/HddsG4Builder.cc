@@ -1589,6 +1589,11 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
       magfield->ReadMapFile(S(mapS));
    }
 
+   // Apply a post-build fix to ensure that every point in the geometry
+   // has a consistent magnetic field on all layers, using recursion.
+
+   addReflections(1);
+
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
    std::cerr << timestr.str() << std::endl;
@@ -1641,4 +1646,125 @@ G4LogicalVolume* HddsG4Builder::getWorldVolume(int parallel)
       return paraworld->second;
    }
    return 0;
+}
+
+void HddsG4Builder::addReflections(int volume_id)
+{
+#ifdef LINUX_CPUTIME_PROFILING
+   std::stringstream timestr;
+   timestr << "addReflections: " << timer.getUserTime() << ", "
+           << timer.getSystemTime() << ", " << timer.getRealTime();
+   timer.resetClocks();
+#endif
+   std::vector<int> layer;
+   std::map<vpair_t,G4LogicalVolume*>::iterator witer;
+   for (witer = fLogicalVolumes.find(vpair_t(1,0));
+        witer != fLogicalVolumes.end() && witer->first.first == 1;
+        ++witer)
+   {
+      layer.push_back(witer->first.second);
+   }
+
+   std::map<int,G4FieldManager*> lastManager;
+   std::map<int,G4FieldManager*>::iterator miter;
+   std::map<vpair_t,G4LogicalVolume*>::iterator mine;
+   for (mine = fLogicalVolumes.find(vpair_t(volume_id,0));
+        mine != fLogicalVolumes.end() && mine->first.first == volume_id;
+        ++mine)
+   {
+      G4FieldManager* fieldmgr = mine->second->GetFieldManager();
+      for (int child = 0; child < mine->second->GetNoDaughters(); ++child) {
+         G4VPhysicalVolume* pvol = mine->second->GetDaughter(child);
+         G4LogicalVolume* lvol = pvol->GetLogicalVolume();
+         G4FieldManager* mgr = lvol->GetFieldManager();
+         int childId = getVolumeId(lvol);
+         miter = lastManager.find(childId);
+         if ((miter != lastManager.end() && mgr != miter->second) ||
+             (miter == lastManager.end() && mine->first.second != 0 &&
+              mgr != 0 && mgr != fieldmgr))
+         {
+            std::cerr << "HddsG4Builder::addReflections warning - "
+                      << "local magnetic field assigned to volume "
+                      << lvol->GetName()
+                      << " placed on a buried layer in the geometry."
+                      << std::endl
+                      << "This is a violation of the assumption made "
+                      << "in the Geant4 tracking algorithm that fields "
+                      << "at a given point are the same on all layers."
+                      << std::endl
+                      << "Expect inconsistent results."
+                      << std::endl;
+         }
+         else {
+            lastManager[childId] = mgr;
+         }
+
+         // Use recursion to visit every child logical volume once
+
+         if (miter == lastManager.end()) {
+            addReflections(childId);
+         }
+
+         // Any volume in the hierarchy that has a different magnetic field
+         // manager than its mother volume needs to be reflected onto all
+         // layers to maintain consistency of the field value at all points.
+
+         if (mgr != 0 && mgr != fieldmgr) {
+            vpair_t cpy(childId, pvol->GetCopyNo());
+            std::map<vpair_t,G4VPhysicalVolume*>::iterator piter;
+            piter = fPhysicalVolumes.find(cpy);
+            if (piter == fPhysicalVolumes.end()) {
+               std::cerr << "HddsG4Builder::addReflections error - "
+                         << "physical volume " << pvol->GetName()
+                         << " copy " <<  cpy.second
+                         << " not found in physical volume lookup table, "
+                         << "cannot continue." << std::endl;
+               exit(1);
+            }
+            else if (piter->second->IsReplicated()) {
+               fCurrentDivision[childId] = piter;
+            }
+            else {
+               fCurrentPlacement[childId] = piter;
+            }
+            fCurrentMother[childId] = mine;
+            std::vector<int>::iterator liter;
+            for (liter = layer.begin(); liter != layer.end(); ++liter) {
+               if (*liter > mine->first.second) {
+#if DEBUG_REFLECTION
+                  std::cout << "HddsG4Builder::addReflections info - "
+                            << "reflected volume " << lvol->GetName()
+                            << " copy " << cpy.second
+                            << " in mother " << mine->second->GetName()
+                            << " onto layer " << *liter
+                            << " because child field manager " << mgr
+                            << " is different from mother field manager " << fieldmgr
+                            << std::endl;
+#endif
+                  addNewLayer(childId, *liter);
+               }
+            }
+         }
+      }
+   }
+#ifdef LINUX_CPUTIME_PROFILING
+   timestr << " ( " << timer.getUserDelta() << " ) ";
+   std::cerr << timestr.str() << std::endl;
+#endif
+}
+
+int HddsG4Builder::getVolumeId(G4LogicalVolume* vol)
+{
+   std::map<vpair_t,G4LogicalVolume*>::iterator iter;
+   for (iter = fLogicalVolumes.begin(); iter != fLogicalVolumes.end(); ++iter)
+   {
+      if (iter->second == vol) {
+         return iter->first.first;
+      }
+   }
+   std::cerr << "HddsG4Builder::getVolumeId error - "
+             << "logical volume " << vol->GetName()
+             << " not found in volume lookup table, "
+             << "cannot continue." << std::endl;
+   exit(1);
 }

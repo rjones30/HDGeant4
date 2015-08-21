@@ -76,6 +76,7 @@ class HddsG4Builder : public CodeWriter
 
    G4LogicalVolume* getWorldVolume(int parallel=0);
                                          // return ptr to world volume
+   int getVolumeId(G4LogicalVolume* vol); // reverse-find in fLogicalVolumes
    void translate(DOMElement* topel);	 // invokes the translator
 
  private:
@@ -83,6 +84,7 @@ class HddsG4Builder : public CodeWriter
 
    std::map<vpair_t,G4LogicalVolume*>::iterator
    addNewLayer(int volume_id, int layer); // generate code for geometry layers
+   void addReflections(int volume_id);    // propagate volume to other layers
 
    int fWorldVolume;
 
