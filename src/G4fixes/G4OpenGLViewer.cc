@@ -1497,6 +1497,9 @@ G4String G4OpenGLViewerPickMap::print() {
                       G4TransportationManager::GetTransportationManager();
   std::vector<G4VPhysicalVolume*>::iterator iter = 
                                             tmanager->GetWorldsIterator();
+  G4FieldManager *fieldmgr = 0;
+  bool warning = false;
+  bool seen = false;
   for (int world = tmanager->GetNoWorlds() - 1; world >= 0; --world) {
     G4Navigator *navigator = tmanager->GetNavigator(iter[world]);
     G4VPhysicalVolume *pvol = navigator->
@@ -1507,43 +1510,51 @@ G4String G4OpenGLViewerPickMap::print() {
     if (!lvol)
       continue;
     G4Material *mat = lvol->GetMaterial();
-    if (!mat)
-      continue;
-    G4TouchableHistory *hist = navigator->CreateTouchableHistory();
-    std::ostringstream pvpath;
-    pvpath << "/" << navigator->GetWorldVolume()->GetName() << ":0";
-    for (int depth = hist->GetHistoryDepth() - 1; depth >= 0; --depth) {
-       pvpath << "/" << hist->GetVolume(depth)->GetName()
-              << ":" << hist->GetVolume(depth)->GetCopyNo();
+    if (fieldmgr == 0) {
+      fieldmgr = lvol->GetFieldManager();
     }
+    else if (fieldmgr != lvol->GetFieldManager()) {
+      txt << "ERROR - field manager inconsistency found in world " << world
+          << std::endl;
+      warning = true;
+    }
+    if (warning || (mat != 0 && !seen)) {
+      G4TouchableHistory *hist = navigator->CreateTouchableHistory();
+      std::ostringstream pvpath;
+      pvpath << "/" << navigator->GetWorldVolume()->GetName() << ":0";
+      for (int depth = hist->GetHistoryDepth() - 1; depth >= 0; --depth) {
+        pvpath << "/" << hist->GetVolume(depth)->GetName()
+               << ":" << hist->GetVolume(depth)->GetCopyNo();
+      }
    
-    txt << "(" << fCoordinates[0] / cm 
-        << "," << fCoordinates[1] / cm
-        << "," << fCoordinates[2] / cm << ")"
-        << " found in " << pvol->GetName() << " copy " << pvol->GetCopyNo()
-        << " of " << lvol->GetName() << " with " << std::endl
-        << "   complete path: " << pvpath.str() << std::endl
-        << "   layer " << world << " material: " << mat->GetName() << std::endl;
-    G4FieldManager *fman = lvol->GetFieldManager();
-    if (fman) {
-      const G4Field *fld = fman->GetDetectorField();
-      if (fld) {
-        double Bfld[3];
-        double xglob[4] = {fCoordinates[0],fCoordinates[1],fCoordinates[2],0};
-        fld->GetFieldValue(xglob,Bfld);
-        txt << "   magnetic field (Tesla): "
-            << Bfld[0] / tesla << "," 
-            << Bfld[1] / tesla << "," 
-            << Bfld[2] / tesla << std::endl;
+      txt << "(" << fCoordinates[0] / cm 
+          << "," << fCoordinates[1] / cm
+          << "," << fCoordinates[2] / cm << ")"
+          << " found in " << pvol->GetName() << " copy " << pvol->GetCopyNo()
+          << " of " << lvol->GetName() << " with " << std::endl
+          << "   complete path: " << pvpath.str() << std::endl
+          << "   layer " << world << " material: " 
+          << ((mat)? mat->GetName() : "0") << std::endl;
+      if (fieldmgr) {
+        const G4Field *fld = fieldmgr->GetDetectorField();
+        if (fld) {
+          double Bfld[3];
+          double xglob[4] = {fCoordinates[0],fCoordinates[1],fCoordinates[2],0};
+          fld->GetFieldValue(xglob,Bfld);
+          txt << "   magnetic field (Tesla): "
+              << Bfld[0] / tesla << "," 
+              << Bfld[1] / tesla << "," 
+              << Bfld[2] / tesla << std::endl;
+        }
+        else {
+          txt << "   magnetic field: UNDEFINED" << std::endl;
+        }
       }
       else {
-        txt << "   magnetic field: UNDEFINED" << std::endl;
+        txt << "   magnetic field: null" << std::endl;
       }
+      seen = true;
     }
-    else {
-      txt << "   magnetic field: null" << std::endl;
-    }
-    break;
   }
 
 #else
