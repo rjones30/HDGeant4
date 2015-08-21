@@ -7,6 +7,8 @@
 #include "GlueXSteppingVerbose.hh"
 #include "GlueXPathFinder.hh"
 
+#include "G4TransportationManager.hh"
+#include "G4Navigator.hh"
 #include "G4SteppingManager.hh"
 #include "G4UnitsTable.hh"
 
@@ -32,10 +34,10 @@ void GlueXSteppingVerbose::StepInfo()
 	     << std::setw(10) << "Process"   << G4endl;
     }
 
-    G4TouchableHandle phand = GlueXPathFinder::CreateTouchableHandle();
-    G4VPhysicalVolume *pvol = (phand)? phand->GetVolume() : 0;
+    G4TouchableHandle touch = GlueXPathFinder::CreateTouchableHandle();
+    G4VPhysicalVolume *pvol = (touch)? touch->GetVolume() : 0;
     G4String volname = (pvol)? pvol->GetName() : "NULL";
-    int copyno = (phand)? phand->GetCopyNumber() : 0;
+    int copyno = (touch)? touch->GetCopyNumber() : 0;
     G4cout << std::setw( 5) << fTrack->GetCurrentStepNumber() << " "
 	<< std::setw(8) << G4BestUnit(fTrack->GetPosition().x(),"Length")
 	<< std::setw(8) << G4BestUnit(fTrack->GetPosition().y(),"Length")
@@ -103,10 +105,27 @@ void GlueXSteppingVerbose::TrackingStarted()
 	   << std::setw(10) << "Volume"     << "  "
 	   << std::setw(10) << "Process"    << G4endl;
 
-    G4TouchableHandle phand = GlueXPathFinder::CreateTouchableHandle();
-    G4VPhysicalVolume *pvol = (phand)? phand->GetVolume() : 0;
+    // PathFinder is not yet initialized for this track, so drill down
+    // into the list of navigators and find the layer where this point lies.
+
+    G4TouchableHistory *touch = 0;
+    G4TransportationManager *tmanager =
+                        G4TransportationManager::GetTransportationManager();
+    std::vector<G4VPhysicalVolume*>::iterator iter = 
+                                              tmanager->GetWorldsIterator();
+    for (int world = tmanager->GetNoWorlds() - 1; world >= 0; --world) {
+      G4Navigator *navigator = tmanager->GetNavigator(iter[world]);
+      G4VPhysicalVolume *pvol = navigator->
+                 LocateGlobalPointAndSetup(fTrack->GetPosition(),0,false);
+      G4LogicalVolume *lvol = (pvol)? pvol->GetLogicalVolume() : 0;
+      if (lvol && lvol->GetMaterial()) {
+        touch = navigator->CreateTouchableHistory();
+        break;
+      }
+    }
+    G4VPhysicalVolume *pvol = (touch)? touch->GetVolume() : 0;
     G4String volname = (pvol)? pvol->GetName() : "NULL";
-    int copyno = (phand)? phand->GetCopyNumber() : 0;
+    int copyno = (touch)? touch->GetCopyNumber() : 0;
     G4cout << std::setw(5) << fTrack->GetCurrentStepNumber() << " "
 	<< std::setw(8) << G4BestUnit(fTrack->GetPosition().x(),"Length")
 	<< std::setw(8) << G4BestUnit(fTrack->GetPosition().y(),"Length")
