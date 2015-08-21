@@ -1,5 +1,5 @@
 INC = ../src
 SRC = ../src
 
-t:	t.cc $(SRC)/GlueXUserOptions.cc
+options_t: options_t.cc $(SRC)/GlueXUserOptions.cc
 	g++ -g -I $(INC) -o $@ $^	
