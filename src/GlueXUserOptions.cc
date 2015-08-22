@@ -86,7 +86,10 @@ GlueXUserOptions *GlueXUserOptions::GetInstance()
    // application obtain the primary instance, if any. If none has
    // yet been constructed, it returns zero.
 
-   return *fInstance.begin();
+   if (fInstance.size() > 0)
+      return *fInstance.begin();
+   else
+      return 0;
 }
 
 int GlueXUserOptions::ReadControl_in(const char *ctrlin)
