@@ -7,7 +7,11 @@
 #ifndef GlueXDetectorConstruction_h
 #define GlueXDetectorConstruction_h 1
 
+#include <list>
+#include <pthread.h>
+
 #include "globals.hh"
+#include "G4SystemOfUnits.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include <G4VUserParallelWorld.hh>
 #include <GlueXMagneticField.hh>
@@ -33,16 +37,28 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      void SetUniformField(G4double field_T);
      void SetMaxStep (G4double step_mm);     
 
+     G4double GetUniformField(G4double unit) {
+        return fUniformField * tesla / unit;
+     }
+     G4double GetMaxStep(G4double unit) {
+        return fMaxStep * mm / unit;
+     }
+
      int GetParallelWorldCount();
      G4String GetParallelWorldName(int paraIndex);
      G4LogicalVolume* GetParallelWorldVolume(int paraIndex);
      
+     static GlueXDetectorConstruction* GetInstance();
+
   private:
      G4double fMaxStep;		// maximum step size for tracking
      G4double fUniformField;  	// optional uniform field (for testing)
      G4MagneticField* fpMagneticField; // pointer to the field manager
      GlueXDetectorMessenger* fpDetectorMessenger;  // pointer to the Messenger
      HddsG4Builder fHddsBuilder; // hdds translator object instance
+
+     static pthread_mutex_t *fMutex;
+     static std::list<GlueXDetectorConstruction*> fInstance;
 };
 
 class GlueXParallelWorld : public G4VUserParallelWorld

@@ -14,6 +14,7 @@ class GlueXDetectorConstruction;
 class G4UIdirectory;
 class G4UIcmdWithAString;
 class G4UIcmdWithADoubleAndUnit;
+class G4UIcmdWithoutParameter;
 
 class GlueXDetectorMessenger: public G4UImessenger
 {
@@ -32,6 +33,8 @@ class GlueXDetectorMessenger: public G4UImessenger
     G4UIdirectory*             detDir;
     G4UIcmdWithADoubleAndUnit* FieldCmd;
     G4UIcmdWithADoubleAndUnit* StepMaxCmd;    
+    G4UIcmdWithoutParameter*   OpenGeomCmd;
+    G4UIcmdWithoutParameter*   CloseGeomCmd;
 };
 
 #endif
