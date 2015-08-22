@@ -16,7 +16,6 @@
 
 #include <DANA/DApplication.h>
 
-#include <G4GeometryManager.hh>
 #include <G4RunManager.hh>
 #include <G4UImanager.hh>
 
@@ -59,7 +58,6 @@ int main(int argc,char** argv)
     geometry->RegisterParallelWorld(parallelWorld);
   }
   runManager.SetUserInitialization(geometry);
-  G4GeometryManager::GetInstance()->CloseGeometry();
 
   // Physics process initialization
   runManager.SetUserInitialization(new GlueXPhysicsList(geometry));
