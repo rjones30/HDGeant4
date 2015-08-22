@@ -12,6 +12,7 @@
 
 #include "GlueXMagneticField.hh"
 #include "GlueXUserOptions.hh"
+#include "GlueXDetectorConstruction.hh"
 #include "G4FieldManager.hh"
 #include "G4TransportationManager.hh"
 #include "G4SystemOfUnits.hh"
@@ -577,7 +578,10 @@ void GlueXComputedMagField::SetFunction(std::string function)
          fJanaFieldMap = new DMagneticFieldMapNoField(japp);
       }
       else if (type_opts[1] == "Const") {
-         fJanaFieldMap = new DMagneticFieldMapConst(0.0, 0.0, 1.9);
+         GlueXDetectorConstruction *geom;
+         geom = GlueXDetectorConstruction::GetInstance();
+         double field_T = (geom)? geom->GetUniformField(tesla) : 1.9;
+         fJanaFieldMap = new DMagneticFieldMapConst(0.0, 0.0, field_T);
       }
       else {
          std::cerr << "Error in GlueXComputedMagField::SetFunction - "
