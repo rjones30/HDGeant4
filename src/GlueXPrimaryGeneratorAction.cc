@@ -451,13 +451,33 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
          if (it_product->getType() <= 0)
            continue;
 
+         int g3type = it_product->getType();
          int pdgtype = it_product->getPdgtype();
+         G4ParticleDefinition *part;
+         if (pdgtype > 0 && pdgtype < 999999) {
+            part = fParticleTable->FindParticle(pdgtype);
+         }
+         else if (g3type > 0) {
+            pdgtype = ConvertGeant3ToPdg(g3type);
+            part = fParticleTable->FindParticle(pdgtype);
+#if FORCE_PARTICLE_TYPE_CHARGED_GEANTINO
+            part = fParticleTable->FindParticle("chargedgeantino");
+#endif
+         }
+         else {
+            std::cerr << "Unknown particle found in input MC record, "
+                      << "geant3 type " << g3type 
+                      << ", PDG type " << pdgtype
+                      << ", failing over to geantino!"
+                      << std::endl;
+            part = fParticleTable->FindParticle("geantino");
+         }
          hddm_s::Momentum &momentum = it_product->getMomentum();
          double px = momentum.getPx() * GeV;
          double py = momentum.getPy() * GeV;
          double pz = momentum.getPz() * GeV;
-         G4ParticleDefinition *part = fParticleTable->FindParticle(pdgtype);
-         vertex->SetPrimary(new G4PrimaryParticle(part, px, py, pz));
+         double Etot = momentum.getE() * GeV;
+         vertex->SetPrimary(new G4PrimaryParticle(part, px, py, pz, Etot));
          ++Nprimaries;
       }
       anEvent->AddPrimaryVertex(vertex);
