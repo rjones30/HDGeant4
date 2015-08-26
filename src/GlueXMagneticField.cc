@@ -578,8 +578,8 @@ void GlueXComputedMagField::SetFunction(std::string function)
          fJanaFieldMap = new DMagneticFieldMapNoField(japp);
       }
       else if (type_opts[1] == "Const") {
-         GlueXDetectorConstruction *geom;
-         geom = GlueXDetectorConstruction::GetInstance();
+         const GlueXDetectorConstruction *geom =
+               GlueXDetectorConstruction::GetInstance();
          double field_T = (geom)? geom->GetUniformField(tesla) : 1.9;
          fJanaFieldMap = new DMagneticFieldMapConst(0.0, 0.0, field_T);
       }
