@@ -49,7 +49,7 @@ using namespace xercesc;
 
 #define APP_NAME "HDGeant4"
 
-pthread_mutex_t *GlueXDetectorConstruction::fMutex;
+pthread_mutex_t *GlueXDetectorConstruction::fMutex = 0;
 std::list<GlueXDetectorConstruction*> GlueXDetectorConstruction::fInstance;
 
 GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
@@ -191,7 +191,7 @@ GlueXDetectorConstruction::~GlueXDetectorConstruction()
    delete fpDetectorMessenger;             
 }
 
-GlueXDetectorConstruction *GlueXDetectorConstruction::GetInstance()
+const GlueXDetectorConstruction *GlueXDetectorConstruction::GetInstance()
 {
    // Generally one only needs a single instance of this object
    // per process, and this static method lets any component in the
@@ -234,7 +234,7 @@ G4VPhysicalVolume* GlueXDetectorConstruction::Construct()
    return new G4PVPlacement(0, G4ThreeVector(), worldvol, "World", 0, 0, 0);
 }
 
-int GlueXDetectorConstruction::GetParallelWorldCount()
+int GlueXDetectorConstruction::GetParallelWorldCount() const
 {
    for (int worlds=0; ; ++worlds) {
       if (fHddsBuilder.getWorldVolume(worlds) == 0) {
@@ -244,7 +244,7 @@ int GlueXDetectorConstruction::GetParallelWorldCount()
    return 0;
 }
 
-G4String GlueXDetectorConstruction::GetParallelWorldName(int paraIndex)
+G4String GlueXDetectorConstruction::GetParallelWorldName(int paraIndex) const
 {
    std::stringstream worldStr;
    worldStr << "Parallel World " << paraIndex;
@@ -252,7 +252,7 @@ G4String GlueXDetectorConstruction::GetParallelWorldName(int paraIndex)
 }
 
 G4LogicalVolume*
- GlueXDetectorConstruction::GetParallelWorldVolume(int paraIndex)
+ GlueXDetectorConstruction::GetParallelWorldVolume(int paraIndex) const
 {
    return fHddsBuilder.getWorldVolume(paraIndex);
 }

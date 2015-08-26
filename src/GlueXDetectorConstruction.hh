@@ -37,18 +37,18 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      void SetUniformField(G4double field_T);
      void SetMaxStep (G4double step_mm);     
 
-     G4double GetUniformField(G4double unit) {
+     G4double GetUniformField(G4double unit) const {
         return fUniformField * tesla / unit;
      }
-     G4double GetMaxStep(G4double unit) {
+     G4double GetMaxStep(G4double unit) const {
         return fMaxStep * mm / unit;
      }
 
-     int GetParallelWorldCount();
-     G4String GetParallelWorldName(int paraIndex);
-     G4LogicalVolume* GetParallelWorldVolume(int paraIndex);
+     int GetParallelWorldCount() const;
+     G4String GetParallelWorldName(int paraIndex) const;
+     G4LogicalVolume* GetParallelWorldVolume(int paraIndex) const;
      
-     static GlueXDetectorConstruction* GetInstance();
+     static const GlueXDetectorConstruction* GetInstance();
 
   private:
      G4double fMaxStep;		// maximum step size for tracking
