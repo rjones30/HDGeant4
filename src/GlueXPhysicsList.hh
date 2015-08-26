@@ -16,7 +16,7 @@
 class GlueXPhysicsList: public QGSP_FTFP_BERT
 {
  public:
-   GlueXPhysicsList(GlueXDetectorConstruction *geometry);
+   GlueXPhysicsList(const GlueXDetectorConstruction *geometry=0);
 };
 
 #endif
