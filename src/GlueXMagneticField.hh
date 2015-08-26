@@ -3,6 +3,12 @@
 //
 // author: richard.t.jones at uconn.edu
 // version: may 12, 2012
+//
+// In the context of the Geant4 event-level multithreading model,
+// this class is "shared", ie. has no thread-local state. The
+// getter methods of these classes are thread-safe and provide
+// concurrent interlock-free access to the magnetic fields from
+// all worker threads.
 
 #ifndef GlueXMagneticField_H
 #define GlueXMagneticField_H

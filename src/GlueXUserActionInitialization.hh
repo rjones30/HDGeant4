@@ -4,6 +4,8 @@
 // author: richard.t.jones at uconn.edu
 // version: august 24, 2015
 //
+// In the context of the Geant4 event-level multithreading model,
+// this class is "shared", ie. has no thread-local state.
 
 #ifndef _GlueXUserActionInitialization_
 #define _GlueXUserActionInitialization_

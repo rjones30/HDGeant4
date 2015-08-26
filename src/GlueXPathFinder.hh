@@ -9,6 +9,8 @@
 // for efficient lookup of volume information in a
 // multi-layer mass geometry.
 //
+// In the context of the Geant4 event-level multithreading model,
+// this class is "thread-local", ie. has thread-local state.
 
 #ifndef GlueXPathFinder_h
 #define GlueXPathFinder_h 1

@@ -3,6 +3,14 @@
 //
 // author: richard.t.jones at uconn.edu
 // version: may 12, 2012
+//
+// In the context of the Geant4 event-level multithreading model,
+// this class is "thread-local", ie. has thread-local state.
+// Separate object instances are created for each worker thread,
+// but virtually all of its functions need to be serialized, so
+// it maintains its own interlocks for this purpose. Resources
+// are created once when the first object is instantiated, and
+// destroyed once when the last object is destroyed.
 
 #ifndef _GLUEXPRIMARYGENERATORACTION_H_
 #define _GLUEXPRIMARYGENERATORACTION_H_

@@ -4,6 +4,8 @@
 // author: richard.t.jones at uconn.edu
 // version: may 28, 2015
 //
+// In the context of the Geant4 event-level multithreading model,
+// this class is "shared", ie. has no thread-local state.
 
 #ifndef _GLUEXUSEROPTIONS_
 #define _GLUEXUSEROPTIONS_

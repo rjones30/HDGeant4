@@ -3,6 +3,9 @@
 //
 // author: richard.t.jones at uconn.edu
 // version: may 12, 2012
+//
+// In the context of the Geant4 event-level multithreading model,
+// this class is "shared", ie. has no thread-local state.
 
 #ifndef GlueXPhysicsList_h
 #define GlueXPhysicsList_h 1
