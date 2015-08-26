@@ -127,12 +127,12 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
       else {
          std::string key(askey(cards.substr(strt, stop - strt)));
          size_t args = strt + stop;
-         args += cards.substr(args).find_first_not_of(" ");
-         if (args >= strt + stop) {
-            fKeyValue[key] = cards.substr(args);
+         size_t argo = cards.substr(args).find_first_not_of(" ");
+         if (argo == cards.npos) {
+            fKeyValue[key] = ".TRUE.";
          }
          else {
-            fKeyValue[key] = ".TRUE.";
+            fKeyValue[key] = cards.substr(args + argo);
          }
       }
       ++ncards;
@@ -167,16 +167,18 @@ int GlueXUserOptions::Find(const char *name,
          break;
       }
       p += pfin;
-      pfin = p + args.substr(p).find_first_not_of("0123456789");
-      if (pfin > p && args[pfin] == '=') {
-         narg = atoi(args.substr(p, pfin - p).c_str());
-         p = pfin + 1;
-         pfin = p + args.substr(p).find_first_not_of("0123456789");
+      pfin = args.substr(p).find_first_not_of("0123456789");
+      if (pfin != args.npos && pfin > 0 && args[p + pfin] == '=') {
+         std::string substr(args.substr(p, pfin));
+         narg = atoi(substr.c_str());
+         p += pfin + 1;
+         pfin = args.substr(p).find_first_not_of("0123456789");
       }
       int nrep=1;
-      if (pfin > p && args[pfin] == '*') {
-         nrep = atoi(args.substr(p, pfin - p).c_str());
-         p = pfin + 1;
+      if (pfin != args.npos && pfin > 0 && args[p + pfin] == '*') {
+         std::string substr(args.substr(p, pfin));
+         nrep = atoi(substr.c_str());
+         p += pfin + 1;
       }
       if (args[p] == '\'') {
          pfin = args.substr(p + 1).find_first_of("'");
@@ -226,19 +228,22 @@ int GlueXUserOptions::Find(const char *name,
          break;
       }
       p += pfin;
-      pfin = p + args.substr(p).find_first_not_of("0123456789");
-      if (pfin > p && args[pfin] == '=') {
-         narg = atoi(args.substr(p, pfin - p).c_str());
+      pfin = args.substr(p).find_first_not_of("0123456789");
+      if (pfin != args.npos && pfin > 0 && args[p + pfin] == '=') {
+         std::string substr(args.substr(p, pfin));
+         narg = atoi(substr.c_str());
          p = pfin + 1;
-         pfin = p + args.substr(p).find_first_not_of("0123456789");
+         pfin = args.substr(p).find_first_not_of("0123456789");
       }
       int nrep=1;
-      if (pfin > p && args[pfin] == '*') {
-         nrep = atoi(args.substr(p, pfin - p).c_str());
-         p = pfin + 1;
+      if (pfin != args.npos && pfin > 0 && args[p + pfin] == '*') {
+         std::string substr(args.substr(p, pfin));
+         nrep = atoi(substr.c_str());
+         p += pfin + 1;
       }
       char *end;
-      const char *start = args.substr(p).c_str();
+      std::string subarg(args.substr(p));
+      const char *start = subarg.c_str();
       double dval = strtod(start, &end);
       if (end > start) {
          for (int rep=0; rep < nrep; ++rep, ++narg) {
@@ -280,19 +285,22 @@ int GlueXUserOptions::Find(const char *name,
          break;
       }
       p += pfin;
-      pfin = p + args.substr(p).find_first_not_of("0123456789");
-      if (pfin > p && args[pfin] == '=') {
-         narg = atoi(args.substr(p, pfin - p).c_str());
-         p = pfin + 1;
-         pfin = p + args.substr(p).find_first_not_of("0123456789");
+      pfin = args.substr(p).find_first_not_of("0123456789");
+      if (pfin != args.npos && pfin > 0 && args[p + pfin] == '=') {
+         std::string substr(args.substr(p, pfin));
+         narg = atoi(substr.c_str());
+         p += pfin + 1;
+         pfin = args.substr(p).find_first_not_of("0123456789");
       }
       int nrep=1;
-      if (pfin > p && args[pfin] == '*') {
-         nrep = atoi(args.substr(p, pfin - p).c_str());
-         p = pfin + 1;
+      if (pfin != args.npos && pfin > 0 && args[p + pfin] == '*') {
+         std::string substr(args.substr(p, pfin));
+         nrep = atoi(substr.c_str());
+         p += pfin + 1;
       }
       char *end;
-      const char *start = args.substr(p).c_str();
+      std::string subarg(args.substr(p));
+      const char *start = subarg.c_str();
       double ival = strtol(start, &end, 0);
       if (end != start) {
          for (int rep=0; rep < nrep; ++rep, ++narg) {
