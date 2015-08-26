@@ -18,6 +18,7 @@
 #include <HDDM/hddm_s.hpp>
 
 #include <fstream>
+#include <pthread.h>
 
 class G4Event;
 
@@ -32,7 +33,9 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
       SOURCE_TYPE_HDDM
    };
 
-    GlueXPrimaryGeneratorAction();
+   GlueXPrimaryGeneratorAction();
+   GlueXPrimaryGeneratorAction(const GlueXPrimaryGeneratorAction &src);
+   GlueXPrimaryGeneratorAction &operator=(const GlueXPrimaryGeneratorAction &src);
    ~GlueXPrimaryGeneratorAction();
    
    virtual void GeneratePrimaries(G4Event* anEvent);
@@ -42,33 +45,43 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    void GenerateBeamPhoton(G4Event* anEvent, double t0);
 
    int ConvertGeant3ToPdg(int Geant3number) const;
-   
-private:
-   source_type_t fSourceType;
-   std::ifstream *fHDDMinfile;
-   hddm_s::istream *fHDDMistream;
-   CobremsGenerator *fCobremsGenerator;
-   GlueXParticleGun *fParticleGun;
-   G4ParticleTable *fParticleTable;
-   int fGunParticleGeantType;
-   int fGunParticlePDGType;
-   G4ParticleDefinition *fGunParticle;
-   G4ThreeVector fGunParticlePos;
-   double fGunParticleMom;
-   double fGunParticleMomTheta;
-   double fGunParticleMomPhi;
-   double fGunParticleDeltaPosR;
-   double fGunParticleDeltaPosZ;
-   double fGunParticleDeltaMom;
-   double fGunParticleDeltaTheta;
-   double fGunParticleDeltaPhi;
-   double fBeamBucketPeriod;
-   double fBeamBackgroundRate;
-   double fBeamBackgroundGateStart;
-   double fBeamBackgroundGateStop;
-   double fL1triggerTimeSigma;
-   double fBeamStartZ;
-   int fEventCount;
+ 
+ private:
+   static int instanceCount;
+   static source_type_t fSourceType;
+   static std::ifstream *fHDDMinfile;
+   static hddm_s::istream *fHDDMistream;
+   static CobremsGenerator *fCobremsGenerator;
+   static G4ParticleTable *fParticleTable;
+   static GlueXParticleGun *fParticleGun;
+
+ public:
+   struct single_particle_gun_t {
+      int geantType;
+      int pdgType;
+      G4ParticleDefinition *partDef;
+      G4ThreeVector pos;
+      double mom;
+      double theta;
+      double phi;
+      double deltaR;
+      double deltaZ;
+      double deltaMom;
+      double deltaTheta;
+      double deltaPhi;
+   };
+
+ private:
+   static single_particle_gun_t fGunParticle;
+
+   static double fBeamBucketPeriod;
+   static double fBeamBackgroundRate;
+   static double fBeamBackgroundGateStart;
+   static double fBeamBackgroundGateStop;
+   static double fL1triggerTimeSigma;
+   static double fBeamStartZ;
+
+   static int fEventCount;
 
    // The following parameters describe the dimensions of the target
    // that are used when generating the primary interaction vertex for
@@ -78,9 +91,9 @@ private:
    // to the HDDM input source.  They are initialized to default values
    // for the GlueX liquid hydrogen target in the constructor, but
    // can be accessed/changed by the getter/setter methods below.
-   double fTargetCenterZ;
-   double fTargetLength;
-   double fBeamDiameter;
+   static double fTargetCenterZ;
+   static double fTargetLength;
+   static double fBeamDiameter;
 
  public:
    void setTargetCenterZ(double Z_cm) {
@@ -124,9 +137,9 @@ private:
       return fBeamStartZ / cm;
    }
 
- private:
    // The following tables contain PDFs for importance-sampling the
    // kinematic variables in coherent bremsstrahlung beam generation.
+ 
    struct ImportanceSampler {
       std::vector<double> randvar;
       std::vector<double> density;
@@ -141,12 +154,17 @@ private:
        : Psum(0), Pcut(1), Pmax(0), Nfailed(0), Npassed(0) {}
    };
 
-   ImportanceSampler fCoherentPDFx; 
-   ImportanceSampler fIncoherentPDFlogx;
-   ImportanceSampler fIncoherentPDFy;
-   double fIncoherentPDFtheta02;
+ private:
+   static ImportanceSampler fCoherentPDFx; 
+   static ImportanceSampler fIncoherentPDFlogx;
+   static ImportanceSampler fIncoherentPDFy;
+
+   static double fIncoherentPDFtheta02;
 
    void prepareCobremsImportanceSamplingPDFs();
+
+ private:
+   static pthread_mutex_t *fMutex;
 };
 
 #endif

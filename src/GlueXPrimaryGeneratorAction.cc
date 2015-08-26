@@ -20,26 +20,68 @@
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>
 
+typedef GlueXPrimaryGeneratorAction::source_type_t source_type_t;
+typedef GlueXPrimaryGeneratorAction::single_particle_gun_t particle_gun_t;
+typedef GlueXPrimaryGeneratorAction::ImportanceSampler ImportanceSampler;
+
+int GlueXPrimaryGeneratorAction::instanceCount = 0;
+source_type_t GlueXPrimaryGeneratorAction::fSourceType = SOURCE_TYPE_NONE;
+
+std::ifstream *GlueXPrimaryGeneratorAction::fHDDMinfile;
+hddm_s::istream *GlueXPrimaryGeneratorAction::fHDDMistream;
+CobremsGenerator *GlueXPrimaryGeneratorAction::fCobremsGenerator;
+G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable;
+GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun;
+particle_gun_t GlueXPrimaryGeneratorAction::fGunParticle;
+
+double GlueXPrimaryGeneratorAction::fBeamBucketPeriod = 0;
+double GlueXPrimaryGeneratorAction::fBeamBackgroundRate = 0;
+double GlueXPrimaryGeneratorAction::fBeamBackgroundGateStart = 0;
+double GlueXPrimaryGeneratorAction::fBeamBackgroundGateStop = 0;
+double GlueXPrimaryGeneratorAction::fL1triggerTimeSigma = 10 * ns;
+double GlueXPrimaryGeneratorAction::fBeamStartZ = -24 * m;
+double GlueXPrimaryGeneratorAction::fTargetCenterZ = 65 * cm;
+double GlueXPrimaryGeneratorAction::fTargetLength = 29.9746 * cm;
+double GlueXPrimaryGeneratorAction::fBeamDiameter = 0.5 * cm;
+
+int GlueXPrimaryGeneratorAction::fEventCount = 0;
+
+ImportanceSampler GlueXPrimaryGeneratorAction::fCoherentPDFx; 
+ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFlogx;
+ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFy;
+double GlueXPrimaryGeneratorAction::fIncoherentPDFtheta02;
+
+pthread_mutex_t *GlueXPrimaryGeneratorAction::fMutex = 0;
+
 //--------------------------------------------
 // GlueXPrimaryGeneratorAction (constructor)
 //--------------------------------------------
 
 GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
- : G4VUserPrimaryGeneratorAction(),
-   fBeamBucketPeriod(0),
-   fBeamBackgroundRate(0),
-   fBeamBackgroundGateStart(0),
-   fBeamBackgroundGateStop(0),
-   fL1triggerTimeSigma(10 * ns),
-   fBeamStartZ(-24 * m),
-   fEventCount(0),
-   fTargetCenterZ(65 * cm),
-   fTargetLength(29.9746 * cm),
-   fBeamDiameter(0.5 * cm)
 {
+   pthread_mutex_t *mutex = new pthread_mutex_t;
+   if (fMutex == 0) {
+      fMutex = mutex;
+      pthread_mutex_init(mutex, 0);
+   }
+   if (fMutex != mutex) {
+      pthread_mutex_destroy(mutex);
+      delete mutex;
+   }
+
+   pthread_mutex_lock(fMutex);
+   ++instanceCount;
+
+   // Initializaton is driven by the control.in file, which
+   // gets read and parsed only once, by the first constructor.
+
+   if (fSourceType != SOURCE_TYPE_NONE) {
+      pthread_mutex_unlock(fMutex);
+      return;
+   }
+
    fParticleGun = new GlueXParticleGun();
    fParticleTable = G4ParticleTable::GetParticleTable();
-   fSourceType = SOURCE_TYPE_NONE;
    
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
    if (user_opts == 0) {
@@ -126,30 +168,30 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    else if (user_opts->Find("KINE", kinepars))
    {
       if (kinepars[1] == 1000) {
-         fGunParticleGeantType = 0;
-         fGunParticlePDGType = 999999;
-         fGunParticle = fParticleTable->FindParticle("geantino");
+         fGunParticle.geantType = 0;
+         fGunParticle.pdgType = 999999;
+         fGunParticle.partDef = fParticleTable->FindParticle("geantino");
       }
       else if (kinepars[1] == 1001) {
-         fGunParticleGeantType = 0;
-         fGunParticlePDGType = 999999;
-         fGunParticle = fParticleTable->FindParticle("chargedgeantino");
+         fGunParticle.geantType = 0;
+         fGunParticle.pdgType = 999999;
+         fGunParticle.partDef = fParticleTable->FindParticle("chargedgeantino");
       }
       else {
          if (kinepars[1] > 100)
-            fGunParticleGeantType = kinepars[1] - 100;
+            fGunParticle.geantType = kinepars[1] - 100;
          else
-            fGunParticleGeantType = kinepars[1];
-         fGunParticlePDGType = ConvertGeant3ToPdg(fGunParticleGeantType);
-         fGunParticle = fParticleTable->FindParticle(fGunParticlePDGType);
+            fGunParticle.geantType = kinepars[1];
+         fGunParticle.pdgType = ConvertGeant3ToPdg(fGunParticle.geantType);
+         fGunParticle.partDef = fParticleTable->FindParticle(fGunParticle.pdgType);
       }
-      if (fGunParticle == 0) {   
+      if (fGunParticle.partDef == 0) {   
          std::cerr << "GlueXPrimaryGeneratorAction constructor error - "
                    << "Unknown GEANT particle type: " << kinepars[1] 
                    << " was specified in the control.in file." << std::endl;
          exit(-1);
       }
-      fParticleGun->SetParticleDefinition(fGunParticle);
+      fParticleGun->SetParticleDefinition(fGunParticle.partDef);
 
       double x(0), y(0), z(65 * cm);
       std::map<int,double> scappars;
@@ -158,31 +200,31 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          y = scappars[2] * cm;
          z = scappars[3] * cm;
       }
-      fGunParticlePos.set(x,y,z);
+      fGunParticle.pos.set(x,y,z);
       std::map<int,double> tgtwidthpars;
       if (user_opts->Find("tgtwidth", tgtwidthpars)) {
-         fGunParticleDeltaPosR = tgtwidthpars[1] * cm;
-         fGunParticleDeltaPosZ = tgtwidthpars[2] * cm;
+         fGunParticle.deltaR = tgtwidthpars[1] * cm;
+         fGunParticle.deltaZ = tgtwidthpars[2] * cm;
       }
       else {
-         fGunParticleDeltaPosR = 0;
-         fGunParticleDeltaPosZ = 0;
+         fGunParticle.deltaR = 0;
+         fGunParticle.deltaZ = 0;
       }
 
-      fGunParticleMom = kinepars[2] * GeV;
+      fGunParticle.mom = kinepars[2] * GeV;
       if (kinepars[1] > 100) {
-         fGunParticleMomTheta = kinepars[3] * degree;
-         fGunParticleMomPhi = kinepars[4] * degree;
-         fGunParticleDeltaMom = kinepars[5];
-         fGunParticleDeltaTheta = kinepars[6];
-         fGunParticleDeltaPhi = kinepars[7];
+         fGunParticle.theta = kinepars[3] * degree;
+         fGunParticle.phi = kinepars[4] * degree;
+         fGunParticle.deltaMom = kinepars[5];
+         fGunParticle.deltaTheta = kinepars[6];
+         fGunParticle.deltaPhi = kinepars[7];
       }
       else {
-         fGunParticleDeltaMom = 0;
-         fGunParticleMomTheta = 90 * degree;
-         fGunParticleDeltaTheta = 180 * degree;
-         fGunParticleMomPhi = 0;
-         fGunParticleDeltaPhi = 360 * degree;
+         fGunParticle.deltaMom = 0;
+         fGunParticle.theta = 90 * degree;
+         fGunParticle.deltaTheta = 180 * degree;
+         fGunParticle.phi = 0;
+         fGunParticle.deltaPhi = 360 * degree;
       }
       fSourceType = SOURCE_TYPE_PARTICLE_GUN;
    }
@@ -194,6 +236,22 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    else {
       fL1triggerTimeSigma = 10 * ns;
    }
+
+   pthread_mutex_unlock(fMutex);
+}
+
+GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction(const
+                             GlueXPrimaryGeneratorAction &src)
+{
+   pthread_mutex_lock(fMutex);
+   ++instanceCount;
+   pthread_mutex_unlock(fMutex);
+}
+
+GlueXPrimaryGeneratorAction &GlueXPrimaryGeneratorAction::operator=(const
+                             GlueXPrimaryGeneratorAction &src)
+{
+   return *this;
 }
 
 //--------------------------------------------
@@ -202,13 +260,22 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 
 GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()
 {
-   if (fHDDMistream)
-      delete fHDDMistream;
-   if (fHDDMinfile)
-      delete fHDDMinfile;
-   if (fCobremsGenerator)
-      delete fCobremsGenerator;
-   delete fParticleGun;
+   pthread_mutex_lock(fMutex);
+   if (--instanceCount == 0) {
+      if (fHDDMistream)
+         delete fHDDMistream;
+      if (fHDDMinfile)
+         delete fHDDMinfile;
+      if (fCobremsGenerator)
+         delete fCobremsGenerator;
+      delete fParticleGun;
+   }
+   pthread_mutex_unlock(fMutex);
+   if (instanceCount == 0) {
+      pthread_mutex_destroy(fMutex);
+      delete fMutex;
+      fMutex = 0;
+   }
 }
 
 void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
@@ -293,6 +360,7 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
 
 void GlueXPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
+   pthread_mutex_lock(fMutex);
 
    switch(fSourceType){
       case SOURCE_TYPE_HDDM:
@@ -308,6 +376,8 @@ void GlueXPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
          G4cout << "No event source selected, cannot continue!" << std::endl;
          exit(-1);
    }
+
+   pthread_mutex_unlock(fMutex);
 }   
 
 //--------------------------------------------
@@ -323,36 +393,36 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    fParticleGun->Reset();
 
    // place and smear the particle gun origin
-   G4ThreeVector pos(fGunParticlePos);
-   if (fGunParticleDeltaPosR > 0) {
+   G4ThreeVector pos(fGunParticle.pos);
+   if (fGunParticle.deltaR > 0) {
       double dx, dy;
       while (true) {
          double rx = G4UniformRand() - 0.5;
          double ry = G4UniformRand() - 0.5;
          if (rx*rx + ry*ry <= 0.25) {
-            dx = rx * 2 * fGunParticleDeltaPosR;
-            dy = ry * 2 * fGunParticleDeltaPosR;
+            dx = rx * 2 * fGunParticle.deltaR;
+            dy = ry * 2 * fGunParticle.deltaR;
             break;
          }
       }
       pos += G4ThreeVector(dx, dy, 0);
    }
-   if (fGunParticleDeltaPosZ > 0) {
-      double dz = (G4UniformRand() - 0.5) * fGunParticleDeltaPosZ;
+   if (fGunParticle.deltaZ > 0) {
+      double dz = (G4UniformRand() - 0.5) * fGunParticle.deltaZ;
       pos += G4ThreeVector(0, 0, dz);
    }
    fParticleGun->SetParticlePosition(pos);
 
    // Assign and optionally smear the particle momentum
-   double p = fGunParticleMom;
-   double thetap = fGunParticleMomTheta;
-   double phip = fGunParticleMomPhi;
-   if (fGunParticleDeltaMom > 0)
-      p += (G4UniformRand() - 0.5) * fGunParticleDeltaMom;
-   if (fGunParticleDeltaTheta > 0)
-      thetap += (G4UniformRand() - 0.5) * fGunParticleDeltaTheta;
-   if (fGunParticleDeltaPhi > 0)
-      phip += (G4UniformRand() - 0.5) * fGunParticleDeltaPhi;
+   double p = fGunParticle.mom;
+   double thetap = fGunParticle.theta;
+   double phip = fGunParticle.phi;
+   if (fGunParticle.deltaMom > 0)
+      p += (G4UniformRand() - 0.5) * fGunParticle.deltaMom;
+   if (fGunParticle.deltaTheta > 0)
+      thetap += (G4UniformRand() - 0.5) * fGunParticle.deltaTheta;
+   if (fGunParticle.deltaPhi > 0)
+      phip += (G4UniformRand() - 0.5) * fGunParticle.deltaPhi;
    G4ThreeVector mom(p * sin(thetap) * cos(phip),
                      p * sin(thetap) * sin(phip),
                      p * cos(thetap));
@@ -365,7 +435,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    // Store generated particle info so it can be written to output file
    pos *= 1 / cm; // convert to cm
    mom *= 1 / GeV; // convert to GeV
-   int type = fGunParticleGeantType;
+   int type = fGunParticle.geantType;
    anEvent->SetUserInformation(new GlueXUserEventInformation(type, pos, mom));
 }
 

@@ -10,12 +10,20 @@ class GlueXSteppingVerbose;
 #define GlueXSteppingVerbose_h 1
 
 #include "G4SteppingVerbose.hh"
+#include <pthread.h>
 
 class GlueXSteppingVerbose : public G4SteppingVerbose 
 {
  public:
-  void StepInfo();
-  void TrackingStarted();
+   GlueXSteppingVerbose();
+   GlueXSteppingVerbose(const GlueXSteppingVerbose &src);
+   ~GlueXSteppingVerbose();
+   void StepInfo();
+   void TrackingStarted();
+
+ private:
+   static int instanceCount;
+   static pthread_mutex_t *fMutex;
 };
 
 #endif
