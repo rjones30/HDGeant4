@@ -74,9 +74,10 @@ class HddsG4Builder : public CodeWriter
    void createMapFunctions(DOMElement* el,
                   const XString& ident); // generate code for field maps
 
-   G4LogicalVolume* getWorldVolume(int parallel=0);
+   G4LogicalVolume* getWorldVolume(int parallel=0) const;
                                          // return ptr to world volume
-   int getVolumeId(G4LogicalVolume* vol); // reverse-find in fLogicalVolumes
+   int getVolumeId(G4LogicalVolume* vol) const;
+                                         // reverse-find in fLogicalVolumes
    void translate(DOMElement* topel);	 // invokes the translator
 
  private:

@@ -1631,10 +1631,10 @@ void HddsG4Builder::translate(DOMElement* topel)
 #endif
 }
 
-G4LogicalVolume* HddsG4Builder::getWorldVolume(int parallel)
+G4LogicalVolume* HddsG4Builder::getWorldVolume(int parallel) const
 {
    int worlds = 0;
-   std::map<vpair_t,G4LogicalVolume*>::iterator paraworld;
+   std::map<vpair_t,G4LogicalVolume*>::const_iterator paraworld;
    for (paraworld = fLogicalVolumes.find(vpair_t(fWorldVolume,0));
         paraworld != fLogicalVolumes.end() &&
         paraworld->first.first == fWorldVolume;
@@ -1753,9 +1753,9 @@ void HddsG4Builder::addReflections(int volume_id)
 #endif
 }
 
-int HddsG4Builder::getVolumeId(G4LogicalVolume* vol)
+int HddsG4Builder::getVolumeId(G4LogicalVolume* vol) const
 {
-   std::map<vpair_t,G4LogicalVolume*>::iterator iter;
+   std::map<vpair_t,G4LogicalVolume*>::const_iterator iter;
    for (iter = fLogicalVolumes.begin(); iter != fLogicalVolumes.end(); ++iter)
    {
       if (iter->second == vol) {
