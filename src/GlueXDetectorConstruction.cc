@@ -94,9 +94,8 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    catch (const XMLException& toCatch)
    {
       XString message(toCatch.getMessage());
-      std::cerr
-           << APP_NAME << " - error during xercesc initialization!"
-           << std::endl << S(message) << std::endl;
+      G4cerr << APP_NAME << " - error during xercesc initialization!"
+             << G4endl << S(message) << G4endl;
       return;
    }
 
@@ -115,16 +114,14 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
       }
       else
       {
-         std::cerr
-           << APP_NAME << " - unsupported protocol for JANA_GEOMETRY_URL"
-           << std::endl << getenv("JANA_GEOMETRY_URL") << std::endl;
+         G4cerr << APP_NAME << " - unsupported protocol for JANA_GEOMETRY_URL"
+                << G4endl << getenv("JANA_GEOMETRY_URL") << G4endl;
          return;
       }
    }
    else {
-      std::cerr
-           << APP_NAME << " - no hdds geometry file specified!"
-           << std::endl;
+      G4cerr << APP_NAME << " - no hdds geometry file specified!"
+             << G4endl;
       return;
    }
    
@@ -140,9 +137,8 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    DOMDocument* document = buildDOMDocument(xmlFile,false);
    if (document == 0)
    {
-      std::cerr
-           << APP_NAME << " - error parsing HDDS document, "
-           << "cannot continue" << std::endl;
+      G4cerr << APP_NAME << " - error parsing HDDS document, "
+             << "cannot continue" << G4endl;
       return;
    }
    chdir(saved_cwd);
@@ -154,16 +150,15 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
       docEl = document->getDocumentElement();
    }
    catch (DOMException& e) {
-      std::cerr << APP_NAME << " - Woops " << e.msg << std::endl;
+      G4cerr << APP_NAME << " - Woops " << e.msg << G4endl;
       return;
    }
 
    DOMElement* rootEl = document->getElementById(X("everything"));
    if (rootEl == 0)
    {
-      std::cerr
-           << APP_NAME << " - error scanning HDDS document, " << std::endl
-           << "  no element named \"everything\" found" << std::endl;
+      G4cerr << APP_NAME << " - error scanning HDDS document, " << G4endl
+             << "  no element named \"everything\" found" << G4endl;
       return;
    }
 
@@ -219,9 +214,8 @@ void GlueXDetectorConstruction::SetUniformField(G4double field_T)
   // this is not how to simulate the GlueX spectrometer field!
 
   fUniformField = field_T;
-  std::cout << "setting up a new field manager with a uniform field "
-            << " of " << field_T << " Tesla."
-            << std::endl;
+  G4cout << "setting up a new field manager with a uniform field "
+         << " of " << field_T << " Tesla." << G4endl;
   G4ThreeVector B(0,0,fUniformField);
   G4AffineTransform xform;
   fpMagneticField = new GlueXUniformMagField(B,tesla,xform);
@@ -235,9 +229,9 @@ void GlueXDetectorConstruction::SetMaxStep(G4double step_mm)
 G4VPhysicalVolume* GlueXDetectorConstruction::Construct()
 {
    G4LogicalVolume *worldvol = fHddsBuilder.getWorldVolume();
-   std::cout << "Root geometry volume " << worldvol->GetName();
+   G4cout << "Root geometry volume " << worldvol->GetName();
    worldvol->SetName("World");
-   std::cout << " configured as " << worldvol->GetName() << std::endl;
+   G4cout << " configured as " << worldvol->GetName() << G4endl;
    worldvol->SetVisAttributes(new G4VisAttributes(false));
    return new G4PVPlacement(0, G4ThreeVector(), worldvol, "World", 0, 0, 0);
 }
@@ -297,10 +291,10 @@ void GlueXDetectorConstruction::CloneF()
                field_copy = new G4UniformMagField(orig);
             }
             else {
-               std::cerr << "GlueXDetectorConstruction::CloneF error - "
-                         << "unknown G4MagneticField class found "
-                         << "attached to detector volume " << lvol->GetName()
-                         << ", cannot continue!" << std::endl;
+               G4cerr << "GlueXDetectorConstruction::CloneF error - "
+                      << "unknown G4MagneticField class found "
+                      << "attached to detector volume " << lvol->GetName()
+                      << ", cannot continue!" << G4endl;
                exit(1);
             }
             G4Mag_UsualEqRhs *eqn_copy = new G4Mag_UsualEqRhs(field_copy);
@@ -318,10 +312,10 @@ void GlueXDetectorConstruction::CloneF()
                stepper_copy = new G4HelixMixedStepper(eqn_copy);
             }
             else {
-               std::cerr << "GlueXDetectorConstruction::CloneF error - "
-                         << "unknown G4MagIntegratorStepper class found "
-                         << "attached to detector volume " << lvol->GetName()
-                         << ", cannot continue!" << std::endl;
+               G4cerr << "GlueXDetectorConstruction::CloneF error - "
+                      << "unknown G4MagIntegratorStepper class found "
+                      << "attached to detector volume " << lvol->GetName()
+                      << ", cannot continue!" << G4endl;
                exit(1);
             }
             G4ChordFinder *cfinder_copy = new G4ChordFinder(field_copy,
@@ -381,13 +375,13 @@ void GlueXParallelWorld::Construct()
       worldLogical->AddDaughter(pvol);
    }
    if (worldLogical->GetNoDaughters()) {
-      std::cout << "Additional geometry layer configured as "
-                << ghostWorld->GetName() << std::endl;
+      G4cout << "Additional geometry layer configured as "
+             << ghostWorld->GetName() << G4endl;
    }
    else {
-      std::cout << "Additional geometry layer configured as "
-                << ghostWorld->GetName() << " is EMPTY!" << std::endl
-                << "This is probably due to a geometry bug -- "
-                << "PLEASE REPORT THIS TO THE AUTHORS" << std::endl;
+      G4cout << "Additional geometry layer configured as "
+             << ghostWorld->GetName() << " is EMPTY!" << G4endl
+             << "This is probably due to a geometry bug -- "
+             << "PLEASE REPORT THIS TO THE AUTHORS" << G4endl;
    }
 }

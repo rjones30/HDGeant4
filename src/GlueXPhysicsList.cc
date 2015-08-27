@@ -16,10 +16,10 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry)
   if (geometry == 0) {
     geometry = GlueXDetectorConstruction::GetInstance();
     if (geometry == 0) {
-      std::cerr << "GlueXPhysicsList constructor error - "
-                << "cannot construct GlueXPhysicsList until the detector "
-                << "geometry has been constructed, aborting."
-                << std::endl;
+      G4cerr << "GlueXPhysicsList constructor error - "
+             << "cannot construct GlueXPhysicsList until the detector "
+             << "geometry has been constructed, aborting."
+             << G4endl;
       exit(1);
     }
   }

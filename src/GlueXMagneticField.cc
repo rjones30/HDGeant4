@@ -268,9 +268,9 @@ int GlueXMappedMagField::ReadMapFile(const char *mapS)
    std::ifstream mapfile(mapS);
    if (! mapfile.good())
    {
-      std::cerr << "GlueXMappedMagField::ReadMapFile error - "
-                << "open failed on input map file " << mapS
-                << std::endl;
+      G4cerr << "GlueXMappedMagField::ReadMapFile error - "
+             << "open failed on input map file " << mapS
+             << G4endl;
       return 0;
    }
 
@@ -489,23 +489,23 @@ void GlueXComputedMagField::SetFunction(std::string function)
 
    extern jana::JApplication *japp;
    if (japp == 0) {
-      std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                << "jana global DApplication object not set, "
-                << "cannot continue." << std::endl;
+      G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+             << "jana global DApplication object not set, "
+             << "cannot continue." << G4endl;
       exit(-1);
    }
    jana::JParameterManager *jpars = japp->GetJParameterManager();
    if (jpars == 0) {
-      std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                << "jana global DApplication object returns null "
-                << "JParameterManager object, cannot continue." << std::endl;
+      G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+             << "jana global DApplication object returns null "
+             << "JParameterManager object, cannot continue." << G4endl;
       exit(-1);
    }
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
    if (user_opts == 0) {
-      std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                << "GlueXUserOptions::GetInstance() returns null, "
-                << "cannot continue." << std::endl;
+      G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+             << "GlueXUserOptions::GetInstance() returns null, "
+             << "cannot continue." << G4endl;
       exit(-1);
    }
 
@@ -520,9 +520,9 @@ void GlueXComputedMagField::SetFunction(std::string function)
       run_number = runno_opts[1];
    }
    else {
-      std::cerr << "Warning in GlueXComputedMagField::SetFunction - "
-                << "no run number specified in control.in, "
-                << "default value of 9000 assumed." << std::endl;
+      G4cerr << "Warning in GlueXComputedMagField::SetFunction - "
+             << "no run number specified in control.in, "
+             << "default value of 9000 assumed." << G4endl;
       run_number = 9000;
    }
    jana::JCalibration *jcalib = japp->GetJCalibration(run_number);
@@ -552,10 +552,10 @@ void GlueXComputedMagField::SetFunction(std::string function)
             std::map<std::string, std::string> map_name;
             const char *map_key = "/Magnets/Solenoid/solenoid.map";
             if (jcalib->GetCalib(map_key, map_name)) {
-               std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                         << "failed to figure out which magnetic field map "
-                         << "to use for the solenoid in this simulation, "
-                         << "cannot continue." << std::endl;
+               G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+                      << "failed to figure out which magnetic field map "
+                      << "to use for the solenoid in this simulation, "
+                      << "cannot continue." << G4endl;
                exit(-1);
             }
             else if (map_name.find("map_name") != map_name.end()) {
@@ -566,10 +566,10 @@ void GlueXComputedMagField::SetFunction(std::string function)
                                       run_number, map_name["map_name"]);
 	    }
             else {
-               std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                         << "no solenoid magnetic field map specified for "
-                         << "this run in either the simulation options "
-                         << "or in ccdb, cannot continue." << std::endl;
+               G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+                      << "no solenoid magnetic field map specified for "
+                      << "this run in either the simulation options "
+                      << "or in ccdb, cannot continue." << G4endl;
 	       exit(-1);
 	    }
          }
@@ -584,9 +584,9 @@ void GlueXComputedMagField::SetFunction(std::string function)
          fJanaFieldMap = new DMagneticFieldMapConst(0.0, 0.0, field_T);
       }
       else {
-         std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                   << "unknown DMagneticFieldMap type " << type_opts[1]
-                   << ", cannot continue." << std::endl;
+         G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+                << "unknown DMagneticFieldMap type " << type_opts[1]
+                << ", cannot continue." << G4endl;
          exit(-1);
       }
    }
@@ -616,10 +616,10 @@ void GlueXComputedMagField::SetFunction(std::string function)
             map<string,string> map_name;
             const char *map_key = "/Magnets/PairSpectrometer/ps_magnet_map";
             if (jcalib->GetCalib(map_key, map_name)) {
-               std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                         << "failed to figure out which magnetic field map "
-                         << "to use for the pair spectrometer, "
-                         << "cannot continue." << std::endl;
+               G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+                      << "failed to figure out which magnetic field map "
+                      << "to use for the pair spectrometer, "
+                      << "cannot continue." << G4endl;
                exit(-1);
             }
             else if (map_name.find("map_name") != map_name.end()) {
@@ -627,10 +627,10 @@ void GlueXComputedMagField::SetFunction(std::string function)
                                      run_number, map_name["map_name"]);
 	    }
             else {
-               std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                         << "no pair spectrometer magnetic field map "
-                         << "specified for this run either in the options "
-                         << "or in ccdb, cannot continue." << std::endl;
+               G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+                      << "no pair spectrometer magnetic field map "
+                      << "specified for this run either in the options "
+                      << "or in ccdb, cannot continue." << G4endl;
 	       exit(-1);
 	    }
          }
@@ -639,9 +639,9 @@ void GlueXComputedMagField::SetFunction(std::string function)
          fJanaFieldMapPS = new DMagneticFieldMapPSConst(0.0, 1.64, 0.0);
       }
       else {
-         std::cerr << "Error in GlueXComputedMagField::SetFunction - "
-                   << "unknown DMagneticFieldMapPS type " << type_opts[1]
-                   << ", cannot continue." << std::endl;
+         G4cerr << "Error in GlueXComputedMagField::SetFunction - "
+                << "unknown DMagneticFieldMapPS type " << type_opts[1]
+                << ", cannot continue." << G4endl;
          exit(-1);
       }
    }

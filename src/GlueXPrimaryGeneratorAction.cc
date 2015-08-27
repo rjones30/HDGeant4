@@ -85,9 +85,9 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
    if (user_opts == 0) {
-      std::cerr << "Error in GlueXPrimaryGeneratorAction constructor - "
-                << "GlueXUserOptions::GetInstance() returns null, "
-                << "cannot continue." << std::endl;
+      G4cerr << "Error in GlueXPrimaryGeneratorAction constructor - "
+             << "GlueXUserOptions::GetInstance() returns null, "
+             << "cannot continue." << G4endl;
       exit(-1);
    }
 
@@ -108,13 +108,13 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    {
       fHDDMinfile = new std::ifstream(infile[1].c_str());
       if (!fHDDMinfile->is_open()) {
-         std::cerr << "GlueXPrimaryGeneratorAction error: "
-                   << "Unable to open HDDM input file: " << infile[1]
-                   << std::endl;
+         G4cerr << "GlueXPrimaryGeneratorAction error: "
+                << "Unable to open HDDM input file: " << infile[1]
+                << G4endl;
          exit(-1);
       }
       fHDDMistream = new hddm_s::istream(*fHDDMinfile);
-      std::cout << "Opened input file: " << infile[1] << std::endl;
+      G4cout << "Opened input file: " << infile[1] << G4endl;
       fSourceType = SOURCE_TYPE_HDDM;
    }
 
@@ -129,10 +129,10 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       double radThick = (beampars[7] > 0)? beampars[7] : 20e-6;
 
       if (beamE0 == 0 || beamEpeak == 0) {
-         std::cerr << "GlueXPrimaryGeneratorAction error: "
-                   << "BEAM card specified in control.in but required values "
-                   << "Emax and/or Epeak are missing, cannot continue."
-                   << std::endl;
+         G4cerr << "GlueXPrimaryGeneratorAction error: "
+                << "BEAM card specified in control.in but required values "
+                << "Emax and/or Epeak are missing, cannot continue."
+                << G4endl;
          exit(-1);
       }
 
@@ -155,10 +155,10 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          if (fBeamBackgroundRate > 0 &&
              fBeamBackgroundGateStart >= fBeamBackgroundGateStop)
          {
-            std::cerr << "GlueXPrimaryGeneratorAction error: "
-                      << "BGRATE is non-zero, but the time window specified "
-                      << "in BGGATE is invalid."
-                      << std::endl;
+            G4cerr << "GlueXPrimaryGeneratorAction error: "
+                   << "BGRATE is non-zero, but the time window specified "
+                   << "in BGGATE is invalid."
+                   << G4endl;
             exit(-1);
          }
       }
@@ -186,9 +186,9 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          fGunParticle.partDef = fParticleTable->FindParticle(fGunParticle.pdgType);
       }
       if (fGunParticle.partDef == 0) {   
-         std::cerr << "GlueXPrimaryGeneratorAction constructor error - "
-                   << "Unknown GEANT particle type: " << kinepars[1] 
-                   << " was specified in the control.in file." << std::endl;
+         G4cerr << "GlueXPrimaryGeneratorAction constructor error - "
+                << "Unknown GEANT particle type: " << kinepars[1] 
+                << " was specified in the control.in file." << G4endl;
          exit(-1);
       }
       fParticleGun->SetParticleDefinition(fGunParticle.partDef);
@@ -373,7 +373,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
          GeneratePrimariesParticleGun(anEvent);
          break;
       default:
-         G4cout << "No event source selected, cannot continue!" << std::endl;
+         G4cout << "No event source selected, cannot continue!" << G4endl;
          exit(-1);
    }
 
@@ -455,7 +455,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
       *fHDDMistream >> *hddmevent;
    }
    catch(std::exception e) {
-      std::cout << e.what() << std::endl;
+      G4cout << e.what() << G4endl;
       anEvent->SetEventAborted();
       return;
    }
@@ -468,7 +468,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
    int Nprimaries = 0;
    hddm_s::VertexList vertices = hddmevent->getVertices();
    if (vertices.size() == 0) {
-      std::cout << "No vertices in input HDDM event!" << std::endl;
+      G4cout << "No vertices in input HDDM event!" << G4endl;
       anEvent->SetEventAborted();
       return;
    }
@@ -535,11 +535,11 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
 #endif
          }
          else {
-            std::cerr << "Unknown particle found in input MC record, "
-                      << "geant3 type " << g3type 
-                      << ", PDG type " << pdgtype
-                      << ", failing over to geantino!"
-                      << std::endl;
+            G4cerr << "Unknown particle found in input MC record, "
+                   << "geant3 type " << g3type 
+                   << ", PDG type " << pdgtype
+                   << ", failing over to geantino!"
+                   << G4endl;
             part = fParticleTable->FindParticle("geantino");
          }
          hddm_s::Momentum &momentum = it_product->getMomentum();
@@ -554,7 +554,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
    }
    
    if (Nprimaries == 0) {
-      std::cerr << "Number of primaries in event is zero!!" << std::endl;
+      G4cerr << "Number of primaries in event is zero!!" << G4endl;
       anEvent->SetEventAborted();
    }
 
@@ -707,9 +707,9 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
          if (Pfactor > fCoherentPDFx.Pmax)
             fCoherentPDFx.Pmax = Pfactor;
          if (Pfactor > fCoherentPDFx.Pcut) {
-            std::cout << "Warning in GenerateBeamPhoton - Pfactor " << Pfactor
-                      << " exceeds fCoherentPDFx.Pcut = " << fCoherentPDFx.Pcut
-                      << ", please increase." << std::endl;
+            G4cout << "Warning in GenerateBeamPhoton - Pfactor " << Pfactor
+                   << " exceeds fCoherentPDFx.Pcut = " << fCoherentPDFx.Pcut
+                   << ", please increase." << G4endl;
          }
          if (G4UniformRand() * fCoherentPDFx.Pcut > Pfactor) {
             ++fCoherentPDFx.Nfailed;
@@ -775,10 +775,10 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
          if (Pfactor > fIncoherentPDFlogx.Pmax)
             fIncoherentPDFlogx.Pmax = Pfactor;
          if (Pfactor > fIncoherentPDFlogx.Pcut) {
-            std::cout << "Warning in GenerateBeamPhoton - Pfactor " << Pfactor
-                      << " exceeds fIncoherentPDFlogx.Pcut = " 
-                      << fIncoherentPDFlogx.Pcut << ", please increase."
-                      << std::endl;
+            G4cout << "Warning in GenerateBeamPhoton - Pfactor " << Pfactor
+                   << " exceeds fIncoherentPDFlogx.Pcut = " 
+                   << fIncoherentPDFlogx.Pcut << ", please increase."
+                   << G4endl;
          }
          if (G4UniformRand() * fIncoherentPDFlogx.Pcut > Pfactor) {
             ++fIncoherentPDFlogx.Nfailed;
@@ -904,18 +904,18 @@ double GlueXPrimaryGeneratorAction::getBeamBucketPeriod(int runno)
       std::map<std::string, double> result;
       std::string map_key("/PHOTON_BEAM/RF/rf_period");
       if (jcalib->Get(map_key, result)) {
-         std::cerr << "Error in GeneratePrimariesHDDM - "
-                   << "error fetching " << map_key << " from ccdb, "
-                   << "cannot continue." << std::endl;
+         G4cerr << "Error in GeneratePrimariesHDDM - "
+                << "error fetching " << map_key << " from ccdb, "
+                << "cannot continue." << G4endl;
          exit(-1);
       }
       else if (result.find("rf_period") != result.end()) {
          fBeamBucketPeriod = result["rf_period"] * ns;
       }
       else {
-         std::cerr << "Error in GeneratePrimariesHDDM - "
-                   << "error finding value for " << map_key
-                   << " in ccdb, cannot continue." << std::endl;
+         G4cerr << "Error in GeneratePrimariesHDDM - "
+                << "error finding value for " << map_key
+                << " in ccdb, cannot continue." << G4endl;
          exit(-1);
       }
    }

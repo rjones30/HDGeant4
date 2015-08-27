@@ -170,7 +170,7 @@ int HddsG4Builder::createMaterial(DOMElement* el)
    }
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
    return imate;
 }
@@ -290,11 +290,10 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
          listr1 >> ri >> ro >> zl;
          if (zl < zlast)
          {
-            std::cerr
-              << APP_NAME << " error: Please re-order the polyplanes"
-              << " of volume " << S(nameS) << " so that the z-values"
-              << " are non-decreasing"
-              << std::endl;
+            G4cerr << APP_NAME << " error: Please re-order the polyplanes"
+                 << " of volume " << S(nameS) << " so that the z-values"
+                 << " are non-decreasing"
+                 << G4endl;
             exit(1);
          }
          zl = (zl < zlast + zeps)? zlast + zeps : zl;
@@ -338,11 +337,10 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
          listr1 >> ri >> ro >> zl;
          if (zl < zlast)
          {
-            std::cerr
-              << APP_NAME << " error: Please re-order the polyplanes"
-              << " of volume " << S(nameS) << " so that the z-values"
-              << " are non-decreasing."
-              << std::endl;
+            G4cerr << APP_NAME << " error: Please re-order the polyplanes"
+                   << " of volume " << S(nameS) << " so that the z-values"
+                   << " are non-decreasing."
+                   << G4endl;
             exit(1);
          }
          zl = (zl < zlast + zeps)? zlast + zeps : zl;
@@ -406,10 +404,9 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
    }
    else
    {
-      std::cerr
-           << APP_NAME << " error: volume " << S(nameS)
-           << " should be one of the valid shapes, not " << S(shapeS)
-           << std::endl;
+      G4cerr << APP_NAME << " error: volume " << S(nameS)
+             << " should be one of the valid shapes, not " << S(shapeS)
+             << G4endl;
       exit(1);
    }
 
@@ -446,7 +443,7 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
    return ivolu;
 }
@@ -477,7 +474,7 @@ int HddsG4Builder::createRotation(Refsys& ref)
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
    return irot;
 }
@@ -531,15 +528,15 @@ int HddsG4Builder::createVolume(DOMElement* el, Refsys& ref)
 #endif
 #ifdef DEBUG_PLACEMENT
          XString nameS(el->getAttribute(X("name")));
-         std::cout << "volume " << nameS 
-                   << "->" << mine->second->GetName()
-                   << "->" << mine->second->GetSolid()->GetName()
-                   << " being placed in mother " << moms->second->GetName()
-                   << "->" << moms->second->GetSolid()->GetName() << " at "
-                   << fRef.fOrigin[0]*cm << ","
-                   << fRef.fOrigin[1]*cm << "," 
-                   << fRef.fOrigin[2]*cm
-                   << std::endl;
+         G4cout << "volume " << nameS 
+                << "->" << mine->second->GetName()
+                << "->" << mine->second->GetSolid()->GetName()
+                << " being placed in mother " << moms->second->GetName()
+                << "->" << moms->second->GetSolid()->GetName() << " at "
+                << fRef.fOrigin[0]*cm << ","
+                << fRef.fOrigin[1]*cm << "," 
+                << fRef.fOrigin[2]*cm
+                << G4endl;
 #endif
 
          if (ilayer == 0) {
@@ -555,7 +552,7 @@ int HddsG4Builder::createVolume(DOMElement* el, Refsys& ref)
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
    return icopy;
 }
@@ -589,11 +586,11 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
    }
    if (max_layer == -1)
    {
-      std::cerr << "HddsG4Builder::addNewLayer called for volume "
-                << volume_id << " which does not (yet) exist!"
-                << std::endl
-                << "Unable to continue, giving up."
-                << std::endl;
+      G4cerr << "HddsG4Builder::addNewLayer called for volume "
+             << volume_id << " which does not (yet) exist!"
+             << G4endl
+             << "Unable to continue, giving up."
+             << G4endl;
       exit(1);
    }
 
@@ -671,12 +668,12 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
       playerN->CheckOverlaps(1000,CHECK_OVERLAPS_MM);
 #endif
 #ifdef DEBUG_PLACEMENT 
-      std::cout << "volume " << str.str() 
-                << "->" << fLogicalVolumes[newvol]->GetName()
-                << "->" << fLogicalVolumes[newvol]->GetSolid()->GetName()
-                << " being placed in mother " << moms->second->GetName()
-                << "->" << moms->second->GetSolid()->GetName()
-                << std::endl;
+      G4cout << "volume " << str.str() 
+             << "->" << fLogicalVolumes[newvol]->GetName()
+             << "->" << fLogicalVolumes[newvol]->GetSolid()->GetName()
+             << " being placed in mother " << moms->second->GetName()
+             << "->" << moms->second->GetSolid()->GetName()
+             << G4endl;
 #endif
    }
 
@@ -703,20 +700,20 @@ HddsG4Builder::addNewLayer(int volume_id, int layer)
                                    axis, ndiv, width, offset);
       fLogicalVolumes[newvol]->SetVisAttributes(new G4VisAttributes(false));
 #ifdef DEBUG_PLACEMENT 
-      std::cout << ndiv << " copies of division " << str.str() 
-                << "->" << fLogicalVolumes[newvol]->GetName()
-                << "->" << fLogicalVolumes[newvol]->GetSolid()->GetName()
-                << " being placed in mother " << moms->second->GetName()
-                << "->" << moms->second->GetSolid()->GetName()
-                << " offset by " << offset << " on axis " << axis
-                << " and repeating every " << width
-                << std::endl;
+      G4cout << ndiv << " copies of division " << str.str() 
+             << "->" << fLogicalVolumes[newvol]->GetName()
+             << "->" << fLogicalVolumes[newvol]->GetSolid()->GetName()
+             << " being placed in mother " << moms->second->GetName()
+             << "->" << moms->second->GetSolid()->GetName()
+             << " offset by " << offset << " on axis " << axis
+             << " and repeating every " << width
+             << G4endl;
 #endif
    }
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
    return fLogicalVolumes.find(newvol);
 }
@@ -775,12 +772,11 @@ int HddsG4Builder::createDivision(XString& divStr, Refsys& ref)
    else
    {
       XString nameS(ref.fMother->getAttribute(X("name")));
-      std::cerr
-           << APP_NAME << " error: Volume division is requested "
-           << " for volume " << S(nameS) << " but division axis "
-           << "\"" << ref.fPartition.axis << "\""
-           << " is not currently supported."
-           << std::endl;
+      G4cerr << APP_NAME << " error: Volume division is requested "
+             << " for volume " << S(nameS) << " but division axis "
+             << "\"" << ref.fPartition.axis << "\""
+             << " is not currently supported."
+             << G4endl;
       exit(1);
    }
 
@@ -875,26 +871,26 @@ int HddsG4Builder::createDivision(XString& divStr, Refsys& ref)
    }
    else
    {
-      std::cerr << "HddsG4Builder::createDivision called for unsupported "
-                << "solid type!" << std::endl
-                << "Unable to continue, giving up."
-                << std::endl;
+      G4cerr << "HddsG4Builder::createDivision called for unsupported "
+             << "solid type!" << G4endl
+             << "Unable to continue, giving up."
+             << G4endl;
       exit(1);
    }
 #ifdef DEBUG_PLACEMENT
-   std::cout << ndiv << " copies of division " << divStr 
-             << "->" << fLogicalVolumes[myvol]->GetName()
-             << "->" << fLogicalVolumes[myvol]->GetSolid()->GetName()
-             << " being placed in mother " << fLogicalVolumes[mothvol]->GetName()
-             << "->" << fLogicalVolumes[mothvol]->GetSolid()->GetName()
-             << " offset by " << offset << " on axis " << axis
-             << " and repeating every " << width
-             << std::endl;
+   G4cout << ndiv << " copies of division " << divStr 
+          << "->" << fLogicalVolumes[myvol]->GetName()
+          << "->" << fLogicalVolumes[myvol]->GetSolid()->GetName()
+          << " being placed in mother " << fLogicalVolumes[mothvol]->GetName()
+          << "->" << fLogicalVolumes[mothvol]->GetSolid()->GetName()
+          << " offset by " << offset << " on axis " << axis
+          << " and repeating every " << width
+          << G4endl;
 #endif
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
    return ndiv;
 }
@@ -1031,7 +1027,7 @@ int HddsG4Builder::createRegion(DOMElement* el, Refsys& ref)
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
    return iregion;
 }
@@ -1212,7 +1208,7 @@ void HddsG4Builder::createSetFunctions(DOMElement* el, const XString& ident)
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
 }
 
@@ -1244,18 +1240,17 @@ void HddsG4Builder::createGetFunctions(DOMElement* el, const XString& ident)
       {
          if (ncopy != (int)idlist->second.size())
          {
-            std::cerr
-                  << APP_NAME << " warning: volume " << ivolu
-                  << " has " << ncopy << " copies, but "
-                  << idlist->second.size() << " " 
-                  << ident << " identifiers!" << std::endl;
+            G4cerr << APP_NAME << " warning: volume " << ivolu
+                   << " has " << ncopy << " copies, but "
+                   << idlist->second.size() << " " 
+                   << ident << " identifiers!" << G4endl;
             for (int idx = 0; idx < (int)idlist->second.size(); idx++)
             {
-               std::cerr << idlist->second[idx]  << " ";
+               G4cerr << idlist->second[idx]  << " ";
                if (idx/20*20 == idx)
-                  std::cerr << std::endl;
+                  G4cerr << G4endl;
             }
-            std::cerr << std::endl;
+            G4cerr << G4endl;
          }
          start[ivolu] = table.size() + 1;
          for (int icopy = 0; icopy < ncopy; icopy++)
@@ -1380,7 +1375,7 @@ void HddsG4Builder::createGetFunctions(DOMElement* el, const XString& ident)
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
 }
 
@@ -1434,9 +1429,8 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
          XString typeS(gridEl->getAttribute(X("type")));
          if (gridtype.size() > 0 && typeS != gridtype)
          {
-            std::cerr
-               << APP_NAME << " error: mappedBfield in region " << S(nameS)
-               << " superimposes incompatible grid types." << std::endl;
+            G4cerr << APP_NAME << " error: mappedBfield in region " << S(nameS)
+                   << " superimposes incompatible grid types." << G4endl;
             exit(1);
          }
          gridtype = typeS;
@@ -1444,9 +1438,8 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
          DOMNodeList* samplesL = gridEl->getElementsByTagName(X("samples"));
          if (samplesL->getLength() != 3)
          {
-            std::cerr
-              << APP_NAME << " error: mappedBfield in region " << S(nameS)
-              << " does not have samples for three axes." << std::endl;
+            G4cerr << APP_NAME << " error: mappedBfield in region " << S(nameS)
+                   << " does not have samples for three axes." << G4endl;
             exit(1);
          }
 
@@ -1491,9 +1484,9 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
                }
                else
                {
-                  std::cerr
-                  << APP_NAME << " error: grid in region " << S(nameS)
-                  << " contains an incompatible set of samples." << std::endl;
+                  G4cerr << APP_NAME << " error: grid in region " << S(nameS)
+                         << " contains an incompatible set of samples." 
+                         << G4endl;
                   exit(1);
                }
             }
@@ -1522,9 +1515,9 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
                }
                else
                {
-                  std::cerr
-                  << APP_NAME << " error: grid in region " << S(nameS)
-                  << " contains an incompatible set of samples." << std::endl;
+                  G4cerr << APP_NAME << " error: grid in region " << S(nameS)
+                         << " contains an incompatible set of samples." 
+                         << G4endl;
                   exit(1);
                }
             }
@@ -1536,9 +1529,9 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
             }
             else
             {
-               std::cerr
-                 << APP_NAME << " error: mappedBfield in region " << S(nameS)
-                 << " combines incompatible grid elements." << std::endl;
+               G4cerr << APP_NAME << " error: mappedBfield in region " << S(nameS)
+                      << " combines incompatible grid elements." 
+                      << G4endl;
                exit(1);
             }
 
@@ -1562,9 +1555,8 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
          }
          else
          {
-            std::cerr
-                      << APP_NAME << " error: unrecognized grid type " 
-                      << S(gridtype) << std::endl;
+            G4cerr << APP_NAME << " error: unrecognized grid type " 
+                   << S(gridtype) << G4endl;
             exit(1);
          }
       }
@@ -1573,16 +1565,14 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
       XString encS(mapfEl->getAttribute(X("encoding")));
       if (encS != "utf-8")
       {
-         std::cerr
-              << APP_NAME << " error: mappedBfield in region " << S(nameS)
-              << " uses unsupported encoding " << encS << std::endl;
+         G4cerr << APP_NAME << " error: mappedBfield in region " << S(nameS)
+                << " uses unsupported encoding " << encS << G4endl;
          exit(1);
       }
       else if (mapS.substr(0,7) != "file://")
       {
-         std::cerr
-              << APP_NAME << " error: mappedBfield in region " << S(nameS)
-              << " uses unsupported map URL " << mapS << std::endl;
+         G4cerr << APP_NAME << " error: mappedBfield in region " << S(nameS)
+                << " uses unsupported map URL " << mapS << G4endl;
          exit(1);
       }
       mapS.erase(0,7);
@@ -1596,7 +1586,7 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
 }
 
@@ -1617,17 +1607,16 @@ void HddsG4Builder::translate(DOMElement* topel)
    XString ivoluS(topvolEl->getAttribute(X("HDDSvolu")));
    if (ivoluS.size() == 0)
    {
-      std::cerr
-           << APP_NAME << " error: top-level composition named "
-           << "\"everything\" was not found in input document!"
-           << std::endl;
+      G4cerr << APP_NAME << " error: top-level composition named "
+             << "\"everything\" was not found in input document!"
+             << G4endl;
       exit(1);
    }
    fWorldVolume = atoi(S(ivoluS));
 
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
 }
 
@@ -1683,17 +1672,17 @@ void HddsG4Builder::addReflections(int volume_id)
              (miter == lastManager.end() && mine->first.second != 0 &&
               mgr != 0 && mgr != fieldmgr))
          {
-            std::cerr << "HddsG4Builder::addReflections warning - "
-                      << "local magnetic field assigned to volume "
-                      << lvol->GetName()
-                      << " placed on a buried layer in the geometry."
-                      << std::endl
-                      << "This is a violation of the assumption made "
-                      << "in the Geant4 tracking algorithm that fields "
-                      << "at a given point are the same on all layers."
-                      << std::endl
-                      << "Expect inconsistent results."
-                      << std::endl;
+            G4cerr << "HddsG4Builder::addReflections warning - "
+                   << "local magnetic field assigned to volume "
+                   << lvol->GetName()
+                   << " placed on a buried layer in the geometry."
+                   << G4endl
+                   << "This is a violation of the assumption made "
+                   << "in the Geant4 tracking algorithm that fields "
+                   << "at a given point are the same on all layers."
+                   << G4endl
+                   << "Expect inconsistent results."
+                   << G4endl;
          }
          else {
             lastManager[childId] = mgr;
@@ -1714,11 +1703,11 @@ void HddsG4Builder::addReflections(int volume_id)
             std::map<vpair_t,G4VPhysicalVolume*>::iterator piter;
             piter = fPhysicalVolumes.find(cpy);
             if (piter == fPhysicalVolumes.end()) {
-               std::cerr << "HddsG4Builder::addReflections error - "
-                         << "physical volume " << pvol->GetName()
-                         << " copy " <<  cpy.second
-                         << " not found in physical volume lookup table, "
-                         << "cannot continue." << std::endl;
+               G4cerr << "HddsG4Builder::addReflections error - "
+                      << "physical volume " << pvol->GetName()
+                      << " copy " <<  cpy.second
+                      << " not found in physical volume lookup table, "
+                      << "cannot continue." << G4endl;
                exit(1);
             }
             else if (piter->second->IsReplicated()) {
@@ -1732,14 +1721,14 @@ void HddsG4Builder::addReflections(int volume_id)
             for (liter = layer.begin(); liter != layer.end(); ++liter) {
                if (*liter > mine->first.second) {
 #if DEBUG_REFLECTION
-                  std::cout << "HddsG4Builder::addReflections info - "
-                            << "reflected volume " << lvol->GetName()
-                            << " copy " << cpy.second
-                            << " in mother " << mine->second->GetName()
-                            << " onto layer " << *liter
-                            << " because child field manager " << mgr
-                            << " is different from mother field manager " << fieldmgr
-                            << std::endl;
+                  G4cout << "HddsG4Builder::addReflections info - "
+                         << "reflected volume " << lvol->GetName()
+                         << " copy " << cpy.second
+                         << " in mother " << mine->second->GetName()
+                         << " onto layer " << *liter
+                         << " because child field manager " << mgr
+                         << " is different from mother field manager " << fieldmgr
+                         << G4endl;
 #endif
                   addNewLayer(childId, *liter);
                }
@@ -1749,7 +1738,7 @@ void HddsG4Builder::addReflections(int volume_id)
    }
 #ifdef LINUX_CPUTIME_PROFILING
    timestr << " ( " << timer.getUserDelta() << " ) ";
-   std::cerr << timestr.str() << std::endl;
+   G4cerr << timestr.str() << G4endl;
 #endif
 }
 
@@ -1762,9 +1751,9 @@ int HddsG4Builder::getVolumeId(G4LogicalVolume* vol) const
          return iter->first.first;
       }
    }
-   std::cerr << "HddsG4Builder::getVolumeId error - "
-             << "logical volume " << vol->GetName()
-             << " not found in volume lookup table, "
-             << "cannot continue." << std::endl;
+   G4cerr << "HddsG4Builder::getVolumeId error - "
+          << "logical volume " << vol->GetName()
+          << " not found in volume lookup table, "
+          << "cannot continue." << G4endl;
    exit(1);
 }

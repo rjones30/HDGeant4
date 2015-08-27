@@ -73,7 +73,7 @@ void pickPoint3D(G4double x_cm, G4double y_cm, G4double z_cm)
    G4OpenGLViewerPickMap map;
    G4ThreeVector v(x_cm * cm, y_cm * cm, z_cm * cm);
    map.setPickCoordinates3D(v);
-   std::cout << map.print();
+   G4cout << map.print();
 }
 
 // More python utility functions to access properties not reachable

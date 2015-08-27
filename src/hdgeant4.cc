@@ -29,9 +29,9 @@
 
 void usage()
 {
-  std::cout << std::endl
-            << "Usage: hdgeant4 [-v] [-t <THREAD_COUNT>] [<filename.mac>]"
-            << std::endl;
+  G4cout << G4endl
+         << "Usage: hdgeant4 [-v] [-t <THREAD_COUNT>] [<filename.mac>]"
+         << G4endl;
   exit(9);
 }
 
@@ -104,9 +104,9 @@ int main(int argc,char** argv)
     visManager = new G4VisExecutive();
     visManager->Initialize();
 #else
-    std::cerr << "Visualization system not available,"
-              << " please rebuild hdgeant4 with visualization enabled."
-              << std::endl;
+    G4cerr << "Visualization system not available,"
+           << " please rebuild hdgeant4 with visualization enabled."
+           << G4endl;
      exit(1);
 #endif
   }

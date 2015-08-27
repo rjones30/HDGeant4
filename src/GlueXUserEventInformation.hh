@@ -49,8 +49,8 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    }
 
    void Print() const {
-      std::cout << "GlueXUserEventInformation: hddm_s=" << hddmevent 
-                << std::endl;
+      G4cout << "GlueXUserEventInformation: hddm_s=" << hddmevent 
+             << G4endl;
    }
 
    hddm_s::HDDM *hddmevent;

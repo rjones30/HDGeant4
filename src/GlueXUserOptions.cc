@@ -8,6 +8,7 @@
 #define APP_NAME "GlueXUserOptions"
 
 #include <GlueXUserOptions.hh>
+#include <G4ios.hh>
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
@@ -99,9 +100,9 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
 
    std::ifstream fin(ctrlin);
    if (!fin.good()) {
-      std::cerr << "Error in GlueXUserOptions::ReadControl_in: "
-                << "unable to open file " << ctrlin
-                << std::endl;
+      G4cerr << "Error in GlueXUserOptions::ReadControl_in: "
+             << "unable to open file " << ctrlin
+             << G4endl;
       return 0;
    }
 
