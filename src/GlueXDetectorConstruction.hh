@@ -33,10 +33,13 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      GlueXDetectorConstruction(G4String hddsFile="");
      GlueXDetectorConstruction(const GlueXDetectorConstruction &src);
      GlueXDetectorConstruction &operator=(const GlueXDetectorConstruction &src);
-    ~GlueXDetectorConstruction();
+     virtual ~GlueXDetectorConstruction();
 
   public:
-     G4VPhysicalVolume* Construct();
+     virtual G4VPhysicalVolume* Construct();
+     virtual void ConstructSDandField();
+     virtual void CloneF();
+
      void SetUniformField(G4double field_T);
      void SetMaxStep (G4double step_mm);     
 

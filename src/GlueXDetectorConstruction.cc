@@ -16,6 +16,14 @@
 #include "G4SDManager.hh"
 #include "G4GeometryTolerance.hh"
 #include "G4GeometryManager.hh"
+#include "G4MTRunManager.hh"
+#include "G4LogicalVolumeStore.hh"
+#include "G4MagIntegratorDriver.hh"
+#include "G4ChordFinder.hh"
+#include "G4Mag_UsualEqRhs.hh"
+#include "G4ExactHelixStepper.hh"
+#include "G4HelixMixedStepper.hh"
+#include "G4ClassicalRK4.hh"
 
 #include "G4UserLimits.hh"
 #include "G4SystemOfUnits.hh"
@@ -232,6 +240,106 @@ G4VPhysicalVolume* GlueXDetectorConstruction::Construct()
    std::cout << " configured as " << worldvol->GetName() << std::endl;
    worldvol->SetVisAttributes(new G4VisAttributes(false));
    return new G4PVPlacement(0, G4ThreeVector(), worldvol, "World", 0, 0, 0);
+}
+
+void GlueXDetectorConstruction::ConstructSDandField()
+{
+   G4RunManager::RMType rmtype = G4RunManager::GetRunManager()->
+                                               GetRunManagerType();
+   if (rmtype == G4RunManager::sequentialRM)
+      return;
+   else
+      CloneF();
+}
+
+void GlueXDetectorConstruction::CloneF()
+{
+   typedef std::map<G4FieldManager*,G4FieldManager*> FMtoFMmap;
+   typedef std::pair<G4FieldManager*,G4FieldManager*> FMpair;
+   FMtoFMmap masterToWorker;
+   G4LogicalVolumeStore* const logVolStore = G4LogicalVolumeStore::GetInstance();
+   assert(logVolStore != NULL);
+   for (G4LogicalVolumeStore::const_iterator iter = logVolStore->begin();
+        iter != logVolStore->end();
+        ++iter)
+   {
+      G4LogicalVolume *lvol = *iter;
+      G4FieldManager* masterFM = lvol->GetFieldManager();
+      G4FieldManager* clonedFM = 0;
+      if (masterFM) {
+         FMtoFMmap::iterator fmFound = masterToWorker.find(masterFM);
+         if (fmFound == masterToWorker.end()) {
+
+            // First time we see this FM, let's clone and remember...
+
+            G4ChordFinder *cfinder = masterFM->GetChordFinder();
+            G4MagInt_Driver *midriver = cfinder->GetIntegrationDriver();
+            double stepMinimum = midriver->GetHmin();
+            G4MagIntegratorStepper *stepper = midriver->GetStepper();
+            G4EquationOfMotion *eqn = stepper->GetEquationOfMotion();
+            const G4Field *field = masterFM->GetDetectorField();
+
+            G4MagneticField *field_copy;
+            if (dynamic_cast<const GlueXUniformMagField*>(field)) {
+               GlueXUniformMagField &orig = *(GlueXUniformMagField*)field;
+               field_copy = new GlueXUniformMagField(orig);
+            }
+            else if (dynamic_cast<const GlueXMappedMagField*>(field)) {
+               GlueXMappedMagField &orig = *(GlueXMappedMagField*)field;
+               field_copy = new GlueXMappedMagField(orig);
+            }
+            else if (dynamic_cast<const GlueXComputedMagField*>(field)) {
+               GlueXComputedMagField &orig = *(GlueXComputedMagField*)field;
+               field_copy = new GlueXComputedMagField(orig);
+            }
+            else if (dynamic_cast<const G4UniformMagField*>(field)) {
+               G4UniformMagField &orig = *(G4UniformMagField*)field;
+               field_copy = new G4UniformMagField(orig);
+            }
+            else {
+               std::cerr << "GlueXDetectorConstruction::CloneF error - "
+                         << "unknown G4MagneticField class found "
+                         << "attached to detector volume " << lvol->GetName()
+                         << ", cannot continue!" << std::endl;
+               exit(1);
+            }
+            G4Mag_UsualEqRhs *eqn_copy = new G4Mag_UsualEqRhs(field_copy);
+            G4MagIntegratorStepper *stepper_copy;
+            if (dynamic_cast<const G4ExactHelixStepper*>(stepper)) {
+               G4ExactHelixStepper &orig = *(G4ExactHelixStepper*)stepper;
+               stepper_copy = new G4ExactHelixStepper(eqn_copy);
+            }
+            else if (dynamic_cast<const G4ClassicalRK4*>(stepper)) {
+               G4ClassicalRK4 &orig = *(G4ClassicalRK4*)stepper;
+               stepper_copy = new G4ClassicalRK4(eqn_copy);
+            }
+            else if (dynamic_cast<const G4HelixMixedStepper*>(stepper)) {
+               G4HelixMixedStepper &orig = *(G4HelixMixedStepper*)stepper;
+               stepper_copy = new G4HelixMixedStepper(eqn_copy);
+            }
+            else {
+               std::cerr << "GlueXDetectorConstruction::CloneF error - "
+                         << "unknown G4MagIntegratorStepper class found "
+                         << "attached to detector volume " << lvol->GetName()
+                         << ", cannot continue!" << std::endl;
+               exit(1);
+            }
+            G4ChordFinder *cfinder_copy = new G4ChordFinder(field_copy,
+                                                            stepMinimum,
+                                                            stepper_copy);
+            clonedFM = new G4FieldManager(field_copy, cfinder_copy);
+            masterToWorker[masterFM] = clonedFM;
+         }
+         else {
+
+            // We have already seen this FM attached to a different 
+            // LogicalVolume, let's re-use the previous clone
+ 
+            clonedFM = (*fmFound).second;
+         }
+         lvol->SetFieldManager(clonedFM, false);
+      }
+   }
 }
 
 int GlueXDetectorConstruction::GetParallelWorldCount() const
