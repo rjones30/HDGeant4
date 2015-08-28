@@ -13,15 +13,22 @@
 #define GlueXRunAction_h 1
 
 #include "G4UserRunAction.hh"
+#include "G4RotationMatrix.hh"
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
+
 #include "globals.hh"
 
 class G4Run;
 
 class GlueXRunAction : public G4UserRunAction
 {
-  public:
-    void BeginOfRunAction(const G4Run*);
-    void EndOfRunAction(const G4Run*);
+ public:
+   void BeginOfRunAction(const G4Run*);
+   void EndOfRunAction(const G4Run*);
+
+ private:
+   static G4Mutex fMutex;
 };
 
 #endif
