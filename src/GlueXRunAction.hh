@@ -19,6 +19,8 @@
 
 #include "globals.hh"
 
+#include <list>
+
 class G4Run;
 
 class GlueXRunAction : public G4UserRunAction
@@ -29,6 +31,7 @@ class GlueXRunAction : public G4UserRunAction
 
  private:
    static G4Mutex fMutex;
+   std::list<G4RotationMatrix*> usedRmatrix;
 };
 
 #endif

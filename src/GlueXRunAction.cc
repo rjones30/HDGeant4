@@ -46,10 +46,21 @@ void GlueXRunAction::BeginOfRunAction(const G4Run* aRun)
             else
                workerRmat = new G4RotationMatrix();
             pvol->SetRotation(workerRmat);
+            usedRmatrix.push_back(workerRmat);
          }
       }
    }
 }
 
 void GlueXRunAction::EndOfRunAction(const G4Run*)
-{}
+{
+   // Clean up the thread-local clones of G4RotationMatrix that were
+   // created in the BeginOfRunAction. As soon as the Geant4 team 
+   // releases a proper fix for this bug, this section can go away.
+ 
+   std::list<G4RotationMatrix*>::iterator iter;
+   for (iter = usedRmatrix.begin(); iter != usedRmatrix.end(); ++iter)
+      delete *iter;
+   usedRmatrix.clear();
+
+}
