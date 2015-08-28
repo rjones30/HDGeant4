@@ -16,7 +16,8 @@ class GlueXSteppingVerbose;
 #define GlueXSteppingVerbose_h 1
 
 #include "G4SteppingVerbose.hh"
-#include <pthread.h>
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
 
 class GlueXSteppingVerbose : public G4SteppingVerbose 
 {
@@ -29,7 +30,7 @@ class GlueXSteppingVerbose : public G4SteppingVerbose
 
  private:
    static int instanceCount;
-   static pthread_mutex_t *fMutex;
+   static G4Mutex fMutex;
 };
 
 #endif

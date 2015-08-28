@@ -13,7 +13,7 @@
 #include <iostream>
 #include <fstream>
 
-pthread_mutex_t *GlueXUserOptions::fMutex = 0;
+G4Mutex GlueXUserOptions::fMutex = G4MUTEX_INITIALIZER;
 std::list<GlueXUserOptions*> GlueXUserOptions::fInstance;
 
 GlueXUserOptions::GlueXUserOptions()
@@ -30,53 +30,33 @@ GlueXUserOptions::GlueXUserOptions()
    //       method GetInstance() and then use that to look up values.
    // This is a thread-safe implementation of a singleton constructor.
 
-   pthread_mutex_t *mutex = new pthread_mutex_t;
-   if (fMutex == 0) {
-      fMutex = mutex;
-      pthread_mutex_init(mutex, 0);
-   }
-   if (fMutex != mutex) {
-      pthread_mutex_destroy(mutex);
-      delete mutex;
-   }
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    fInstance.push_back(this);
-   pthread_mutex_unlock(fMutex);
 }
 
 GlueXUserOptions::~GlueXUserOptions()
 {
    // This is a thread-safe implementation of a singleton destructor.
 
-   int remaining;
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    fInstance.remove(this);
-   remaining = fInstance.size();
-   pthread_mutex_unlock(fMutex);
-   if (remaining == 0) {
-      pthread_mutex_destroy(fMutex);
-      delete fMutex;
-      fMutex = 0;
-   }
 }
 
 GlueXUserOptions::GlueXUserOptions(const GlueXUserOptions &src)
 {
    // This is a thread-safe implementation of a copy constructor
 
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    fKeyValue = src.fKeyValue;
    fInstance.push_back(this);
-   pthread_mutex_unlock(fMutex);
 }
 
 GlueXUserOptions &GlueXUserOptions::operator=(const GlueXUserOptions &src)
 {
    // This is a thread-safe implementation of an assignment operator
 
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    fKeyValue = src.fKeyValue;
-   pthread_mutex_unlock(fMutex);
    return *this;
 }
 
@@ -106,7 +86,7 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
       return 0;
    }
 
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
   
    int ncards = 0;
    char card[9999];
@@ -138,8 +118,6 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
       }
       ++ncards;
    }
-
-   pthread_mutex_unlock(fMutex);
    return ncards;
 }
 

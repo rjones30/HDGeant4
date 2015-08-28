@@ -51,7 +51,7 @@ ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFlogx;
 ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFy;
 double GlueXPrimaryGeneratorAction::fIncoherentPDFtheta02;
 
-pthread_mutex_t *GlueXPrimaryGeneratorAction::fMutex = 0;
+G4Mutex GlueXPrimaryGeneratorAction::fMutex = G4MUTEX_INITIALIZER;
 
 //--------------------------------------------
 // GlueXPrimaryGeneratorAction (constructor)
@@ -59,24 +59,13 @@ pthread_mutex_t *GlueXPrimaryGeneratorAction::fMutex = 0;
 
 GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 {
-   pthread_mutex_t *mutex = new pthread_mutex_t;
-   if (fMutex == 0) {
-      fMutex = mutex;
-      pthread_mutex_init(mutex, 0);
-   }
-   if (fMutex != mutex) {
-      pthread_mutex_destroy(mutex);
-      delete mutex;
-   }
-
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 
    // Initializaton is driven by the control.in file, which
    // gets read and parsed only once, by the first constructor.
 
    if (fSourceType != SOURCE_TYPE_NONE) {
-      pthread_mutex_unlock(fMutex);
       return;
    }
 
@@ -236,21 +225,20 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    else {
       fL1triggerTimeSigma = 10 * ns;
    }
-
-   pthread_mutex_unlock(fMutex);
 }
 
 GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction(const
                              GlueXPrimaryGeneratorAction &src)
+ : G4VUserPrimaryGeneratorAction(src)
 {
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
-   pthread_mutex_unlock(fMutex);
 }
 
 GlueXPrimaryGeneratorAction &GlueXPrimaryGeneratorAction::operator=(const
                              GlueXPrimaryGeneratorAction &src)
 {
+   *(G4VUserPrimaryGeneratorAction*)this = src;
    return *this;
 }
 
@@ -260,7 +248,7 @@ GlueXPrimaryGeneratorAction &GlueXPrimaryGeneratorAction::operator=(const
 
 GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()
 {
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    if (--instanceCount == 0) {
       if (fHDDMistream)
          delete fHDDMistream;
@@ -269,12 +257,6 @@ GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()
       if (fCobremsGenerator)
          delete fCobremsGenerator;
       delete fParticleGun;
-   }
-   pthread_mutex_unlock(fMutex);
-   if (instanceCount == 0) {
-      pthread_mutex_destroy(fMutex);
-      delete fMutex;
-      fMutex = 0;
    }
 }
 
@@ -360,7 +342,7 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
 
 void GlueXPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
 
    switch(fSourceType){
       case SOURCE_TYPE_HDDM:
@@ -376,8 +358,6 @@ void GlueXPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
          G4cout << "No event source selected, cannot continue!" << G4endl;
          exit(-1);
    }
-
-   pthread_mutex_unlock(fMutex);
 }   
 
 //--------------------------------------------

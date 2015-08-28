@@ -15,20 +15,12 @@
 #define G4setw std::setw
 
 int GlueXSteppingVerbose::instanceCount = 0;
-pthread_mutex_t *GlueXSteppingVerbose::fMutex = 0;
+G4Mutex GlueXSteppingVerbose::fMutex = G4MUTEX_INITIALIZER;
 
 GlueXSteppingVerbose::GlueXSteppingVerbose()
  : G4SteppingVerbose()
 {
-   pthread_mutex_t *mutex = new pthread_mutex_t;
-   if (fMutex == 0) {
-      fMutex = mutex;
-      pthread_mutex_init(mutex, 0);
-   }
-   if (fMutex != mutex) {
-      pthread_mutex_destroy(mutex);
-      delete mutex;
-   }
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
@@ -39,17 +31,11 @@ GlueXSteppingVerbose::GlueXSteppingVerbose(const GlueXSteppingVerbose &src)
 }
 
 GlueXSteppingVerbose::~GlueXSteppingVerbose()
-{
-   if (--instanceCount == 0) {
-      pthread_mutex_destroy(fMutex);
-      delete fMutex;
-      fMutex = 0;
-   }
-}
+{}
 
 void GlueXSteppingVerbose::StepInfo()
 {
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    CopyState();
    G4int prec = G4cout.precision(5);
  
@@ -122,12 +108,11 @@ void GlueXSteppingVerbose::StepInfo()
    }
 
    G4cout.precision(prec);
-   pthread_mutex_unlock(fMutex);
 }
 
 void GlueXSteppingVerbose::TrackingStarted()
 {
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    CopyState();
    G4int prec = G4cout.precision(5);
 
@@ -179,5 +164,4 @@ void GlueXSteppingVerbose::TrackingStarted()
    }
 
    G4cout.precision(prec);
-   pthread_mutex_unlock(fMutex);
 }

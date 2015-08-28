@@ -57,7 +57,7 @@ using namespace xercesc;
 
 #define APP_NAME "HDGeant4"
 
-pthread_mutex_t *GlueXDetectorConstruction::fMutex = 0;
+G4Mutex GlueXDetectorConstruction::fMutex = G4MUTEX_INITIALIZER;
 std::list<GlueXDetectorConstruction*> GlueXDetectorConstruction::fInstance;
 
 GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
@@ -65,18 +65,8 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
   fUniformField(0),
   fpMagneticField(0)
 {
-   pthread_mutex_t *mutex = new pthread_mutex_t;
-   if (fMutex == 0) {
-      fMutex = mutex;
-      pthread_mutex_init(mutex, 0);
-   }
-   if (fMutex != mutex) {
-      pthread_mutex_destroy(mutex);
-      delete mutex;
-   }
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    fInstance.push_back(this);
-   pthread_mutex_unlock(fMutex);
 
    // Initialize the class that implements custom interactive
    // commands under the command prefix /hdgeant4/.
@@ -171,9 +161,8 @@ GlueXDetectorConstruction::
 GlueXDetectorConstruction(const GlueXDetectorConstruction &src)
  : fHddsBuilder(src.fHddsBuilder)
 {
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    fInstance.push_back(this);
-   pthread_mutex_unlock(fMutex);
    fMaxStep = src.fMaxStep;
    fUniformField = src.fUniformField;
    fpMagneticField = src.fpMagneticField; // shallow copy, sharing magfield
@@ -182,15 +171,8 @@ GlueXDetectorConstruction(const GlueXDetectorConstruction &src)
 
 GlueXDetectorConstruction::~GlueXDetectorConstruction()
 {
-   pthread_mutex_lock(fMutex);
+   G4AutoLock barrier(&fMutex);
    fInstance.remove(this);
-   int remaining = fInstance.size();
-   pthread_mutex_unlock(fMutex);
-   if (remaining == 0) {
-      pthread_mutex_destroy(fMutex);
-      delete fMutex;
-      fMutex = 0;
-   }
    delete fpDetectorMessenger;             
 }
 

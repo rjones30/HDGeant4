@@ -15,6 +15,9 @@
 #ifndef _GLUEXPRIMARYGENERATORACTION_H_
 #define _GLUEXPRIMARYGENERATORACTION_H_
 
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
+
 #include "CobremsGenerator.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "G4ParticleDefinition.hh"
@@ -26,7 +29,6 @@
 #include <HDDM/hddm_s.hpp>
 
 #include <fstream>
-#include <pthread.h>
 
 class G4Event;
 
@@ -172,7 +174,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    void prepareCobremsImportanceSamplingPDFs();
 
  private:
-   static pthread_mutex_t *fMutex;
+   static G4Mutex fMutex;
 };
 
 #endif

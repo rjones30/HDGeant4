@@ -11,7 +11,9 @@
 #define GlueXDetectorConstruction_h 1
 
 #include <list>
-#include <pthread.h>
+
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
 
 #include "globals.hh"
 #include "G4SystemOfUnits.hh"
@@ -63,7 +65,7 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      GlueXDetectorMessenger* fpDetectorMessenger;  // pointer to the Messenger
      HddsG4Builder fHddsBuilder; // hdds translator object instance
 
-     static pthread_mutex_t *fMutex;
+     static G4Mutex fMutex;
      static std::list<GlueXDetectorConstruction*> fInstance;
 };
 

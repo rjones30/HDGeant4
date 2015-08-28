@@ -11,10 +11,12 @@
 #define _GLUEXUSEROPTIONS_
 
 #include <stdlib.h>
-#include <pthread.h>
 #include <string>
 #include <list>
 #include <map>
+
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
 
 class GlueXUserOptions
 {
@@ -40,7 +42,7 @@ class GlueXUserOptions
  private:
    std::string askey(const std::string name) const;
 
-   static pthread_mutex_t *fMutex;
+   static G4Mutex fMutex;
    static std::list<GlueXUserOptions*> fInstance;
    std::map<std::string, std::string> fKeyValue;
 };
