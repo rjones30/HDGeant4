@@ -14,24 +14,7 @@
 
 #define G4setw std::setw
 
-int GlueXSteppingVerbose::instanceCount = 0;
 G4Mutex GlueXSteppingVerbose::fMutex = G4MUTEX_INITIALIZER;
-
-GlueXSteppingVerbose::GlueXSteppingVerbose()
- : G4SteppingVerbose()
-{
-   G4AutoLock barrier(&fMutex);
-   ++instanceCount;
-}
-
-GlueXSteppingVerbose::GlueXSteppingVerbose(const GlueXSteppingVerbose &src)
- : G4SteppingVerbose(src)
-{
-   ++instanceCount;
-}
-
-GlueXSteppingVerbose::~GlueXSteppingVerbose()
-{}
 
 void GlueXSteppingVerbose::StepInfo()
 {

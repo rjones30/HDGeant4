@@ -22,14 +22,10 @@ class GlueXSteppingVerbose;
 class GlueXSteppingVerbose : public G4SteppingVerbose 
 {
  public:
-   GlueXSteppingVerbose();
-   GlueXSteppingVerbose(const GlueXSteppingVerbose &src);
-   ~GlueXSteppingVerbose();
    void StepInfo();
    void TrackingStarted();
 
  private:
-   static int instanceCount;
    static G4Mutex fMutex;
 };
 
