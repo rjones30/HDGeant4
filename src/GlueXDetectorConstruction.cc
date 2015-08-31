@@ -341,6 +341,34 @@ G4LogicalVolume*
    return fHddsBuilder.getWorldVolume(paraIndex);
 }
 
+G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit) const
+{
+   // Utility function for use by other simulation components,
+   // returns the magnetic field at an arbitrary location in
+   // the geometry. If geometry has not yet been constructed
+   // the value returned is always zero.
+
+   G4TransportationManager *tmanager;
+   G4Navigator *navigator;
+   G4VPhysicalVolume *pvol;
+   G4LogicalVolume *lvol;
+   G4FieldManager *fieldmgr;
+   G4Field *field;
+   if ((tmanager = G4TransportationManager::GetTransportationManager()) &&
+       (navigator = tmanager->GetNavigatorForTracking()) &&
+       (pvol = navigator->LocateGlobalPointAndSetup(pos)) &&
+       (lvol = pvol->GetLogicalVolume()) &&
+       (fieldmgr = lvol->GetFieldManager()) &&
+       (field = fieldmgr->GetDetectorField()) )
+   {
+      double xglob[4] = {pos[0], pos[1], pos[2], 0};
+      return field->GetMagField(xglob, unit);
+   }
+   return G4ThreeVector();
+}
+
+
+
 GlueXParallelWorld::GlueXParallelWorld(const GlueXParallelWorld &src)
  : G4VUserParallelWorld(src.fWorldName), fTopVolume(src.fTopVolume)
 { }

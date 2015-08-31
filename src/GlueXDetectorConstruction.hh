@@ -19,6 +19,7 @@
 #include "G4SystemOfUnits.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include <G4VUserParallelWorld.hh>
+#include <G4ThreeVector.hh>
 #include <GlueXMagneticField.hh>
 #include <HddsG4Builder.hh>
 
@@ -55,7 +56,9 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      int GetParallelWorldCount() const;
      G4String GetParallelWorldName(int paraIndex) const;
      G4LogicalVolume* GetParallelWorldVolume(int paraIndex) const;
-     
+
+     G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit);
+
      static const GlueXDetectorConstruction* GetInstance();
 
   private:
