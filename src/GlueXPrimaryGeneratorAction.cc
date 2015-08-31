@@ -482,8 +482,10 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
       // the L1 trigger signal. The spread in the L1 relative to the
       // interacting bunch time is parameterized as a Gaussian.
 
+      extern int run_number;
       if (fBeamBucketPeriod == 0)
-         getBeamBucketPeriod(it_vertex->getRunNo());
+         getBeamBucketPeriod(run_number);
+         // getBeamBucketPeriod(it_vertex->getRunNo());
 
       double t0, t0rf;
       double lightSpeed = 2.99792e8 * m/s;

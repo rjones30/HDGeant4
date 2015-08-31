@@ -509,22 +509,7 @@ void GlueXComputedMagField::SetFunction(std::string function)
       exit(-1);
    }
 
-   // look up the simulation run number in the user options,
-   // cannot come from the input file because that is not open yet
- 
-   int run_number = 0;
-   std::map<int, int> runno_opts;
-   if (user_opts->Find("RUNNO", runno_opts) ||
-       user_opts->Find("RUNG", runno_opts))
-   {
-      run_number = runno_opts[1];
-   }
-   else {
-      G4cerr << "Warning in GlueXComputedMagField::SetFunction - "
-             << "no run number specified in control.in, "
-             << "default value of 9000 assumed." << G4endl;
-      run_number = 9000;
-   }
+   extern int run_number;
    jana::JCalibration *jcalib = japp->GetJCalibration(run_number);
 
    if (function == "gufld_db(r,B)") {
