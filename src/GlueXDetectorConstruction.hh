@@ -57,7 +57,7 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      G4String GetParallelWorldName(int paraIndex) const;
      G4LogicalVolume* GetParallelWorldVolume(int paraIndex) const;
 
-     G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit);
+     G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit) const;
 
      static const GlueXDetectorConstruction* GetInstance();
 

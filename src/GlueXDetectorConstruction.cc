@@ -18,6 +18,7 @@
 #include "G4GeometryManager.hh"
 #include "G4MTRunManager.hh"
 #include "G4LogicalVolumeStore.hh"
+#include "G4TransportationManager.hh"
 #include "G4MagIntegratorDriver.hh"
 #include "G4ChordFinder.hh"
 #include "G4Mag_UsualEqRhs.hh"
@@ -341,7 +342,9 @@ G4LogicalVolume*
    return fHddsBuilder.getWorldVolume(paraIndex);
 }
 
-G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit) const
+G4ThreeVector
+GlueXDetectorConstruction::GetMagneticField(G4ThreeVector pos, double unit)
+const
 {
    // Utility function for use by other simulation components,
    // returns the magnetic field at an arbitrary location in
@@ -353,7 +356,7 @@ G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit) const
    G4VPhysicalVolume *pvol;
    G4LogicalVolume *lvol;
    G4FieldManager *fieldmgr;
-   G4Field *field;
+   const G4Field *field;
    if ((tmanager = G4TransportationManager::GetTransportationManager()) &&
        (navigator = tmanager->GetNavigatorForTracking()) &&
        (pvol = navigator->LocateGlobalPointAndSetup(pos)) &&
@@ -361,8 +364,11 @@ G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit) const
        (fieldmgr = lvol->GetFieldManager()) &&
        (field = fieldmgr->GetDetectorField()) )
    {
+      double Bfield[3];
       double xglob[4] = {pos[0], pos[1], pos[2], 0};
-      return field->GetMagField(xglob, unit);
+      field->GetFieldValue(xglob, Bfield);
+      G4ThreeVector B(Bfield[0], Bfield[1], Bfield[2]);
+      return B / unit;
    }
    return G4ThreeVector();
 }
