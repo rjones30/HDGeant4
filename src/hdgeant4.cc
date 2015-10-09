@@ -77,9 +77,9 @@ int main(int argc,char** argv)
    }
    if (run_number == 0) {
       std::map<int, int> runno_opts;
-      if (opts->Find("RUNNO", runno_opts) || opts->Find("RUNG", runno_opts))
+      if (opts.Find("RUNNO", runno_opts) || opts.Find("RUNG", runno_opts))
          run_number = runno_opts[1];
-   {
+   }
    else {
       G4cerr << "Warning - "
              << "no run number specified in control.in, "
