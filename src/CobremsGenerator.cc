@@ -321,7 +321,7 @@ void CobremsGenerator::applyBeamCrystalConvolution(int nbins, double *xvalues,
       for (int i=-nbins; i <= nbins; ++i) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
-         double dalph = dx * alph / (x * (1 - x));
+         double dalph = dx * alph / (x * (1 - x) + 1e-99);
          double term;
          if (varMS / var0 > 1e-4) {
             term = dalph / varMS *
@@ -345,7 +345,7 @@ void CobremsGenerator::applyBeamCrystalConvolution(int nbins, double *xvalues,
       for (int j=0; j < nbins; ++j) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
-         double dalph = dx * alph / (x * (1 - x));
+         double dalph = dx * alph / (x * (1 - x) + 1e-99);
          double term;
          if (varMS / var0 > 1e-4) {
             term = dalph / varMS *
@@ -628,12 +628,12 @@ double CobremsGenerator::Rate_dNcdxdp(double x, double phi)
                kmin = k;
                lmin = l;
             }
-            double theta2 = (1 - x) * xmax / (x * (1 - xmax)) - 1;
+            double theta2 = (1 - x) * xmax / (x * (1 - xmax) + 1e-99) - 1;
             double betaFF2 = pow(fTargetCrystal.betaFF, 2);
             double FF = 1 / (1 + q2 * betaFF2);
             sum += sigma0 * qT2 * S2 * pow(FF * betaFF2, 2) *
                    exp(-q2 * fTargetCrystal.Debye_Waller_const) *
-                   ((1 - x) / pow(x * (1 + theta2), 2)) *
+                   ((1 - x) / pow(x * (1 + theta2) + 1e-99, 2)) *
                    ((1 + pow(1 - x, 2)) - 8 * (theta2 / pow(1 + theta2, 2) * 
                                               (1 - x) * pow(cos(phi), 2))) *
                    ((fCollimatedFlag)? Acceptance(theta2) : 1) *
@@ -738,7 +738,7 @@ double CobremsGenerator::Rate_dNidxdt2(double x, double theta2)
    double betaFF = fTargetCrystal.betaFF;
    double a = fTargetCrystal.lattice_constant;
    double zeta = log(1440 * pow(Z, -2/3.)) / log(183 * pow(Z, -1/3.));
-   double MSchiff = 1 / (pow((me * x) / (2 * fBeamEnergy * (1 - x)), 2) +
+   double MSchiff = 1 / (pow((me * x) / (2*fBeamEnergy * (1 - x) + 1e-99), 2) +
                          1 / pow(betaFF * me * (1 + theta2), 2));
    double dNidxdt2 = 2 * fTargetCrystal.nsites * fTargetThickness * Z *
                      (Z + zeta) * pow(alpha, 3) * pow(hbarc/(a*me), 2) / (a*x) *
@@ -786,7 +786,7 @@ double CobremsGenerator::Polarization(double x, double theta2)
    // The argument theta2 is the production polar angle theta^2 expressed
    // in units of (me/fBeamEnergy)^2.
 
-   return 2 * (1 - x) / (pow(1 + theta2, 2) * (pow(1 - x, 2) + 1) - 
+   return 2 * (1 - x) / (pow(1 + theta2, 2) * (pow(1 - x + 1e-99, 2) + 1) - 
                          4 * theta2 * (1 - x));
 }
 
