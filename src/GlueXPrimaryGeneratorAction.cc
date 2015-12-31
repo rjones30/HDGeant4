@@ -27,12 +27,16 @@ typedef GlueXPrimaryGeneratorAction::ImportanceSampler ImportanceSampler;
 int GlueXPrimaryGeneratorAction::instanceCount = 0;
 source_type_t GlueXPrimaryGeneratorAction::fSourceType = SOURCE_TYPE_NONE;
 
-std::ifstream *GlueXPrimaryGeneratorAction::fHDDMinfile;
-hddm_s::istream *GlueXPrimaryGeneratorAction::fHDDMistream;
-CobremsGenerator *GlueXPrimaryGeneratorAction::fCobremsGenerator;
-G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable;
-GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun;
+std::ifstream *GlueXPrimaryGeneratorAction::fHDDMinfile = 0;
+hddm_s::istream *GlueXPrimaryGeneratorAction::fHDDMistream = 0;
+CobremsGenerator *GlueXPrimaryGeneratorAction::fCobremsGenerator = 0;
+G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable = 0;
+GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun = 0;
 particle_gun_t GlueXPrimaryGeneratorAction::fGunParticle;
+
+std::ofstream *GlueXPrimaryGeneratorAction::fHDDMoutfile = 0;
+hddm_s::ostream *GlueXPrimaryGeneratorAction::fHDDMostream = 0;
+hddm_s::HDDM *GlueXPrimaryGeneratorAction::fOutputRecord = 0;
 
 double GlueXPrimaryGeneratorAction::fBeamBucketPeriod = 0;
 double GlueXPrimaryGeneratorAction::fBeamBackgroundRate = 0;
@@ -52,6 +56,8 @@ ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFy;
 double GlueXPrimaryGeneratorAction::fIncoherentPDFtheta02;
 
 G4Mutex GlueXPrimaryGeneratorAction::fMutex = G4MUTEX_INITIALIZER;
+
+static std::map<int,int> PDGtoGeant3type;
 
 //--------------------------------------------
 // GlueXPrimaryGeneratorAction (constructor)
@@ -80,9 +86,6 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       exit(-1);
    }
 
-   fHDDMinfile = 0;
-   fHDDMistream = 0;
-   fCobremsGenerator = 0;
    std::map<int,std::string> infile;
    std::map<int,double> beampars;
    std::map<int,double> kinepars;
@@ -715,6 +718,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
             }
          }
          polarization = fCobremsGenerator->Polarization(x, theta2);
+         break;
       }
    }
    else {
@@ -771,6 +775,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
 
          phi = twopi * G4UniformRand();
          polarization = 0;
+         break;
       }
    }
 
@@ -816,11 +821,11 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
 
 // Convert particle types from Geant3 types to PDG scheme
 
-int GlueXPrimaryGeneratorAction::ConvertGeant3ToPdg(int Geant3number) const
+int GlueXPrimaryGeneratorAction::ConvertGeant3ToPdg(int Geant3type)
 {
    // This method was imported from ROOT source file TDatabasePDG.cc
 
-   switch(Geant3number) {
+   switch (Geant3type) {
 
       case 1   : return 22;       // photon
       case 25  : return -2112;    // anti-neutron
@@ -874,6 +879,20 @@ int GlueXPrimaryGeneratorAction::ConvertGeant3ToPdg(int Geant3number) const
       default  : return 0;
 
    }
+}
+
+// Convert particle types from PDG scheme to Geant3 types
+
+int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
+{
+   // Invert the table contained in ConvertGeant3ToPdg
+
+   int geant3MaxType = 99;
+   if (PDGtoGeant3type.size() < geant4MaxType) {
+      for (int g3type=1; g3type <= geant3MaxType; ++g3type)
+         PDGtoGeant3type[ConvertGeant3ToPdg(g3type)] = g3type;
+   }
+   return PDGtoGeant3type[PDGtype];
 }
 
 double GlueXPrimaryGeneratorAction::getBeamBucketPeriod(int runno)
