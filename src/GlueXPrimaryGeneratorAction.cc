@@ -888,7 +888,7 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
    // Invert the table contained in ConvertGeant3ToPdg
 
    int geant3MaxType = 99;
-   if (PDGtoGeant3type.size() < geant4MaxType) {
+   if ((int)PDGtoGeant3type.size() < geant3MaxType) {
       for (int g3type=1; g3type <= geant3MaxType; ++g3type)
          PDGtoGeant3type[ConvertGeant3ToPdg(g3type)] = g3type;
    }

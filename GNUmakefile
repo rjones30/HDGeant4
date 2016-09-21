@@ -13,7 +13,7 @@ CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I/usr/include/Qt
 CPPFLAGS += -I/usr/include/python2.6
-CPPFLAGS += -Wno-unused
+CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
 CPPFLAGS += -DUSE_SSE2
 #CPPFLAGS += -I/usr/include/Qt
 #CPPFLAGS += -DLINUX_CPUTIME_PROFILING=1
@@ -42,13 +42,15 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
-           -lTRIGGER -lDAQ -lTTAB \
+           -lTRIGGER -lDAQ -lTTAB -lEVENTSTORE -lKINFITTER \
            -lxstream -lbz2 -lz \
+           -L/usr/lib64/mysql -lmysqlclient\
            -L$(JANA_HOME)/lib -lJANA \
            -L$(CCDB_HOME)/lib -lccdb \
            -L$(EVIOROOT)/lib -levioxx -levio \
-           -L$(ROOTSYS)/lib -lCore -lPhysics -lTree -lHist -lGeom 
-#           -L$(CLHEP_LIB_DIR) -lCLHEP
+           -L$(ROOTSYS)/lib -lCore -lGeom -lPhysics -lTree -lHist \
+           -lRIO -lMathCore -lMatrix \
+           -lpthread -ldl
 
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 

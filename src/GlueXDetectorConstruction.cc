@@ -232,7 +232,6 @@ void GlueXDetectorConstruction::ConstructSDandField()
 void GlueXDetectorConstruction::CloneF()
 {
    typedef std::map<G4FieldManager*,G4FieldManager*> FMtoFMmap;
-   typedef std::pair<G4FieldManager*,G4FieldManager*> FMpair;
    FMtoFMmap masterToWorker;
    G4LogicalVolumeStore* const logVolStore = G4LogicalVolumeStore::GetInstance();
    assert(logVolStore != NULL);
@@ -253,7 +252,6 @@ void GlueXDetectorConstruction::CloneF()
             G4MagInt_Driver *midriver = cfinder->GetIntegrationDriver();
             double stepMinimum = midriver->GetHmin();
             G4MagIntegratorStepper *stepper = midriver->GetStepper();
-            G4EquationOfMotion *eqn = stepper->GetEquationOfMotion();
             const G4Field *field = masterFM->GetDetectorField();
 
             G4MagneticField *field_copy;
@@ -283,15 +281,12 @@ void GlueXDetectorConstruction::CloneF()
             G4Mag_UsualEqRhs *eqn_copy = new G4Mag_UsualEqRhs(field_copy);
             G4MagIntegratorStepper *stepper_copy;
             if (dynamic_cast<const G4ExactHelixStepper*>(stepper)) {
-               G4ExactHelixStepper &orig = *(G4ExactHelixStepper*)stepper;
                stepper_copy = new G4ExactHelixStepper(eqn_copy);
             }
             else if (dynamic_cast<const G4ClassicalRK4*>(stepper)) {
-               G4ClassicalRK4 &orig = *(G4ClassicalRK4*)stepper;
                stepper_copy = new G4ClassicalRK4(eqn_copy);
             }
             else if (dynamic_cast<const G4HelixMixedStepper*>(stepper)) {
-               G4HelixMixedStepper &orig = *(G4HelixMixedStepper*)stepper;
                stepper_copy = new G4HelixMixedStepper(eqn_copy);
             }
             else {
