@@ -12,6 +12,7 @@
 #define GlueXSensitiveDetectorCDC_h 1
 
 #include "G4VSensitiveDetector.hh"
+#include "G4VPhysicalVolume.hh"
 #include "G4Threading.hh"
 #include "G4AutoLock.hh"
 
@@ -32,11 +33,10 @@ class GlueXSensitiveDetectorCDC : public G4VSensitiveDetector
    virtual ~GlueXSensitiveDetectorCDC();
   
    virtual void Initialize(G4HCofThisEvent* hitCollection);
-   virtual G4bool ProcessHits(G4Step* step, G4TouchableHistory* history);
+   virtual G4bool ProcessHits(G4Step* step, G4TouchableHistory* unused);
    virtual void EndOfEvent(G4HCofThisEvent* hitCollection);
 
-   int GetRing(G4Step *step);
-   int GetSector(G4Step *step);
+   int GetIdent(std::string div, const G4VTouchable *touch);
 
  private:
    double asic_response(double t_ns); 
@@ -48,6 +48,8 @@ class GlueXSensitiveDetectorCDC : public G4VSensitiveDetector
  private:
    GlueXHitsMapCDCstraw* fStrawsMap;
    GlueXHitsMapCDCpoint* fPointsMap;
+
+   static std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static const double ELECTRON_CHARGE;
    static double DRIFT_SPEED;
