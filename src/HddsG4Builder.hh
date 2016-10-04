@@ -66,9 +66,9 @@ class HddsG4Builder : public CodeWriter
    int createRegion(DOMElement* el,
                     Refsys& ref);        // generate code for regions
    int createVolume(DOMElement* el,
-                    Refsys& ref);  	 // generate code for placement
+                    Refsys& ref);   	 // generate code for placement
    int createDivision(XString& divStr,
-                      Refsys& ref);	 // generate code for divisions
+                      Refsys& ref); 	 // generate code for divisions
    void createSetFunctions(DOMElement* el,
                   const XString& ident); // generate code for properties
    void createGetFunctions(DOMElement* el,
@@ -80,7 +80,10 @@ class HddsG4Builder : public CodeWriter
                                          // return ptr to world volume
    int getVolumeId(G4LogicalVolume* vol) const;
                                          // reverse-find in fLogicalVolumes
-   void translate(DOMElement* topel);	 // invokes the translator
+   const std::map<int,G4LogicalVolume*> getSensitiveVolumes() const;
+                                         // read-only access to fSensitiveVolumes
+
+   void translate(DOMElement* topel);	 // invokes the main translator
 
  private:
    typedef std::pair<int,int> vpair_t;
@@ -107,6 +110,9 @@ class HddsG4Builder : public CodeWriter
    // keeps track of each named volume as it is initially placed,
    // whatever the layer; placement of reflections is not stored here
    std::map<vpair_t,G4VPhysicalVolume*> fPhysicalVolumes;
+
+   // one-to-one map from volume id to logical volume for sensitive volumes
+   std::map<int,G4LogicalVolume*> fSensitiveVolumes;
 
    // iterator arrays indexed by volume id into the above tables of
    // logical and physical volumes, about the current working state

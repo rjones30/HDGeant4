@@ -60,6 +60,7 @@ HddsG4Builder::HddsG4Builder(const HddsG4Builder &src)
    fMagneticRegions = src.fMagneticRegions;
    fLogicalVolumes = src.fLogicalVolumes;
    fPhysicalVolumes = src.fPhysicalVolumes;
+   fSensitiveVolumes = src.fSensitiveVolumes;
    fRotations = src.fRotations;
    fCurrentMother = src.fCurrentMother;
    fCurrentPlacement = src.fCurrentPlacement;
@@ -426,7 +427,7 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
    XString sensiS(el->getAttribute(X("sensitive")));
    if (sensiS == "true")
    {
-      // define G4VSensitiveDetector object here to handle hits
+      fSensitiveVolumes[ivolu] = fLogicalVolumes[newvol];
    }
 
    G4MaterialPropertiesTable *mpt = fMaterials[imate]->GetMaterialPropertiesTable();
@@ -1756,4 +1757,9 @@ int HddsG4Builder::getVolumeId(G4LogicalVolume* vol) const
           << " not found in volume lookup table, "
           << "cannot continue." << G4endl;
    exit(1);
+}
+
+const std::map<int, G4LogicalVolume*> HddsG4Builder::getSensitiveVolumes() const
+{
+   return fSensitiveVolumes;
 }
