@@ -60,3 +60,15 @@ void GlueXHitCDCpoint::Print() const
           << "   t = " << t_ns << " ns" << G4endl
           << G4endl;
 }
+
+void printallhits(GlueXHitsMapCDCpoint *hitsmap)
+{
+   std::map<int, GlueXHitCDCpoint*> *map = hitsmap->GetMap();
+   std::map<int, GlueXHitCDCpoint*>::const_iterator iter;
+   G4cout << "G4THitsMap " << hitsmap->GetName() << " with " << hitsmap->entries()
+          << " entries:" << G4endl;
+   for (iter = map->begin(); iter != map->end(); ++iter) {
+      G4cout << "  key=" << iter->first << " ";
+      iter->second->Print();
+   }
+}

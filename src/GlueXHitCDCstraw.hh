@@ -41,6 +41,8 @@ class GlueXHitCDCstraw : public G4VHit
       G4double d_cm;       // distance (cm) of closest cluster to the wire
       G4double itrack_;    // track index of first particle making this hit
       G4double ptype_G3;   // G3 type of first particle making this hit
+      G4double t0_ns;      // time of passage of the track making this hit
+      G4double z_cm;       // z coordinate of the hit in global refsys
    };
    std::vector<hitinfo_t> hits;
 
