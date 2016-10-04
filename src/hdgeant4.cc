@@ -9,6 +9,8 @@
 #include <GlueXDetectorConstruction.hh>
 #include <GlueXUserActionInitialization.hh>
 #include <GlueXPhysicsList.hh>
+#include <HddmOutput.hh>
+#include <Randomize.hh>
 
 #include <DANA/DApplication.h>
 #include <unistd.h>
@@ -87,6 +89,29 @@ int main(int argc,char** argv)
       run_number = 9000;
    }
 
+   HddmOutput *hddmOut = 0;
+   std::map<int, std::string> outfile_opts;
+   if (opts.Find("OUTFILE", outfile_opts)) {
+      hddmOut = new HddmOutput(outfile_opts[1]);
+      hddmOut->setRunNo(run_number);
+   }
+
+   G4Random::setTheEngine(new CLHEP::RanecuEngine);
+   std::map<int, int> rndm_opts;
+   if (opts.Find("RNDM", rndm_opts)) {
+      if (rndm_opts.size() > 1) {
+         long int seed[2];
+         seed[0] = rndm_opts[1];
+         seed[1] = rndm_opts[2];
+         G4Random::setTheSeeds(seed);
+      }
+      else if (rndm_opts.size() == 1) {
+         long int seed[2];
+         G4Random::getTheTableSeeds(seed, rndm_opts[1]);
+         G4Random::setTheSeeds(seed);
+      }
+   }
+
    // Declare our G4VSteppingVerbose implementation
    G4VSteppingVerbose::SetInstance(new GlueXSteppingVerbose());
 
@@ -158,5 +183,7 @@ int main(int argc,char** argv)
    // Clean up and exit
    if (visManager)
       delete visManager;
+   if (hddmOut)
+      delete hddmOut;
    return 0;
 }
