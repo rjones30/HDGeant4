@@ -14,7 +14,7 @@ CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I/usr/include/Qt
 CPPFLAGS += -I/usr/include/python2.6
 CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
-CPPFLAGS += -DUSE_SSE2
+CPPFLAGS += -DUSE_SSE2 -std=c++11
 #CPPFLAGS += -I/usr/include/Qt
 #CPPFLAGS += -DLINUX_CPUTIME_PROFILING=1
 #CPPFLAGS += -DCHECK_OVERLAPS_MM=1e-4
