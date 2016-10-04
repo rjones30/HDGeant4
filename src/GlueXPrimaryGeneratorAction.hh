@@ -54,10 +54,10 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    void GeneratePrimariesCobrems(G4Event* anEvent);
    void GenerateBeamPhoton(G4Event* anEvent, double t0);
 
-   static hddm_s::HDDM *getOutputRecord();
-
    static int ConvertGeant3ToPdg(int Geant3Type);
    static int ConvertPdgToGeant3(int PDGtype);
+   static double GetMassPDG(int PDGtype);
+   static double GetMass(int Geant3Type);
  
  private:
    static int instanceCount;
@@ -67,10 +67,6 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static CobremsGenerator *fCobremsGenerator;
    static G4ParticleTable *fParticleTable;
    static GlueXParticleGun *fParticleGun;
-
-   static std::ofstream *fHDDMoutfile;
-   static hddm_s::ostream *fHDDMostream;
-   static hddm_s::HDDM *fOutputRecord;
 
  public:
    struct single_particle_gun_t {
@@ -183,10 +179,5 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
  private:
    static G4Mutex fMutex;
 };
-
-inline hddm_s::HDDM *GlueXPrimaryGeneratorAction::getOutputRecord()
-{
-   return fOutputRecord;
-}
 
 #endif

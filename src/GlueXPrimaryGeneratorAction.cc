@@ -6,6 +6,7 @@
 
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
+#include "GlueXUserTrackInformation.hh"
 #include "GlueXUserOptions.hh"
 
 #include "G4Event.hh"
@@ -33,10 +34,6 @@ CobremsGenerator *GlueXPrimaryGeneratorAction::fCobremsGenerator = 0;
 G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable = 0;
 GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun = 0;
 particle_gun_t GlueXPrimaryGeneratorAction::fGunParticle;
-
-std::ofstream *GlueXPrimaryGeneratorAction::fHDDMoutfile = 0;
-hddm_s::ostream *GlueXPrimaryGeneratorAction::fHDDMostream = 0;
-hddm_s::HDDM *GlueXPrimaryGeneratorAction::fOutputRecord = 0;
 
 double GlueXPrimaryGeneratorAction::fBeamBucketPeriod = 0;
 double GlueXPrimaryGeneratorAction::fBeamBackgroundRate = 0;
@@ -658,10 +655,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    double thetax = thxBeam + thxMS - targetThetax - thxMosaic;
    double thetay = thyBeam + thyMS - targetThetay - thyMosaic;
    double thetaz = -targetThetaz;
-   fCobremsGenerator->resetTargetOrientation();
-   fCobremsGenerator->RotateTarget(0, pi/2, 0);    // point (1,0,0) along beam
-   fCobremsGenerator->RotateTarget(0, 0, pi/4);    // point (0,1,1) vertically
-   fCobremsGenerator->RotateTarget(thetax, thetay, thetaz);
+   fCobremsGenerator->setTargetOrientation(thetax, thetay, thetaz);
 
    // Generate with importance sampling
    double x, phi, theta2;
@@ -921,4 +915,14 @@ double GlueXPrimaryGeneratorAction::getBeamBucketPeriod(int runno)
       }
    }
    return fBeamBucketPeriod;
+}
+
+double GlueXPrimaryGeneratorAction::GetMassPDG(int PDGtype)
+{
+   return fParticleTable->FindParticle(PDGtype)->GetPDGMass();
+}
+
+double GlueXPrimaryGeneratorAction::GetMass(int Geant3Type)
+{
+   return GetMassPDG(ConvertGeant3ToPdg(fGunParticle.geantType));
 }
