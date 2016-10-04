@@ -8,6 +8,8 @@
 #include "GlueXDetectorMessenger.hh"
 #include "GlueXMagneticField.hh"
 
+#include "GlueXSensitiveDetectorCDC.hh"
+
 #include "G4Box.hh"
 #include "G4Material.hh"
 #include "G4LogicalVolume.hh"
@@ -186,8 +188,16 @@ const GlueXDetectorConstruction *GlueXDetectorConstruction::GetInstance()
 
    if (fInstance.size() > 0)
       return *fInstance.begin();
-   else
-      return 0;
+   return 0;
+}
+
+const HddsG4Builder *GlueXDetectorConstruction::GetBuilder()
+{
+   // Return a const pointer to the internal HddsG4Builder object.
+
+   if (fInstance.size() > 0)
+      return &(*fInstance.begin())->fHddsBuilder;
+   return 0;
 }
 
 void GlueXDetectorConstruction::SetUniformField(G4double field_T)
@@ -223,10 +233,40 @@ void GlueXDetectorConstruction::ConstructSDandField()
 {
    G4RunManager::RMType rmtype = G4RunManager::GetRunManager()->
                                                GetRunManagerType();
-   if (rmtype == G4RunManager::sequentialRM)
-      return;
-   else
+
+   // Magnetic field objects that were created during geometry building
+   // will need to be reconstructed here in order to be properly
+   // configured to run in multithreaded mode.
+   if (rmtype != G4RunManager::sequentialRM)
       CloneF();
+
+   G4SDManager* SDman = G4SDManager::GetSDMpointer();
+   GlueXSensitiveDetectorCDC* strawHandler = 0;
+
+   // During geometry building, certain logical volumes were marked as
+   // sensitive by adding them to a list. Now we need to go down that
+   // list and pick out an explicit sensitive volume class to handle
+   // each one. If any are missing, report error.
+   const std::map<int, G4LogicalVolume*>
+   svolMap = fHddsBuilder.getSensitiveVolumes();
+   std::map<int, G4LogicalVolume*>::const_iterator iter;
+   for (iter = svolMap.begin(); iter != svolMap.end(); ++iter) {
+      G4String volname = iter->second->GetName();
+      if (volname == "STLA" || volname == "STRA") {
+         if (strawHandler == 0) {
+            strawHandler = new GlueXSensitiveDetectorCDC("straw");
+            SDman->AddNewDetector(strawHandler);
+         }
+         iter->second->SetSensitiveDetector(strawHandler);
+      }
+      else {
+         G4cerr << "Warning from GlueXDetectorConstruction"
+                << "::ConstructSDandField - "
+                << "unsupported sensitive volume " << volname
+                << " found in geometry definition."
+                << G4endl;
+      }
+   }
 }
 
 void GlueXDetectorConstruction::CloneF()

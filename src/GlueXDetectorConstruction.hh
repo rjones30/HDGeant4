@@ -60,6 +60,7 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
      G4ThreeVector GetMagneticField(G4ThreeVector pos, double unit) const;
 
      static const GlueXDetectorConstruction* GetInstance();
+     static const HddsG4Builder* GetBuilder();
 
   private:
      G4double fMaxStep;		// maximum step size for tracking
