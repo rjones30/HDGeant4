@@ -15,6 +15,7 @@
 #include <GlueXPrimaryGeneratorAction.hh>
 #include <GlueXRunAction.hh>
 #include <GlueXEventAction.hh>
+#include <GlueXTrackingAction.hh>
 #include <GlueXSteppingAction.hh>
 #include <GlueXSteppingVerbose.hh>
 
@@ -28,6 +29,7 @@ class GlueXUserActionInitialization : public G4VUserActionInitialization
    virtual void Build() const {
       SetUserAction(new GlueXRunAction());
       SetUserAction(new GlueXEventAction());
+      SetUserAction(new GlueXTrackingAction());
       SetUserAction(new GlueXSteppingAction());
       SetUserAction(new GlueXPrimaryGeneratorAction());
    }
