@@ -67,8 +67,21 @@ below.
 
 ## Build instructions (Linux)
 
+After editing the top-level GNUmakefile to select the desired options, as
+explained above, it is time to build the executable binaries from the
+distributed source files. It is assumed that the desired flavour of the
+Geant4 libraries has been built and the appropriate set of environment
+variables have been set to point to the G4INSTALL area in the user's
+shell, and that the standard GlueX environment variables have been
+initialized.
+
+Before attempting the build, go into the src directory of the HDGeant4
+distribution and create a symlink called G4fixes pointing to the directory
+G4<.X.Y-P>fixes where X,Y,P are the version, release, and patch numbers
+of the G4 libraries to which you will be linking in your build.
+
 The general procedure for building hdgeant4 is:
- $ cd <top_level_install_dir>
+ $ cd <top_level_HDGeant4_build_dir>
  $ ...setup GlueX offline environment variable...
  $ make clean && make
  
