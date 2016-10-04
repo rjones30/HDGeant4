@@ -44,11 +44,11 @@ class CobremsGenerator {
    void setCollimatorDiameter(double diameter_m);
    void setTargetThickness(double thickness_m);
    void setTargetCrystal(std::string crystal);
-   void resetTargetOrientation();
    void setCoherentEdge(double Epeak_GeV);
    void setTargetThetax(double thetax);
    void setTargetThetay(double thetay);
    void setTargetThetaz(double thetaz);
+   void setTargetOrientation(double thetax, double thetay, double thetaz);
    void setPhotonEnergyMin(double Emin_GeV);
    void RotateTarget(double thetax, double thetay, double thetaz);
    void setCollimatedFlag(bool flag);
@@ -168,6 +168,9 @@ class CobremsGenerator {
    std::vector<double> fQ2weight;
 
  private:
+   void resetTargetOrientation();
+   void updateTargetOrientation();
+
    // description of the radiator crystal lattice, here configured for diamond
    // but may be customized to describe any regular crystal
    struct lattice_vector {
@@ -255,14 +258,26 @@ inline void CobremsGenerator::setTargetThickness(double thickness_m) {
 
 inline void CobremsGenerator::setTargetThetax(double thetax) {
    fTargetThetax = thetax;
+   updateTargetOrientation();
 }
 
 inline void CobremsGenerator::setTargetThetay(double thetay) {
    fTargetThetay = thetay;
+   updateTargetOrientation();
 }
 
 inline void CobremsGenerator::setTargetThetaz(double thetaz) {
    fTargetThetaz = thetaz;
+   updateTargetOrientation();
+}
+
+inline void CobremsGenerator::setTargetOrientation(double thetax,
+                                                   double thetay,
+                                                   double thetaz) {
+   fTargetThetax = thetay;
+   fTargetThetay = thetay;
+   fTargetThetaz = thetaz;
+   updateTargetOrientation();
 }
 
 inline void CobremsGenerator::setPhotonEnergyMin(double Emin_GeV) {

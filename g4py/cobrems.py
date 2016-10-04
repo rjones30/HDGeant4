@@ -217,6 +217,7 @@ def plotCoherent(collimated=1):
       dRcdkH1.Fill(xvals[i] * E0, yvals[i] / E0)
    dRcdkH1.SetStats(0)
    dRcdkH1.Draw("c")
+   return dRcdkH1
 
 def plotIncoherent(collimated=1):
    """
@@ -249,6 +250,7 @@ def plotIncoherent(collimated=1):
       dRidkH1.Fill(xvals[i] * E0, yvals[i] / E0)
    dRidkH1.SetStats(0)
    dRidkH1.Draw("c")
+   return dRidkH1
 
 def plotTotal(collimated=1):
    """
@@ -281,6 +283,7 @@ def plotTotal(collimated=1):
       dRtdkH1.Fill(xvals[i] * E0, yvals[i] / E0)
    dRtdkH1.SetStats(0)
    dRtdkH1.Draw("c")
+   return dRtdkH1
 
 def plotPolarization(collimated=1):
    """
@@ -316,6 +319,7 @@ def plotPolarization(collimated=1):
       polarH1.Fill(xvals[i] * E0, ypols[i] / yvals[i])
    polarH1.SetStats(0)
    polarH1.Draw("c")
+   return polarH1
 
 def acceptance(vars):
    return generator.Acceptance(vars[0] ** 2)
@@ -331,3 +335,75 @@ def dRcdx(vars):
 
 def dRidx(vars):
    return generator.Rate_dNidx(vars[0]) * cur / 1.6e-13
+
+def plotTotal_rc(rchist, collimated=1):
+   """
+   Plot the total coherent+incoherent spectrum, either pre-collimator
+   (collimated=0) or post-collimator (collimated=1) as a TH1D object,
+   using a measured rocking curve in the place of an assumed Gaussian.
+   """
+
+   saved_thetax = generator.getTargetThetax()
+   global dRtdkRC
+   dRtdkRC = 0
+   nsteps = rchist.GetNbinsX()
+   threshold = 0.02 * rchist.GetMaximum()
+   mean_tilt = rchist.GetMean()
+   mean_thetax = generator.getTargetThetax()
+   sum_intens = 0
+   for step in range(1, nsteps + 1):
+      intens = rchist.GetBinContent(step)
+      if intens < threshold:
+         continue
+      tilt = rchist.GetXaxis().GetBinCenter(step) - mean_tilt
+      generator.setTargetThetax(mean_thetax + tilt * 1e-6)
+      dRtdkH1 = plotTotal(collimated)      
+      if not dRtdkRC:
+         dRtdkRC = dRtdkH1.Clone("dRtdkRC")
+         dRtdkRC.Scale(0)
+      dRtdkRC.Add(dRtdkH1, intens)
+      sum_intens += intens
+      dRtdkRC.Draw("c")
+      dRtdkH1.Delete()
+      c1.Update()
+   generator.setTargetThetax(saved_thetax)
+   dRtdkRC.Scale(1 / sum_intens)
+   dRtdkRC.SetStats(0)
+   dRtdkRC.Draw("c")
+   return dRtdkRC
+
+def plotPolarization_rc(rchist, collimated=1):
+   """
+   Plot the linear polarization spectrum, either pre-collimator
+   (collimated=0) or post-collimator (collimated=1) as a TH1D object,
+   using a measured rocking curve in the place of an assumed Gaussian.
+   """
+
+   saved_thetax = generator.getTargetThetax()
+   global polarRC
+   polarRC = 0
+   nsteps = rchist.GetNbinsX()
+   threshold = 0.02 * rchist.GetMaximum()
+   mean_tilt = rchist.GetMean()
+   mean_thetax = generator.getTargetThetax()
+   sum_intens = 0
+   for step in range(1, nsteps + 1):
+      intens = rchist.GetBinContent(step)
+      if intens < threshold:
+         continue
+      tilt = rchist.GetXaxis().GetBinCenter(step) - mean_tilt
+      generator.setTargetThetax(mean_thetax + tilt * 1e-6)
+      polarH1 = plotPolarization(collimated)      
+      if not polarRC:
+         polarRC = polarH1.Clone("polarRC")
+         polarRC.Scale(0)
+      polarRC.Add(polarH1, intens)
+      sum_intens += intens
+      polarRC.Draw("c")
+      polarH1.Delete()
+      c1.Update()
+   generator.setTargetThetax(saved_thetax)
+   polarRC.Scale(1 / sum_intens)
+   polarRC.SetStats(0)
+   polarRC.Draw("c")
+   return polarRC

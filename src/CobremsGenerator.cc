@@ -89,6 +89,16 @@ CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
 #endif
 }
 
+void CobremsGenerator::updateTargetOrientation()
+{
+   resetTargetOrientation();
+   RotateTarget(0, dpi/2, 0);      // point (1,0,0) along beam
+   RotateTarget(0, 0, dpi/4);      // point (0,1,1) vertically
+   RotateTarget(-fTargetThetax, 0, 0);
+   RotateTarget(0, -fTargetThetay, 0);
+   RotateTarget(0, 0, -fTargetThetaz);
+}
+
 void CobremsGenerator::setTargetCrystal(std::string crystal)
 {
    // declare the radiator target crystal type by name
@@ -418,12 +428,7 @@ void CobremsGenerator::setCoherentEdge(double Epeak_GeV)
    qtotal *= sqrt(hkl.x * hkl.x + hkl.y * hkl.y + hkl.z * hkl.z);
    double qlong = edge * me*me / (2 * fBeamEnergy * (fBeamEnergy - edge));
    fTargetThetax = -qlong / qtotal;
-   resetTargetOrientation();
-   RotateTarget(0, dpi/2, 0);      // point (1,0,0) along beam
-   RotateTarget(0, 0, dpi/4);      // point (0,1,1) vertically
-   RotateTarget(-fTargetThetax, 0, 0);
-   RotateTarget(0, -fTargetThetay, 0);
-   RotateTarget(0, 0, -fTargetThetaz);
+   updateTargetOrientation();
 }
 
 CobremsGenerator::CobremsGenerator(const CobremsGenerator &src)
@@ -1061,11 +1066,11 @@ BOOST_PYTHON_MODULE(libcobrems)
       .def("setCollimatorDiameter", &CobremsGenerator::setCollimatorDiameter)
       .def("setTargetThickness", &CobremsGenerator::setTargetThickness)
       .def("setTargetCrystal", &CobremsGenerator::setTargetCrystal)
-      .def("resetTargetOrientation", &CobremsGenerator::resetTargetOrientation)
       .def("setCoherentEdge", &CobremsGenerator::setCoherentEdge)
       .def("setTargetThetax", &CobremsGenerator::setTargetThetax)
       .def("setTargetThetay", &CobremsGenerator::setTargetThetay)
       .def("setTargetThetaz", &CobremsGenerator::setTargetThetaz)
+      .def("setTargetOrientation", &CobremsGenerator::setTargetOrientation)
       .def("RotateTarget", &CobremsGenerator::RotateTarget)
       .def("getBeamEnergy", &CobremsGenerator::getBeamEnergy)
       .def("getBeamErms", &CobremsGenerator::getBeamErms)
