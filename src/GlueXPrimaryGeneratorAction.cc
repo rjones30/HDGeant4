@@ -204,9 +204,9 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       if (kinepars[1] > 100) {
          fGunParticle.theta = kinepars[3] * degree;
          fGunParticle.phi = kinepars[4] * degree;
-         fGunParticle.deltaMom = kinepars[5];
-         fGunParticle.deltaTheta = kinepars[6];
-         fGunParticle.deltaPhi = kinepars[7];
+         fGunParticle.deltaMom = kinepars[5] * GeV;
+         fGunParticle.deltaTheta = kinepars[6] * degree;
+         fGunParticle.deltaPhi = kinepars[7] * degree;
       }
       else {
          fGunParticle.deltaMom = 0;
