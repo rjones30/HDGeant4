@@ -52,20 +52,16 @@ int main(int argc,char** argv)
    // Interpret special command-line arguments
    int use_visualization = 0;
    int worker_threads = 1;
-   int argi=1;
    int c;
    while ((c = getopt(argc, argv, "vt:r:")) != -1) {
       if (c == 'v') {
          use_visualization = 1;
-         argi += 1;
       }
       else if (c == 't') {
          worker_threads = atoi(optarg);
-         argi += 2;
       }
       else if (c == 'r') {
          run_number = atoi(optarg);
-         argi += 2;
       }
       else {
          usage();
@@ -159,9 +155,9 @@ int main(int argc,char** argv)
 
    // Start the user interface
    G4UImanager * UImanager = G4UImanager::GetUIpointer();  
-   if (argc > argi) {   // batch mode  
+   if (argc > optind) {   // batch mode  
       G4String command = "/control/execute ";
-      G4String fileName = argv[argi];
+      G4String fileName = argv[optind];
       UImanager->ApplyCommand(command + fileName);
    }
    else if (visManager) {    // interactive mode with visualization
