@@ -1,10 +1,13 @@
-0.1    First (alpha) release of the package, includes complete beam line
-       and detector geometry, magnetic fields, and the built-in particle
-       gun event generator.
+0.1   - February 25, 2016
+      First (alpha) release of the package, includes complete beam line
+      and detector geometry, magnetic fields, and the built-in particle
+      gun event generator.
 
-0.2    Output to the hddm file specified in the OUTFILE line in control.in
-       is now supported. The output hddm file contains a <reaction> tag with
-       a full specification of the primary particles that were launched at
-       the beginning of the simulation for each event.
+0.2   - September 5, 2016
+      Output to the hddm file specified in the OUTFILE line in control.in
+      is now supported. The output hddm file contains a <reaction> tag with
+      a full specification of the primary particles that were launched at
+      the beginning of the simulation for each event.
 
-0.3    Hits in the CDC are now being written to the output hddm file.
+0.3   - October 1, 2016
+      Hits in the CDC are now being written to the output hddm file.
