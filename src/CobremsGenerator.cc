@@ -817,11 +817,13 @@ double CobremsGenerator::Acceptance(double theta2, double phi,
 double CobremsGenerator::Acceptance(double theta2)
 {
    // Returns the acceptance of the collimator for photons emitted at
-   // polar angle theta and azimuthal angle phi at the radiator. Both
-   // beam emittance and multiple-scattering in the target contribute
-   // to smearing of the angular acceptance at the the collimator edge.
-   // The argument theta2 is the production polar angle theta^2
-   // expressed in units of (me/fBeamEnergy)^2.
+   // polar angle theta at the radiator, under the assumption that the
+   // collimator axis is perfectly aligned with the incident electron
+   // beam axis back at the radiator. Both beam emittance and 
+   // multiple-scattering in the target contribute to smearing of the
+   // angular acceptance at the the collimator edge. The argument theta2
+   // is the production polar angle theta^2 expressed in units of 
+   // (me/fBeamEnergy)^2.
 
    double acceptance = 0;
    double niter = 50;
