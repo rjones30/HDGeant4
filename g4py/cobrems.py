@@ -42,6 +42,10 @@ eElim1 = 11.7
 generator = CobremsGenerator(E0, Epeak)
 
 def usage():
+   """
+   Print a brief summary of the internal configuration variables
+   that regulate the behavior of the CobremsGenerator and exit.
+   """
    print """
    Usage: cobrems.init(key=value, ...)
      where key should be one of the following, [defaults in backets]:
@@ -322,18 +326,48 @@ def plotPolarization(collimated=1):
    return polarH1
 
 def acceptance(vars):
+   """
+   TF1 user function that can be used to plot the collimator acceptance
+   for photons emitted at lab polar angle vars[0] relative to the incident
+   electron beam direction at the radiator. Both beam emittance and
+   multiple-scattering in the target contribute to smearing of the angular
+   acceptance at the the collimator edge. The scattering angle is contained
+   in list argument vars[0], expressed in units of (me/fBeamEnergy).
+   """
    return generator.Acceptance(vars[0] ** 2)
 
 def polarization(vars):
-   return generator.Polarization(vars[0])
+   """
+   TF1 user function that can be used to plot the linear polarization of
+   the photon beam at energy k = vars[0] * fBeamEnergy, and production angle
+   vars[1] expressed in units of (me/fBeamEnergy).
+   """
+   return generator.Polarization(vars[0], vars[1] ** 2)
 
 def dRtdx(vars):
+   """
+   TF1 user function that can be used to plot the total beam flux spectrum
+   of the collimated coherent bremsstrahlung photon beam at photon energy
+   k = vars[0] * fBeamEnergy, in units of (/GeV/s).
+   """
    return generator.Rate_dNtdx(vars[0]) * cur / 1.6e-13
 
 def dRcdx(vars):
+   """
+   TF1 user function that can be used to plot the beam flux spectrum
+   (coherent component only) of the collimated coherent bremsstrahlung
+   photon beam at photon energy k = vars[0] * fBeamEnergy, in units
+   of (/GeV/s).
+   """
    return generator.Rate_dNcdx(vars[0]) * cur / 1.6e-13
 
 def dRidx(vars):
+   """
+   TF1 user function that can be used to plot the beam flux spectrum
+   (incoherent component only) of the collimated coherent bremsstrahlung
+   photon beam at photon energy k = vars[0] * fBeamEnergy, in units
+   of (/GeV/s).
+   """
    return generator.Rate_dNidx(vars[0]) * cur / 1.6e-13
 
 def plotTotal_rc(rchist, collimated=1):

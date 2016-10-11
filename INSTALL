@@ -77,7 +77,7 @@ initialized.
 
 Before attempting the build, go into the src directory of the HDGeant4
 distribution and create a symlink called G4fixes pointing to the directory
-G4<.X.Y-P>fixes where X,Y,P are the version, release, and patch numbers
+G4<.X.Y.P>fixes where X,Y,P are the version, release, and patch numbers
 of the G4 libraries to which you will be linking in your build.
 
 The general procedure for building hdgeant4 is:

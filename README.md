@@ -46,16 +46,37 @@ See VERSIONS file in the project directory.
 
 ## Usage synopsis
 
+Usage: hdgeant4 [options] [<batch.mac>]
+ where options include:
+    -v : open a graphics window for visualization
+    -tN : start N worker threads, default 1
+    -rN : set run to N, default taken from control.in
+
 ## Dependencies
+
+See https://halldweb.jlab.org/wiki/index.php/HOWTO_install_and_run_HDGeant4
+for detailed information regarding external package dependencies.
 
 ## Building instructions
 
+See INSTALL file in the project directory, or for more detailed building
+instructions, 
+see https://halldweb.jlab.org/wiki/index.php/HOWTO_install_and_run_HDGeant4
+on the gluex wiki.
+
 ## Documentation
+
+See https://halldweb.jlab.org/wiki/index.php/HOWTO_install_and_run_HDGeant4
+on the gluex wiki.
 
 ## Troubleshooting
 
+See https://halldweb.jlab.org/wiki/index.php/HOWTO_install_and_run_HDGeant4
+section on visualization, found on the gluex wiki.
 ## Bugs
 
 ## How to contribute
 
 ## Contact the authors
+
+Write to richard.t.jones at uconn.edu, or to davidl at jlab.org.
