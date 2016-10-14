@@ -28,7 +28,7 @@ emit = 2.5e-9
 dist = 76
 coldiam = 0.0034
 radt = 20e-6
-nbins = 200
+nbins = 1000
 Emin = 0
 Emax = E0
 pElim0 = 8.4
@@ -139,8 +139,8 @@ def init(**kwargs):
          return
 
    generator.printBeamlineInfo()
-   generator.setCollimatedFlag(true)
-   generator.setPolarizedFlag(false)
+   generator.setCollimatedFlag(True)
+   generator.setPolarizedFlag(False)
 
    # plot the acceptance curve
    global acceptF1
@@ -174,7 +174,7 @@ def init(**kwargs):
    for i in range(0, nbins):
       dRtdkH1.Fill(xvals[i] * E0, yvals[i] / E0)
    dRtdkH1.SetStats(0)
-   dRtdkH1.Draw("c")
+   dRtdkH1.Draw("hist")
 
    # print the rates in the three integration windows
    persec = (Emax - Emin) * 1./nbins
@@ -204,7 +204,7 @@ def plotCoherent(collimated=1):
    yvals = array('d', nbins * [0])
    colFlag = generator.getCollimatedFlag()
    generator.setCollimatedFlag(collimated)
-   generator.setPolarizedFlag(false)
+   generator.setPolarizedFlag(False)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
       yvals[i] = dRcdx([xvals[i]])
@@ -214,13 +214,15 @@ def plotCoherent(collimated=1):
    # convert the result to a spectrum vs photon energy
    global dRcdkH1
    dRcdkH1 = 0
-   title = "\\mbox{coherent photon beam spectrum vs }E_\\gamma" + \
-           "\\mbox{ (/GeV/s)}"
+   title = "collimated photon beam spectrum, coherent part only"
    dRcdkH1 = TH1D("dRcdkH1", title, nbins, Emin, Emax)
    for i in range(0, nbins):
       dRcdkH1.Fill(xvals[i] * E0, yvals[i] / E0)
+   dRcdkH1.GetXaxis().SetTitle("E_{#gamma} (GeV)")
+   dRcdkH1.GetYaxis().SetTitle("rate (counts/GeV/s)")
+   dRcdkH1.GetYaxis().SetTitleOffset(1.5)
    dRcdkH1.SetStats(0)
-   dRcdkH1.Draw("c")
+   dRcdkH1.Draw("hist")
    return dRcdkH1
 
 def plotIncoherent(collimated=1):
@@ -236,7 +238,7 @@ def plotIncoherent(collimated=1):
    yvals = array('d', nbins * [0])
    colFlag = generator.getCollimatedFlag()
    generator.setCollimatedFlag(collimated)
-   generator.setPolarizedFlag(false)
+   generator.setPolarizedFlag(False)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
       yvals[i] = dRidx([xvals[i]])
@@ -246,14 +248,16 @@ def plotIncoherent(collimated=1):
    # convert the result to a spectrum vs photon energy
    global dRidkH1
    dRidkH1 = 0
-   title = "\\mbox{incoherent photon beam spectrum vs }E_\\gamma" + \
-           "\\mbox{ (/GeV/s)}"
+   title = "collimated photon beam spectrum, incoherent part only"
    dRidkH1 = TH1D("dRidkH1", title, nbins, Emin, Emax)
    dRidkH1.GetXaxis().SetRangeUser(Emin + (Emax - Emin)/10., Emax)
    for i in range(0, nbins):
       dRidkH1.Fill(xvals[i] * E0, yvals[i] / E0)
+   dRidkH1.GetXaxis().SetTitle("E_{#gamma} (GeV)")
+   dRidkH1.GetYaxis().SetTitle("rate (counts/GeV/s)")
+   dRidkH1.GetYaxis().SetTitleOffset(1.5)
    dRidkH1.SetStats(0)
-   dRidkH1.Draw("c")
+   dRidkH1.Draw("hist")
    return dRidkH1
 
 def plotTotal(collimated=1):
@@ -269,7 +273,7 @@ def plotTotal(collimated=1):
    yvals = array('d', nbins * [0])
    colFlag = generator.getCollimatedFlag()
    generator.setCollimatedFlag(collimated)
-   generator.setPolarizedFlag(false)
+   generator.setPolarizedFlag(False)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
       yvals[i] = dRtdx([xvals[i]])
@@ -279,14 +283,16 @@ def plotTotal(collimated=1):
    # convert the result to a spectrum vs photon energy
    global dRtdkH1
    dRtdkH1 = 0
-   title = "\\mbox{total photon beam spectrum vs }E_\\gamma" + \
-           "\\mbox{ (/GeV/s)}"
+   title = "collimated photon beam spectrum"
    dRtdkH1 = TH1D("dRtdkH1", title, nbins, Emin, Emax)
    dRtdkH1.GetXaxis().SetRangeUser(Emin + (Emax - Emin)/10., Emax)
    for i in range(0, nbins):
       dRtdkH1.Fill(xvals[i] * E0, yvals[i] / E0)
+   dRtdkH1.GetXaxis().SetTitle("E_{#gamma} (GeV)")
+   dRtdkH1.GetYaxis().SetTitle("rate (counts/GeV/s)")
+   dRtdkH1.GetYaxis().SetTitleOffset(1.5)
    dRtdkH1.SetStats(0)
-   dRtdkH1.Draw("c")
+   dRtdkH1.Draw("hist")
    return dRtdkH1
 
 def plotPolarization(collimated=1):
@@ -305,9 +311,9 @@ def plotPolarization(collimated=1):
    generator.setCollimatedFlag(collimated)
    for i in range(0, nbins):
       xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
-      generator.setPolarizedFlag(true)
+      generator.setPolarizedFlag(True)
       ypols[i] = dRcdx([xvals[i]])
-      generator.setPolarizedFlag(false)
+      generator.setPolarizedFlag(False)
       yvals[i] = dRtdx([xvals[i]])
    generator.setCollimatedFlag(colFlag)
    generator.applyBeamCrystalConvolution(nbins, xvals, yvals)
@@ -316,13 +322,15 @@ def plotPolarization(collimated=1):
    # convert the result to a spectrum vs photon energy
    global polarH1
    polarH1 = 0
-   title = "\\mbox{photon beam polarization vs }E_\\gamma" + \
-           "\\mbox{ (/GeV/s)}"
+   title = "collimated photon beam polarization"
    polarH1 = TH1D("polarH1", title, nbins, Emin, Emax)
    for i in range(0, nbins):
       polarH1.Fill(xvals[i] * E0, ypols[i] / yvals[i])
+   polarH1.GetXaxis().SetTitle("E_{#gamma} (GeV)")
+   polarH1.GetYaxis().SetTitle("linear polarization")
+   polarH1.GetYaxis().SetTitleOffset(1.5)
    polarH1.SetStats(0)
-   polarH1.Draw("c")
+   polarH1.Draw("hist")
    return polarH1
 
 def acceptance(vars):
@@ -397,13 +405,13 @@ def plotTotal_rc(rchist, collimated=1):
          dRtdkRC.Scale(0)
       dRtdkRC.Add(dRtdkH1, intens)
       sum_intens += intens
-      dRtdkRC.Draw("c")
+      dRtdkRC.Draw("hist")
       dRtdkH1.Delete()
       c1.Update()
    generator.setTargetThetax(saved_thetax)
    dRtdkRC.Scale(1 / sum_intens)
    dRtdkRC.SetStats(0)
-   dRtdkRC.Draw("c")
+   dRtdkRC.Draw("hist")
    return dRtdkRC
 
 def plotPolarization_rc(rchist, collimated=1):
@@ -433,11 +441,11 @@ def plotPolarization_rc(rchist, collimated=1):
          polarRC.Scale(0)
       polarRC.Add(polarH1, intens)
       sum_intens += intens
-      polarRC.Draw("c")
+      polarRC.Draw("hist")
       polarH1.Delete()
       c1.Update()
    generator.setTargetThetax(saved_thetax)
    polarRC.Scale(1 / sum_intens)
    polarRC.SetStats(0)
-   polarRC.Draw("c")
+   polarRC.Draw("hist")
    return polarRC
