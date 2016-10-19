@@ -23,7 +23,7 @@ CPPFLAGS += -DLAYERED_GEOMETRY_PICKING_EXTENSIONS
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
-CPPFLAGS += -DG4MULTITHREADED
+#CPPFLAGS += -DG4MULTITHREADED
 #CPPFLAGS += -DFORCE_PARTICLE_TYPE_CHARGED_GEANTINO
 #CPPFLAGS += -DBP_DEBUG
 #CPPFLAGS += -DMOD_SPONCE
@@ -38,6 +38,8 @@ CPPVERBOSE = 1
 G4fixes_sources := $(wildcard src/G4fixes/*.cc)
 HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
 
+ROOTLIBS = $(shell root-config --libs) -lGeom
+
 DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
@@ -48,8 +50,7 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -L$(JANA_HOME)/lib -lJANA \
            -L$(CCDB_HOME)/lib -lccdb \
            -L$(EVIOROOT)/lib -levioxx -levio \
-           -L$(ROOTSYS)/lib -lCore -lGeom -lPhysics -lTree -lHist \
-           -lRIO -lMathCore -lMatrix \
+           $(ROOTLIBS) \
            -lpthread -ldl
 
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
