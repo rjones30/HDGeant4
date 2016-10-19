@@ -75,13 +75,13 @@ void GlueXHitCDCstraw::Print() const
           << "   sector = " << sector_ << G4endl;
    std::vector<hitinfo_t>::const_iterator hiter;
    for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {
-      G4cout << "   q = " << hiter->q_fC << " fC"
-             << "   t = " << hiter->t_ns << " ns"
-             << "   d = " << hiter->d_cm << " cm"
-             << "   itrack = " << hiter->itrack_
-             << "   ptype = " << hiter->ptype_G3
-             << "   t0 = " << hiter->t0_ns << " ns"
-             << "   z = " << hiter->z_cm << " cm"
+      G4cout << "   q = " << hiter->q_fC << " fC" << G4endl
+             << "   t = " << hiter->t_ns << " ns" << G4endl
+             << "   d = " << hiter->d_cm << " cm" << G4endl
+             << "   itrack = " << hiter->itrack_ << G4endl
+             << "   ptype = " << hiter->ptype_G3 << G4endl
+             << "   t0 = " << hiter->t0_ns << " ns" << G4endl
+             << "   z = " << hiter->z_cm << " cm" << G4endl
              << G4endl;
    }
 }
