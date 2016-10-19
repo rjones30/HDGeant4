@@ -20,7 +20,7 @@
 class GlueXHitFDCpoint : public G4VHit
 {
  public:
-   GlueXHitFDCpoint() {}
+   GlueXHitFDCpoint(int chamber);
    int operator==(const GlueXHitFDCpoint &right) const;
    GlueXHitFDCpoint &operator+=(const GlueXHitFDCpoint &right);
 
@@ -29,6 +29,8 @@ class GlueXHitFDCpoint : public G4VHit
 
    void Draw() const;
    void Print() const;
+
+   G4int chamber_;        // FDC chamber, count from upstream starting at 1
 
    G4double E_GeV;       // energy of primary track at point
    G4double dEdx_GeV_cm; // dE/dx (GeV/cm) of this track inside straw

@@ -9,6 +9,7 @@
 #include "GlueXMagneticField.hh"
 
 #include "GlueXSensitiveDetectorCDC.hh"
+#include "GlueXSensitiveDetectorFDC.hh"
 
 #include "G4Box.hh"
 #include "G4Material.hh"
@@ -241,7 +242,8 @@ void GlueXDetectorConstruction::ConstructSDandField()
       CloneF();
 
    G4SDManager* SDman = G4SDManager::GetSDMpointer();
-   GlueXSensitiveDetectorCDC* strawHandler = 0;
+   GlueXSensitiveDetectorCDC* cdcHandler = 0;
+   GlueXSensitiveDetectorFDC* fdcHandler = 0;
 
    // During geometry building, certain logical volumes were marked as
    // sensitive by adding them to a list. Now we need to go down that
@@ -253,11 +255,20 @@ void GlueXDetectorConstruction::ConstructSDandField()
    for (iter = svolMap.begin(); iter != svolMap.end(); ++iter) {
       G4String volname = iter->second->GetName();
       if (volname == "STLA" || volname == "STRA") {
-         if (strawHandler == 0) {
-            strawHandler = new GlueXSensitiveDetectorCDC("straw");
-            SDman->AddNewDetector(strawHandler);
+         if (cdcHandler == 0) {
+            cdcHandler = new GlueXSensitiveDetectorCDC("cdc");
+            SDman->AddNewDetector(cdcHandler);
          }
-         iter->second->SetSensitiveDetector(strawHandler);
+         iter->second->SetSensitiveDetector(cdcHandler);
+      }
+      else if (volname == "FDA1" || volname == "FDA2" ||
+               volname == "FDA3" || volname == "FDA4")
+      {
+         if (fdcHandler == 0) {
+            fdcHandler = new GlueXSensitiveDetectorFDC("fdc");
+            SDman->AddNewDetector(fdcHandler);
+         }
+         iter->second->SetSensitiveDetector(fdcHandler);
       }
       else {
          G4cerr << "Warning from GlueXDetectorConstruction"

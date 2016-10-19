@@ -36,8 +36,9 @@ class GlueXHitFDCwire : public G4VHit
    G4int wire_;               // wire number, ordered by u starting at 1
 
    struct hitinfo_t {
-      G4double dE_arb;     // pulse integral (arb. units)
+      G4double dE_keV;     // energy deposited (keV)
       G4double t_ns;       // pulse leading-edge time (ns)
+      G4double t_unsmeared_ns; // pulse leading-edge time unsmeared (ns)
       G4double d_cm;       // distance (cm) of closest cluster to the wire
       G4double itrack_;    // track index of first particle making this hit
       G4double ptype_G3;   // G3 type of first particle making this hit

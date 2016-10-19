@@ -8,6 +8,11 @@
 
 G4ThreadLocal G4Allocator<GlueXHitFDCpoint>* GlueXHitFDCpointAllocator = 0;
 
+GlueXHitFDCpoint::GlueXHitFDCpoint(G4int chamber)
+ : G4VHit(),
+   chamber_(chamber)
+{}
+
 int GlueXHitFDCpoint::operator==(const GlueXHitFDCpoint &right) const
 {
    if (E_GeV          == right.E_GeV       &&

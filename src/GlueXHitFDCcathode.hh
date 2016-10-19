@@ -41,8 +41,8 @@ class GlueXHitFDCcathode : public G4VHit
       G4double t_ns;       // pulse leading-edge time (ns)
       G4double itrack_;    // track index of first particle making this hit
       G4double ptype_G3;   // G3 type of first particle making this hit
-      G4double t0_ns;      // time of passage of the track making this hit
-      G4double wire_;      // wire number of avalanche in adjacent wire plane
+      G4double u_cm;       // location of hit wire in adjacent wire plane
+      G4double v_cm;       // location of avalanche along wire in adjacent plane
    };
    std::vector<hitinfo_t> hits;
 

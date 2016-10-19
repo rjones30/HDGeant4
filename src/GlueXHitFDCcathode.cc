@@ -30,8 +30,8 @@ int GlueXHitFDCcathode::operator==(const GlueXHitFDCcathode &right) const
       if (hits[ih].q_fC     == right.hits[ih].q_fC    &&
           hits[ih].t_ns     == right.hits[ih].t_ns    &&
           hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].t0_ns    == right.hits[ih].t0_ns   &&
-          hits[ih].wire_    == right.hits[ih].wire_   &&
+          hits[ih].u_cm     == right.hits[ih].u_cm    &&
+          hits[ih].v_cm     == right.hits[ih].v_cm    &&
           hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
       {
          return 0;
@@ -63,8 +63,8 @@ GlueXHitFDCcathode &GlueXHitFDCcathode::operator+=(const GlueXHitFDCcathode &rig
       hiter->t_ns = hitsrc->t_ns;
       hiter->itrack_ = hitsrc->itrack_;
       hiter->ptype_G3 = hitsrc->ptype_G3;
-      hiter->t0_ns = hitsrc->t0_ns;
-      hiter->wire_ = hitsrc->wire_;
+      hiter->u_cm = hitsrc->u_cm;
+      hiter->v_cm = hitsrc->v_cm;
    }
    return *this;
 }
@@ -86,8 +86,8 @@ void GlueXHitFDCcathode::Print() const
              << "   t = " << hiter->t_ns << " ns" << G4endl
              << "   itrack = " << hiter->itrack_ << G4endl
              << "   ptype = " << hiter->ptype_G3 << G4endl
-             << "   t0 = " << hiter->t0_ns << " ns" << G4endl
-             << "   wire = " << hiter->wire_ << G4endl
+             << "   u = " << hiter->u_cm << " cm" << G4endl
+             << "   v = " << hiter->v_cm << " cm" << G4endl
              << G4endl;
    }
 }

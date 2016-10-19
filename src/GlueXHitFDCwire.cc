@@ -22,7 +22,7 @@ int GlueXHitFDCwire::operator==(const GlueXHitFDCwire &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].dE_arb   == right.hits[ih].dE_arb  &&
+      if (hits[ih].dE_keV   == right.hits[ih].dE_keV  &&
           hits[ih].t_ns     == right.hits[ih].t_ns    &&
           hits[ih].d_cm     == right.hits[ih].d_cm    &&
           hits[ih].itrack_  == right.hits[ih].itrack_ &&
@@ -52,7 +52,7 @@ GlueXHitFDCwire &GlueXHitFDCwire::operator+=(const GlueXHitFDCwire &right)
             break;
       }
       hiter = hits.insert(hiter, GlueXHitFDCwire::hitinfo_t());
-      hiter->dE_arb = hitsrc->dE_arb;
+      hiter->dE_keV = hitsrc->dE_keV;
       hiter->t_ns = hitsrc->t_ns;
       hiter->d_cm = hitsrc->d_cm;
       hiter->itrack_ = hitsrc->itrack_;
@@ -75,7 +75,7 @@ void GlueXHitFDCwire::Print() const
           << "   wire = " << wire_ << G4endl;
    std::vector<hitinfo_t>::const_iterator hiter;
    for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {
-      G4cout << "  dE = " << hiter->dE_arb << G4endl
+      G4cout << "   dE = " << hiter->dE_keV << " keV" << G4endl
              << "   t = " << hiter->t_ns << " ns" << G4endl
              << "   d = " << hiter->d_cm << " cm" << G4endl
              << "   itrack = " << hiter->itrack_ << G4endl
