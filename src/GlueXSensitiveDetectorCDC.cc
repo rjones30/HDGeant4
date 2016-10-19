@@ -31,7 +31,7 @@ const double fC = 1e-15 * coulomb;
 const double GlueXSensitiveDetectorCDC::ELECTRON_CHARGE = 1.6022e-4*fC;
 
 // Drift speed 2.2cm/us is appropriate for a 90/10 Argon/Methane mixture
-double GlueXSensitiveDetectorCDC::DRIFT_SPEED = 0.0055*cm/microsecond;
+double GlueXSensitiveDetectorCDC::DRIFT_SPEED = 0.0055*cm/ns;
 
 // Minimum hit time difference for two hits on the same wire
 double GlueXSensitiveDetectorCDC::TWO_HIT_TIME_RESOL = 25*ns;
@@ -78,7 +78,7 @@ GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(const G4String& name)
  : G4VSensitiveDetector(name),
    fStrawsMap(0), fPointsMap(0)
 {
-   collectionName.insert("CDCHitsCollection");
+   collectionName.insert("CDCStrawHitsCollection");
    collectionName.insert("CDCPointsCollection");
 
    // The rest of this only needs to happen once, the first time an object
@@ -100,8 +100,8 @@ GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(const G4String& name)
       jana::JCalibration *jcalib = japp->GetJCalibration(run_number);
       std::map<string, float> cdc_parms;
       jcalib->Get("CDC/cdc_parms", cdc_parms);
-      DRIFT_SPEED = cdc_parms.at("CDC_DRIFT_SPEED");
-      TWO_HIT_TIME_RESOL = cdc_parms.at("CDC_TWO_HIT_RESOL");
+      DRIFT_SPEED = cdc_parms.at("CDC_DRIFT_SPEED")*cm/ns;
+      TWO_HIT_TIME_RESOL = cdc_parms.at("CDC_TWO_HIT_RESOL")*ns;
       MAX_HITS = cdc_parms.at("CDC_MAX_HITS");
       THRESH_KEV = cdc_parms.at("CDC_THRESH_KEV");
 
@@ -403,6 +403,8 @@ void GlueXSensitiveDetectorCDC::EndOfEvent(G4HCofThisEvent*)
          double dradius_cm = hits[0].d_cm;
          int ptype_G3 = hits[0].ptype_G3;
          int itrack = hits[0].itrack_;
+         double t0_ns = hits[0].t0_ns;
+         double z_cm = hits[0].z_cm;
 
          hits.clear();
          double q_mV_ns = 0.; 
@@ -415,6 +417,8 @@ void GlueXSensitiveDetectorCDC::EndOfEvent(G4HCofThisEvent*)
                   hits.back().ptype_G3 = ptype_G3;
                   hits.back().itrack_ = itrack;
                   hits.back().t_ns = double(i);
+                  hits.back().t0_ns = t0_ns;
+                  hits.back().z_cm = z_cm;
                   over_threshold = 1;
                }
                q_mV_ns += samples[i];
