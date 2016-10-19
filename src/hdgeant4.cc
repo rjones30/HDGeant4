@@ -47,6 +47,7 @@ int main(int argc,char** argv)
 {
    // Initialize the jana framework
    DApplication dapp(argc, argv);
+   dapp.create_event_buffer_thread = false;
    dapp.Init();
 
    // Interpret special command-line arguments
