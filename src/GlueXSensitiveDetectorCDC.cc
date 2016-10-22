@@ -208,7 +208,7 @@ G4bool GlueXSensitiveDetectorCDC::ProcessHits(G4Step* step,
    // at tout and making sure it is less than 1 second. If it's
    // not, then just use tin for "t".
 
-   if (tout > 1.0 * s)
+   if (tout > 1.0*s)
       t = tin;
 
    double drin = xinlocal.perp();
@@ -278,27 +278,39 @@ G4bool GlueXSensitiveDetectorCDC::ProcessHits(G4Step* step,
    // TODO: this section should be protected by if (history == 0)
 
    GlueXHitCDCpoint* newPoint = new GlueXHitCDCpoint();
-   G4int key = fPointsMap->entries();
-   fPointsMap->add(key, newPoint);
    G4Track *track = step->GetTrack();
-   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-   GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                          track->GetUserInformation();
-   newPoint->ptype_G3 = g3type;
-   newPoint->track_ = track->GetTrackID();
-   newPoint->trackID_ = trackinfo->GetGlueXTrackID();
-   newPoint->primary_ = (track->GetParentID() == 0);
-   newPoint->t_ns = t/ns;
-   newPoint->z_cm = x[2]/cm;
-   newPoint->r_cm = x.perp()/cm;
-   newPoint->phi_rad = x.phi();
-   newPoint->dradius_cm = dradius/cm;
-   newPoint->px_GeV = pin[0]/GeV;
-   newPoint->py_GeV = pin[1]/GeV;
-   newPoint->pz_GeV = pin[2]/GeV;
-   newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
-
+   G4int trackID = track->GetTrackID();
+   G4int key = fPointsMap->entries();
+   // Compress out multiple points from the same track in this straw
+   GlueXHitCDCpoint* oldPoint = (*fPointsMap)[key - 1];
+   if (oldPoint && oldPoint->track_ == trackID &&
+       fabs(oldPoint->t_ns - t/ns) < 0.1 &&
+       fabs(oldPoint->z_cm - x[2]/cm) < 0.1)
+   {
+      delete newPoint;
+      newPoint = 0;
+   }
+   else {
+      fPointsMap->add(key, newPoint);
+      int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+      int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
+                                             track->GetUserInformation();
+      newPoint->ptype_G3 = g3type;
+      newPoint->track_ = trackID;
+      newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+      newPoint->primary_ = (track->GetParentID() == 0);
+      newPoint->t_ns = t/ns;
+      newPoint->z_cm = x[2]/cm;
+      newPoint->r_cm = x.perp()/cm;
+      newPoint->phi_rad = x.phi();
+      newPoint->dradius_cm = dradius/cm;
+      newPoint->px_GeV = pin[0]/GeV;
+      newPoint->py_GeV = pin[1]/GeV;
+      newPoint->pz_GeV = pin[2]/GeV;
+      newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
+   }
+   
    // Post the hit to the straw hits map, ordered by straw index
 
    if (dEsum > 0) {
