@@ -43,6 +43,7 @@ class GlueXHitSTCpoint : public G4VHit
    G4double r_cm;        // global sqrt(x*x + y*y) of track at point (cm)
    G4double z_cm;        // global z coordinate of track at point (cm)
    G4double t_ns;        // time of track crossing at point (ns)
+   G4int sector_;        // azimuthal sector number of hit counter
    G4int track_;         // Geant4 track ID of particle making this track
    G4int trackID_;       // GlueX-assigned track ID of particle making this track
 

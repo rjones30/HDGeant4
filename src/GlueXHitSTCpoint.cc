@@ -21,6 +21,7 @@ int GlueXHitSTCpoint::operator==(const GlueXHitSTCpoint &right) const
        r_cm           == right.r_cm        &&
        z_cm           == right.z_cm        &&
        t_ns           == right.t_ns        &&
+       sector_        == right.sector_     &&
        track_         == right.track_      &&
        trackID_       == right.trackID_    )
    {
@@ -45,6 +46,7 @@ void GlueXHitSTCpoint::Draw() const
 void GlueXHitSTCpoint::Print() const
 {
    G4cout << "GlueXHitSTCpoint:" << G4endl
+          << "   sector = " << G4endl
           << "   track = " << track_ << G4endl
           << "   trackID = " << trackID_ << G4endl
           << "   E = " << E_GeV << " GeV" << G4endl
