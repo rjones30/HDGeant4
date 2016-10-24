@@ -54,8 +54,6 @@ double GlueXPrimaryGeneratorAction::fIncoherentPDFtheta02;
 
 G4Mutex GlueXPrimaryGeneratorAction::fMutex = G4MUTEX_INITIALIZER;
 
-static std::map<int,int> PDGtoGeant3type;
-
 //--------------------------------------------
 // GlueXPrimaryGeneratorAction (constructor)
 //--------------------------------------------
@@ -820,59 +818,64 @@ int GlueXPrimaryGeneratorAction::ConvertGeant3ToPdg(int Geant3type)
    // This method was imported from ROOT source file TDatabasePDG.cc
 
    switch (Geant3type) {
-
       case 1   : return 22;       // photon
-      case 25  : return -2112;    // anti-neutron
       case 2   : return -11;      // e+
-      case 26  : return -3122;    // anti-Lambda
       case 3   : return 11;       // e-
-      case 27  : return -3222;    // Sigma-
       case 4   : return 12;       // e-neutrino (NB: flavour undefined by Geant)
-      case 28  : return -3212;    // Sigma0
       case 5   : return -13;      // mu+
-      case 29  : return -3112;    // Sigma+ (PB)*/
       case 6   : return 13;       // mu-
-      case 30  : return -3322;    // Xi0
       case 7   : return 111;      // pi0
-      case 31  : return -3312;    // Xi+
       case 8   : return 211;      // pi+
-      case 32  : return -3334;    // Omega+ (PB)
       case 9   : return -211;     // pi-
-      case 33  : return -15;      // tau+
       case 10  : return 130;      // K long
-      case 34  : return 15;       // tau-
       case 11  : return 321;      // K+
-      case 35  : return 411;      // D+
       case 12  : return -321;     // K-
-      case 36  : return -411;     // D-
       case 13  : return 2112;     // n
-      case 37  : return 421;      // D0
       case 14  : return 2212;     // p
-      case 38  : return -421;     // D0
       case 15  : return -2212;    // anti-proton
-      case 39  : return 431;      // Ds+
       case 16  : return 310;      // K short
-      case 40  : return -431;     // anti Ds-
       case 17  : return 221;      // eta
-      case 41  : return 4122;     // Lamba_c+
       case 18  : return 3122;     // Lambda
-      case 42  : return 24;       // W+
       case 19  : return 3222;     // Sigma+
-      case 43  : return -24;      // W-
       case 20  : return 3212;     // Sigma0
-      case 44  : return 23;       // Z
       case 21  : return 3112;     // Sigma-
-      case 45  : return 0;        // deuteron
       case 22  : return 3322;     // Xi0
-      case 46  : return 0;        // triton
       case 23  : return 3312;     // Xi-
-      case 47  : return 0;        // alpha
       case 24  : return 3334;     // Omega- (PB)
-      case 48  : return 0;        // G nu ? PDG ID 0 is undefined
+      case 25  : return -2112;    // anti-neutron
+      case 26  : return -3122;    // anti-Lambda
+      case 27  : return -3222;    // Sigma-
+      case 28  : return -3212;    // Sigma0
+      case 29  : return -3112;    // Sigma+ (PB)*/
+      case 30  : return -3322;    // Xi0
+      case 31  : return -3312;    // Xi+
+      case 32  : return -3334;    // Omega+ (PB)
+      case 33  : return -15;      // tau+
+      case 34  : return 15;       // tau-
+      case 35  : return 411;      // D+
+      case 36  : return -411;     // D-
+      case 37  : return 421;      // D0
+      case 38  : return -421;     // D0
+      case 39  : return 431;      // Ds+
+      case 40  : return -431;     // anti Ds-
+      case 41  : return 4122;     // Lamba_c+
+      case 42  : return 24;       // W+
+      case 43  : return -24;      // W-
+      case 44  : return 23;       // Z
+      case 45  : return 1000010020; // deuteron
+      case 46  : return 1000010030; // triton
+      case 47  : return 1000020040; // alpha
+      case 48  : return 0;        // geantino (no PDG type)
+      case 49  : return 1000020030; // He3 ion
+      case 50  : return 0;        // Cerenkov photon (no PDG type)
 
-      default  : return 0;
-
+      default  :
+         G4cout << "Warning in GlueXPrimaryGeneratorAction::"
+                   "ConvertGeant3ToPdg - lookup performed on unknown"
+                   " Geant3 particle type " << Geant3type << ","
+                   " returning 0 for the PDG particle code." << G4endl;
    }
+   return 0;
 }
 
 // Convert particle types from PDG scheme to Geant3 types
@@ -881,12 +884,63 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
 {
    // Invert the table contained in ConvertGeant3ToPdg
 
-   int geant3MaxType = 99;
-   if ((int)PDGtoGeant3type.size() < geant3MaxType) {
-      for (int g3type=1; g3type <= geant3MaxType; ++g3type)
-         PDGtoGeant3type[ConvertGeant3ToPdg(g3type)] = g3type;
+   switch (PDGtype) {
+      case         22 : return 1;     // photon
+      case        -11 : return 2;     // e+
+      case         11 : return 3;     // e-
+      case         12 : return 4;     // e-neutrino (NB: flavour undefined by Geant)
+      case        -13 : return 5;     // mu+
+      case         13 : return 6;     // mu-
+      case        111 : return 7;     // pi0
+      case        211 : return 8;     // pi+
+      case       -211 : return 9;     // pi-
+      case        130 : return 10;    // K long
+      case        321 : return 11;    // K+
+      case       -321 : return 12;    // K-
+      case       2112 : return 13;    // n
+      case       2212 : return 14;    // p
+      case      -2212 : return 15;    // anti-proton
+      case        310 : return 16;    // K short
+      case        221 : return 17;    // eta
+      case       3122 : return 18;    // Lambda
+      case       3222 : return 19;    // Sigma+
+      case       3212 : return 20;    // Sigma0
+      case       3112 : return 21;    // Sigma-
+      case       3322 : return 22;    // Xi0
+      case       3312 : return 23;    // Xi-
+      case       3334 : return 24;    // Omega- (PB)
+      case      -2112 : return 25;    // anti-neutron
+      case      -3122 : return 26;    // anti-Lambda
+      case      -3222 : return 27;    // Sigma-
+      case      -3212 : return 28;    // Sigma0
+      case      -3112 : return 29;    // Sigma+ (PB)*/
+      case      -3322 : return 30;    // Xi0
+      case      -3312 : return 31;    // Xi+
+      case      -3334 : return 32;    // Omega+ (PB)
+      case        -15 : return 33;    // tau+
+      case         15 : return 34;    // tau-
+      case        411 : return 35;    // D+
+      case       -411 : return 36;    // D-
+      case        421 : return 37;    // D0
+      case       -421 : return 38;    // D0
+      case        431 : return 39;    // Ds+
+      case       -431 : return 40;    // anti Ds-
+      case       4122 : return 41;    // Lamba_c+
+      case         24 : return 42;    // W+
+      case        -24 : return 43;    // W-
+      case         23 : return 44;    // Z
+      case 1000010020 : return 45;    // deuteron
+      case 1000010030 : return 46;    // triton
+      case 1000020040 : return 47;    // alpha
+      case 1000020030 : return 49;    // He3 ion
+
+      default  :
+         G4cout << "Warning in GlueXPrimaryGeneratorAction::"
+                   "ConvertPdgToGeant3 - lookup performed on unknown"
+                   " PDG particle type " << PDGtype << ","
+                   " returning 0 for the Geant3 particle code." << G4endl;
    }
-   return PDGtoGeant3type[PDGtype];
+   return 0;
 }
 
 double GlueXPrimaryGeneratorAction::getBeamBucketPeriod(int runno)
