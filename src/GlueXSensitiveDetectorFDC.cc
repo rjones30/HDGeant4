@@ -289,37 +289,33 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
 
    // Post the hit to the points list in the
    // order of appearance in the event simulation.
-   // TODO: this section should be protected by if (history == 0)
  
-   GlueXHitFDCpoint* newPoint = new GlueXHitFDCpoint(chamber);
-   G4int key = (chamber << 20) + fPointsMap->entries();
-   // Compress out multiple points from the same track in this straw
-   GlueXHitFDCpoint* oldPoint = (*fPointsMap)[key - 1];
-   if (oldPoint && oldPoint->track_ == trackID &&
-       fabs(oldPoint->t_ns - t/ns) < 0.1 &&
-       fabs(oldPoint->z_cm - x[2]/cm) < 0.1)
-   {
-      delete newPoint;
-      newPoint = 0;
-   }
-   else {
-      fPointsMap->add(key, newPoint);
-      newPoint->primary_ = (track->GetParentID() == 0);
-      newPoint->track_ = trackID;
-      newPoint->x_cm = x[0]/cm;
-      newPoint->y_cm = x[1]/cm;
-      newPoint->z_cm = x[2]/cm;
-      newPoint->t_ns = t/ns;
-      newPoint->px_GeV = pin[0]/GeV;
-      newPoint->py_GeV = pin[1]/GeV;
-      newPoint->pz_GeV = pin[2]/GeV;
-      newPoint->E_GeV = Ein/GeV;
-      newPoint->dradius_cm = dradius/cm;
-      newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
-      newPoint->ptype_G3 = g3type;
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-      newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+   GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
+                                          track->GetUserInformation();
+   if (trackinfo->GetGlueXHistory() == 0) {
+      G4int key = (chamber << 20) + fPointsMap->entries();
+      GlueXHitFDCpoint* lastPoint = (*fPointsMap)[key - 1];
+      if (lastPoint == 0 || lastPoint->track_ != trackID ||
+          fabs(lastPoint->t_ns - t/ns) > 0.1 ||
+          fabs(lastPoint->z_cm - x[2]/cm) > 0.1)
+      {
+         GlueXHitFDCpoint* newPoint = new GlueXHitFDCpoint(chamber);
+         fPointsMap->add(key, newPoint);
+         newPoint->primary_ = (track->GetParentID() == 0);
+         newPoint->track_ = trackID;
+         newPoint->x_cm = x[0]/cm;
+         newPoint->y_cm = x[1]/cm;
+         newPoint->z_cm = x[2]/cm;
+         newPoint->t_ns = t/ns;
+         newPoint->px_GeV = pin[0]/GeV;
+         newPoint->py_GeV = pin[1]/GeV;
+         newPoint->pz_GeV = pin[2]/GeV;
+         newPoint->E_GeV = Ein/GeV;
+         newPoint->dradius_cm = dradius/cm;
+         newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
+         newPoint->ptype_G3 = g3type;
+         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+      }
    }
 
    // Post the hit to the hits tree, ordered by wire, strip number

@@ -203,42 +203,38 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
 
    // Post the hit to the points list in the
    // order of appearance in the event simulation.
-   // TODO: this section should be protected by if (history == 0)
 
-   GlueXHitSTCpoint* newPoint = new GlueXHitSTCpoint();
    int sector = GetIdent("sector", touch);
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
-   G4int key = fPointsMap->entries();
-   // Compress out multiple points from the same track in this paddle
-   GlueXHitSTCpoint* oldPoint = (*fPointsMap)[key - 1];
-   if (oldPoint && oldPoint->track_ == trackID &&
-       fabs(oldPoint->t_ns - t/ns) < 0.1 &&
-       fabs(oldPoint->z_cm - x[2]/cm) < 0.1)
-   {
-      delete newPoint;
-      newPoint = 0;
-   }
-   else {
-      fPointsMap->add(key, newPoint);
-      int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-      int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
       GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                              track->GetUserInformation();
-      newPoint->ptype_G3 = g3type;
-      newPoint->track_ = trackID;
-      newPoint->trackID_ = trackinfo->GetGlueXTrackID();
-      newPoint->primary_ = (track->GetParentID() == 0);
-      newPoint->sector_ = sector;
-      newPoint->t_ns = t/ns;
-      newPoint->z_cm = x[2]/cm;
-      newPoint->r_cm = x.perp()/cm;
-      newPoint->phi_rad = x.phi();
-      newPoint->px_GeV = pin[0]/GeV;
-      newPoint->py_GeV = pin[1]/GeV;
-      newPoint->pz_GeV = pin[2]/GeV;
-      newPoint->E_GeV = Ein/GeV;
-      newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
+   if (trackinfo->GetGlueXHistory() == 0) {
+      G4int key = fPointsMap->entries();
+      GlueXHitSTCpoint* lastPoint = (*fPointsMap)[key - 1];
+      if (lastPoint == 0 || lastPoint->track_ != trackID ||
+          fabs(lastPoint->t_ns - t/ns) > 0.1 ||
+          fabs(lastPoint->z_cm - x[2]/cm) > 0.1)
+      {
+         GlueXHitSTCpoint* newPoint = new GlueXHitSTCpoint();
+         fPointsMap->add(key, newPoint);
+         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+         newPoint->ptype_G3 = g3type;
+         newPoint->track_ = trackID;
+         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->primary_ = (track->GetParentID() == 0);
+         newPoint->sector_ = sector;
+         newPoint->t_ns = t/ns;
+         newPoint->z_cm = x[2]/cm;
+         newPoint->r_cm = x.perp()/cm;
+         newPoint->phi_rad = x.phi();
+         newPoint->px_GeV = pin[0]/GeV;
+         newPoint->py_GeV = pin[1]/GeV;
+         newPoint->pz_GeV = pin[2]/GeV;
+         newPoint->E_GeV = Ein/GeV;
+         newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
+      }
    }
 
    // Post the hit to the hits map, ordered by sector index
