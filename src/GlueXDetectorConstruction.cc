@@ -12,6 +12,7 @@
 #include "GlueXSensitiveDetectorFDC.hh"
 #include "GlueXSensitiveDetectorSTC.hh"
 #include "GlueXSensitiveDetectorBCAL.hh"
+#include "GlueXSensitiveDetectorFCAL.hh"
 
 #include "G4Box.hh"
 #include "G4Material.hh"
@@ -248,6 +249,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorFDC* fdcHandler = 0;
    GlueXSensitiveDetectorSTC* stcHandler = 0;
    GlueXSensitiveDetectorBCAL* bcalHandler = 0;
+   GlueXSensitiveDetectorFCAL* fcalHandler = 0;
 
    // During geometry building, certain logical volumes were marked as
    // sensitive by adding them to a list. Now we need to go down that
@@ -307,6 +309,13 @@ void GlueXDetectorConstruction::ConstructSDandField()
             }
          }
          iter->second->SetSensitiveDetector(bcalHandler);
+      }
+      else if (volname == "LGBL") {
+         if (fcalHandler == 0) {
+            fcalHandler = new GlueXSensitiveDetectorFCAL("fcal");
+            SDman->AddNewDetector(fcalHandler);
+         }
+         iter->second->SetSensitiveDetector(fcalHandler);
       }
       else {
          G4cerr << "Warning from GlueXDetectorConstruction"
