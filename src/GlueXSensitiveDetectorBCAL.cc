@@ -57,7 +57,7 @@ GlueXSensitiveDetectorBCAL::GlueXSensitiveDetectorBCAL(const G4String& name)
  : G4VSensitiveDetector(name),
    fCellsMap(0), fPointsMap(0)
 {
-   collectionName.insert("BCALHitsCollection");
+   collectionName.insert("BCALCellHitsCollection");
    collectionName.insert("BCALPointsCollection");
 
    // The rest of this only needs to happen once, the first time an object
@@ -332,7 +332,7 @@ void GlueXSensitiveDetectorBCAL::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the cellTruthShowers
+   // Collect and output the bcalTruthShowers
    for (piter = points->begin(); piter != points->end(); ++piter) {
       hddm_s::BcalTruthShowerList point = barrelEMcal.addBcalTruthShowers(1);
       point(0).setE(piter->second->E_GeV);

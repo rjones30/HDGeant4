@@ -71,7 +71,7 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
  : G4VSensitiveDetector(name),
    fHitsMap(0), fPointsMap(0)
 {
-   collectionName.insert("STCHitsCollection");
+   collectionName.insert("STCPaddleHitsCollection");
    collectionName.insert("STCPointsCollection");
 
    // The rest of this only needs to happen once, the first time an object
