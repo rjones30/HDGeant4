@@ -15,12 +15,6 @@ GlueXHitBCALcell::GlueXHitBCALcell(G4int module, G4int layer, G4int sector)
    sector_(sector)
 {}
 
-#if 0
-  <bcalCell layer="int" maxOccurs="unbounded" minOccurs="0" module="int" sector="int">
-          <bcalTruthHit E="float" maxOccurs="unbounded" minOccurs="0" t="float" zLocal="float" incident_id="int"/>
-  </bcalCell>
-#endif
-
 int GlueXHitBCALcell::operator==(const GlueXHitBCALcell &right) const
 {
    if (module_ !=  right.module_ || layer_ != right.layer_ || 

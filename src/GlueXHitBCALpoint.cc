@@ -8,13 +8,6 @@
 
 G4ThreadLocal G4Allocator<GlueXHitBCALpoint>* GlueXHitBCALpointAllocator = 0;
 
-#if 0
-        <bcalTruthIncidentParticle maxOccurs="unbounded" minOccurs="0" ptype="int" x="float" y="float" z="float" px="float" py="float" pz="float" id="int"/>
-        <bcalTruthShower E="float" maxOccurs="unbounded" minOccurs="0" phi="float" primary="boolean" ptype="int" px="float" py="float" pz="float" r="float" t="float" track="int" z="float">
-          <trackID minOccurs="0" itrack="int"/>
-        </bcalTruthShower>
-#endif
-
 int GlueXHitBCALpoint::operator==(const GlueXHitBCALpoint &right) const
 {
    if (E_GeV          == right.E_GeV       &&
