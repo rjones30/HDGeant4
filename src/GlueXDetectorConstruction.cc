@@ -11,6 +11,7 @@
 #include "GlueXSensitiveDetectorCDC.hh"
 #include "GlueXSensitiveDetectorFDC.hh"
 #include "GlueXSensitiveDetectorSTC.hh"
+#include "GlueXSensitiveDetectorBCAL.hh"
 
 #include "G4Box.hh"
 #include "G4Material.hh"
@@ -246,6 +247,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorCDC* cdcHandler = 0;
    GlueXSensitiveDetectorFDC* fdcHandler = 0;
    GlueXSensitiveDetectorSTC* stcHandler = 0;
+   GlueXSensitiveDetectorBCAL* bcalHandler = 0;
 
    // During geometry building, certain logical volumes were marked as
    // sensitive by adding them to a list. Now we need to go down that
@@ -278,6 +280,33 @@ void GlueXDetectorConstruction::ConstructSDandField()
             SDman->AddNewDetector(stcHandler);
          }
          iter->second->SetSensitiveDetector(stcHandler);
+      }
+      else if (volname == "BM01" || volname == "BM02" ||
+               volname == "BM03" || volname == "BM04" ||
+               volname == "BM05" || volname == "BM06" ||
+               volname == "BMF7" || volname == "BMF8" ||
+               volname == "BMF9" || volname == "BMFA")
+      {
+         if (bcalHandler == 0) {
+            bcalHandler = new GlueXSensitiveDetectorBCAL("bcal");
+            SDman->AddNewDetector(bcalHandler);
+            // Also add support beam BCL0 as a "sensitive" element
+            // to catch incident particles as they enter the BCAL
+            G4LogicalVolume *bcl0 = GlueXDetectorConstruction::GetBuilder()->
+                                    getVolume("BCL0");
+            if (bcl0 != 0) {
+               bcl0->SetSensitiveDetector(bcalHandler);
+            }
+            else {
+               G4cerr << "Warning from GlueXDetectorConstruction"
+                      << "::ConstructSDandField - "
+                      << "special BCal volume BCL0 not found"
+                      << " in geometry definition, bcalTruthShower"
+                      << " information will not be generated."
+                      << G4endl;
+            }
+         }
+         iter->second->SetSensitiveDetector(bcalHandler);
       }
       else {
          G4cerr << "Warning from GlueXDetectorConstruction"

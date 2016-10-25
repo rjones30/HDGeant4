@@ -78,6 +78,8 @@ class HddsG4Builder : public CodeWriter
 
    G4LogicalVolume* getWorldVolume(int parallel=0) const;
                                          // return ptr to world volume
+   G4LogicalVolume* getVolume(const G4String volname) const;
+                                         // look up logical volume by name
    int getVolumeId(G4LogicalVolume* vol) const;
                                          // reverse-find in fLogicalVolumes
    const std::map<int,G4LogicalVolume*> getSensitiveVolumes() const;

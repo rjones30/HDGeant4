@@ -1759,6 +1759,18 @@ int HddsG4Builder::getVolumeId(G4LogicalVolume* vol) const
    exit(1);
 }
 
+G4LogicalVolume* HddsG4Builder::getVolume(const G4String volname) const
+{
+   std::map<vpair_t,G4LogicalVolume*>::const_iterator iter;
+   for (iter = fLogicalVolumes.begin(); iter != fLogicalVolumes.end(); ++iter)
+   {
+      if (iter->second->GetName() == volname) {
+         return iter->second;
+      }
+   }
+   return 0;
+}
+
 const std::map<int, G4LogicalVolume*> HddsG4Builder::getSensitiveVolumes() const
 {
    return fSensitiveVolumes;
