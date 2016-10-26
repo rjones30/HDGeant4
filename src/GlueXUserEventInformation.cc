@@ -92,7 +92,10 @@ void GlueXUserEventInformation::SetRandomSeeds()
       rnd(0).setSeed2(seed[1]);
       rnd(0).setSeed3(709975946 + HddmOutput::getEventNo());
       rnd(0).setSeed4(912931182 + HddmOutput::getEventNo());
-      G4cout << "New event with starting seeds " << seed[0] << ", " << seed[1] << G4endl;
+#if VERBOSE_RANDOMS
+      G4cout << "New event with starting seeds " 
+             << seed[0] << ", " << seed[1] << G4endl;
+#endif
    }
 }
 
