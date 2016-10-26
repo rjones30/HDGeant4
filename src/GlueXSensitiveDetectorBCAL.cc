@@ -367,8 +367,12 @@ int GlueXSensitiveDetectorBCAL::GetIdent(std::string div,
          fVolumeTable[lvol] = volId;
       }
       identifiers = &Refsys::fIdentifierTable[volId];
-      if ((iter = identifiers->find(div)) != identifiers->end())
-         return iter->second[pvol->GetCopyNo() - 1];
+      if ((iter = identifiers->find(div)) != identifiers->end()) {
+         if (dynamic_cast<G4PVPlacement*>(pvol))
+            return iter->second[pvol->GetCopyNo() - 1];
+         else
+            return iter->second[pvol->GetCopyNo()];
+      }
    }
    return -1;
 }
