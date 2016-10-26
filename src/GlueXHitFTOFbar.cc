@@ -8,22 +8,22 @@
 
 G4ThreadLocal G4Allocator<GlueXHitFTOFbar>* GlueXHitFTOFbarAllocator = 0;
 
-GlueXHitFTOFbar::GlueXHitFTOFbar(G4int plane, G4int bar, G4int end)
+GlueXHitFTOFbar::GlueXHitFTOFbar(G4int plane, G4int bar)
  : G4VHit(),
    plane_(plane),
-   bar_(bar),
-   end_(end)
+   bar_(bar)
 {}
 
 int GlueXHitFTOFbar::operator==(const GlueXHitFTOFbar &right) const
 {
-   if (plane_ !=  right.plane_ || bar_ != right.bar_ || end_ != right.end_)
+   if (plane_ !=  right.plane_ || bar_ != right.bar_ )
       return 0;
    else if (hits.size() != right.hits.size())
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].dE_GeV   == right.hits[ih].dE_GeV  &&
+      if (hits[ih].end_     == right.hits[ih].end_    &&
+          hits[ih].dE_GeV   == right.hits[ih].dE_GeV  &&
           hits[ih].t_ns     == right.hits[ih].t_ns    &&
           hits[ih].itrack_  == right.hits[ih].itrack_ &&
           hits[ih].ptype_G3 == right.hits[ih].ptype_G3 &&
@@ -44,7 +44,7 @@ int GlueXHitFTOFbar::operator==(const GlueXHitFTOFbar &right) const
 
 GlueXHitFTOFbar &GlueXHitFTOFbar::operator+=(const GlueXHitFTOFbar &right)
 {
-   if (plane_ !=  right.plane_ || bar_ != right.bar_ || end_ != right.end_) {
+   if (plane_ !=  right.plane_ || bar_ != right.bar_) {
       G4cerr << "Error in GlueXHitFTOFbar::operator+=() - "
              << "illegal attempt to merge hits from two different bars!"
              << G4endl;
@@ -58,6 +58,7 @@ GlueXHitFTOFbar &GlueXHitFTOFbar::operator+=(const GlueXHitFTOFbar &right)
             break;
       }
       hiter = hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
+      hiter->end_   = hitsrc->end_;
       hiter->dE_GeV = hitsrc->dE_GeV;
       hiter->t_ns = hitsrc->t_ns;
       hiter->itrack_ = hitsrc->itrack_;
@@ -83,7 +84,7 @@ void GlueXHitFTOFbar::Print() const
 {
    G4cout << "GlueXHitFTOFbar: "
           << "   plane = " << plane_ 
-          << ",  bar = " << bar << ",  end = " << end_ << G4endl;
+          << ",  bar = " << bar << G4endl;
    std::vector<hitinfo_t>::const_iterator hiter;
    for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {
       G4cout << "   dE = " << hiter->dE_GeV << " GeV" << G4endl

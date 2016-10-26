@@ -20,7 +20,7 @@
 class GlueXHitFTOFbar : public G4VHit
 {
  public:
-   GlueXHitFTOFbar(G4int plane, G4int bar, G4int end);
+   GlueXHitFTOFbar(G4int plane, G4int bar);
    int operator==(const GlueXHitFTOFbar &right) const;
    GlueXHitFTOFbar &operator+=(const GlueXHitFTOFbar &right);
 
@@ -32,12 +32,12 @@ class GlueXHitFTOFbar : public G4VHit
 
    // no reason to hide hit data
 
-   G4int plane_;           // =0 (downstream, vertical) or =1 (up, horizontal)
+   G4int plane_;           // =0 (downstr, vertical) or =1 (upstr, horizontal)
    G4int bar_;             // bar number, bottom-top, south-north (see hdds)
-   G4int end_;             // =0 (top, north) or =1 (bottom, south)
 
    struct hitinfo_t {
-      G4double dE_GeV;     // energy deposition (GeV)
+      G4int end_;          // end=0: top, north/left; end=1: bottom, south/right
+      G4double dE_GeV;     // energy deposition by track(GeV)
       G4double t_ns;       // pulse leading-edge time (ns)
       G4double itrack_;    // track index of first particle making this hit
       G4double ptype_G3;   // G3 type of first particle making this hit
@@ -48,13 +48,13 @@ class GlueXHitFTOFbar : public G4VHit
       G4double x_cm;       // x coordinate of the hit in global refsys (cm)
       G4double y_cm;       // x coordinate of the hit in global refsys (cm)
       G4double z_cm;       // z coordinate of the hit in global refsys (cm)
-      G4double dist_cm;    // distance of hit (from end?) in cm
+      G4double dist_cm;    // distance of hit from center of the bar (cm)
    };
    std::vector<hitinfo_t> hits;
 
-   G4int GetKey() const { return GetKey(plane_, bar_, end_); }
-   static G4int GetKey(G4int plane, G4int bar, G4int end) {
-      return (plane << 20) + (bar << 10) + end;
+   G4int GetKey() const { return GetKey(plane_, bar_); }
+   static G4int GetKey(G4int plane, G4int bar) {
+      return (plane << 10) + bar;
    }
 };
 
