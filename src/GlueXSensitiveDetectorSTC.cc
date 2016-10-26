@@ -31,7 +31,7 @@
 int GlueXSensitiveDetectorSTC::MAX_HITS = 100;
 
 // Light propagation parameters in start counter
-double GlueXSensitiveDetectorSTC::ATTEN_LENGTH = 150.*cm;
+double GlueXSensitiveDetectorSTC::ATTENUATION_LENGTH = 150.*cm;
 double GlueXSensitiveDetectorSTC::C_EFFECTIVE = 15*cm/ns;
 double GlueXSensitiveDetectorSTC::LIGHT_GUIDE = 0.; // ??
 double GlueXSensitiveDetectorSTC::ANGLE_COR = 1.054;
@@ -93,7 +93,7 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
       jana::JCalibration *jcalib = japp->GetJCalibration(run_number);
       std::map<string, float> stc_parms;
       jcalib->Get("START_COUNTER/start_parms", stc_parms);
-      ATTEN_LENGTH = stc_parms.at("START_ATTEN_LENGTH")*cm;
+      ATTENUATION_LENGTH = stc_parms.at("START_ATTEN_LENGTH")*cm;
       C_EFFECTIVE = stc_parms.at("START_C_EFFECTIVE")*cm/ns;
       TWO_HIT_TIME_RESOL = stc_parms.at("START_TWO_HIT_RESOL")*ns;
       MAX_HITS = stc_parms.at("START_MAX_HITS");
@@ -308,7 +308,7 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
       if (hiter != paddle->hits.end()) {             // merge with former hit
          // Use the time from the earlier hit but add the charge
          hiter->dE_MeV += dEcorr/MeV;
-         if (hiter->t_ns > tcorr) {
+         if (hiter->t_ns*ns > tcorr) {
             hiter->t_ns = tcorr/ns;
             int pdgtype = track->GetDynamicParticle()->GetPDGcode();
             int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
@@ -388,27 +388,13 @@ void GlueXSensitiveDetectorSTC::EndOfEvent(G4HCofThisEvent*)
    // Collect and output the stcTruthHits
    for (siter = paddles->begin(); siter != paddles->end(); ++siter) {
       std::vector<GlueXHitSTCpaddle::hitinfo_t> &hits = siter->second->hits;
-      // merge multiple hits coming from the same track segment
-      // that got split up by interactions within the paddle volume
+      // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         for (unsigned int ih2 = ih + 1; ih2 < hits.size(); ++ih2) {
-            if (fabs(hits[ih].z_cm - hits[ih2].z_cm) < 1 &&
-                fabs(hits[ih].t0_ns - hits[ih2].t0_ns) < 1)
-            {
-               hits[ih].dE_MeV += hits[ih2].dE_MeV;
-               if (hits[ih].t_ns > hits[ih2].t_ns) {
-                  hits[ih].t_ns = hits[ih2].t_ns;
-               }
-               hits.erase(hits.begin() + ih2);
-               --ih2;
-            }
-         }
          if (hits[ih].dE_MeV < THRESH_MEV) {
             hits.erase(hits.begin() + ih);
             --ih;
          }
       }
-
       if (hits.size() > 0) {
          hddm_s::StcPaddleList paddle = startCntr.addStcPaddles(1);
          paddle(0).setSector(siter->second->sector_);

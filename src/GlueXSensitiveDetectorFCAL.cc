@@ -219,7 +219,7 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
       if (hiter != block->hits.end()) {             // merge with former hit
          // Use the time from the earlier hit but add the energy deposition
          hiter->E_GeV += dEcorr/GeV;
-         if (hiter->t_ns > tcorr) {
+         if (hiter->t_ns*ns > tcorr) {
             hiter->t_ns = tcorr/ns;
          }
       }
@@ -287,19 +287,8 @@ void GlueXSensitiveDetectorFCAL::EndOfEvent(G4HCofThisEvent*)
    // Collect and output the fcalTruthHits
    for (biter = blocks->begin(); biter != blocks->end(); ++biter) {
       std::vector<GlueXHitFCALblock::hitinfo_t> &hits = biter->second->hits;
-      // merge multiple hits coming from the same track segment
-      // that got split up by interactions within the block volume
+      // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         for (unsigned int ih2 = ih + 1; ih2 < hits.size(); ++ih2) {
-            if (fabs(hits[ih].t_ns - hits[ih2].t_ns) < 1) {
-               hits[ih].E_GeV += hits[ih2].E_GeV;
-               if (hits[ih].t_ns > hits[ih2].t_ns) {
-                  hits[ih].t_ns = hits[ih2].t_ns;
-               }
-               hits.erase(hits.begin() + ih2);
-               --ih2;
-            }
-         }
          if (hits[ih].E_GeV < THRESH_MEV/1e3) {
             hits.erase(hits.begin() + ih);
             --ih;

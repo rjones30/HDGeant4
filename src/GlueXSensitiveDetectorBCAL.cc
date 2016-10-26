@@ -224,7 +224,7 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
       if (hiter != cell->hits.end()) {             // merge with former hit
          // Use the time from the earlier hit but add the energy deposition
          hiter->E_GeV += dEsum/GeV;
-         if (hiter->t_ns > t) {
+         if (hiter->t_ns*ns > t) {
             hiter->t_ns = t/ns;
             hiter->zlocal_cm = x[2]/cm;
             hiter->itrack_ = trackinfo->GetGlueXTrackID();
@@ -296,27 +296,13 @@ void GlueXSensitiveDetectorBCAL::EndOfEvent(G4HCofThisEvent*)
    // Collect and output the bcalTruthHits
    for (citer = cells->begin(); citer != cells->end(); ++citer) {
       std::vector<GlueXHitBCALcell::hitinfo_t> &hits = citer->second->hits;
-      // merge multiple hits coming from the same track segment
-      // that got split up by interactions within the cell volume
+      // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         for (unsigned int ih2 = ih + 1; ih2 < hits.size(); ++ih2) {
-            if (fabs(hits[ih].zlocal_cm - hits[ih2].zlocal_cm) < 1 &&
-                fabs(hits[ih].t_ns - hits[ih2].t_ns) < 1)
-            {
-               hits[ih].E_GeV += hits[ih2].E_GeV;
-               if (hits[ih].t_ns > hits[ih2].t_ns) {
-                  hits[ih].t_ns = hits[ih2].t_ns;
-               }
-               hits.erase(hits.begin() + ih2);
-               --ih2;
-            }
-         }
          if (hits[ih].E_GeV < THRESH_MEV/1e3) {
             hits.erase(hits.begin() + ih);
             --ih;
          }
       }
-
       if (hits.size() > 0) {
          hddm_s::BcalCellList cell = barrelEMcal.addBcalCells(1);
          cell(0).setModule(citer->second->module_);

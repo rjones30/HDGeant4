@@ -45,7 +45,7 @@ class GlueXSensitiveDetectorSTC : public G4VSensitiveDetector
    static std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static int MAX_HITS;
-   static double ATTEN_LENGTH;
+   static double ATTENUATION_LENGTH;
    static double C_EFFECTIVE;
    static double TWO_HIT_TIME_RESOL;
    static double THRESH_MEV;
