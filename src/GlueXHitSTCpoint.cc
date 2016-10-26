@@ -46,7 +46,7 @@ void GlueXHitSTCpoint::Draw() const
 void GlueXHitSTCpoint::Print() const
 {
    G4cout << "GlueXHitSTCpoint:" << G4endl
-          << "   sector = " << G4endl
+          << "   sector = " << sector_ << G4endl
           << "   track = " << track_ << G4endl
           << "   trackID = " << trackID_ << G4endl
           << "   E = " << E_GeV << " GeV" << G4endl
