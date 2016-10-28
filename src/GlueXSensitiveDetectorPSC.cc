@@ -156,8 +156,10 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
       G4int key = fPointsMap->entries();
       GlueXHitPSCpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
-          fabs(lastPoint->t_ns - t/ns) > 0.1 ||
-          fabs(lastPoint->z_cm - x[2]/cm) > 0.1)
+          fabs(lastPoint->t_ns - t/ns) > 0.2 ||
+          fabs(lastPoint->x_cm - x[0]/cm) > 5.0 ||
+          fabs(lastPoint->y_cm - x[1]/cm) > 5.0 ||
+          fabs(lastPoint->z_cm - x[2]/cm) > 5.0)
       {
          GlueXHitPSCpoint* newPoint = new GlueXHitPSCpoint();
          fPointsMap->add(key, newPoint);

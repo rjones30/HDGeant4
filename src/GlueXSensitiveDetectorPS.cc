@@ -37,7 +37,7 @@ double GlueXSensitiveDetectorPS::TWO_HIT_TIME_RESOL = 25*ns;
 double GlueXSensitiveDetectorPS::THRESH_MEV = 0.010;
 
 // Geometric parameters
-int GlueXSensitiveDetectorPS::NUM_COLUMNS_PER_ARM = 8;
+int GlueXSensitiveDetectorPS::NUM_COLUMNS_PER_ARM = 145;
 
 int GlueXSensitiveDetectorPS::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorPS::fMutex = G4MUTEX_INITIALIZER;
@@ -156,8 +156,10 @@ G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step,
       G4int key = fPointsMap->entries();
       GlueXHitPSpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
-          fabs(lastPoint->t_ns - t/ns) > 0.1 ||
-          fabs(lastPoint->z_cm - x[2]/cm) > 0.1)
+          fabs(lastPoint->t_ns - t/ns) > 0.2 ||
+          fabs(lastPoint->x_cm - x[0]/cm) > 5.0 ||
+          fabs(lastPoint->y_cm - x[1]/cm) > 5.0 ||
+          fabs(lastPoint->z_cm - x[2]/cm) > 5.0)
       {
          GlueXHitPSpoint* newPoint = new GlueXHitPSpoint();
          fPointsMap->add(key, newPoint);
