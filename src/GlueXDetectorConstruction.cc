@@ -14,6 +14,8 @@
 #include "GlueXSensitiveDetectorBCAL.hh"
 #include "GlueXSensitiveDetectorFCAL.hh"
 #include "GlueXSensitiveDetectorFTOF.hh"
+#include "GlueXSensitiveDetectorPSC.hh"
+#include "GlueXSensitiveDetectorPS.hh"
 
 #include "G4Box.hh"
 #include "G4Material.hh"
@@ -252,6 +254,8 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorBCAL* bcalHandler = 0;
    GlueXSensitiveDetectorFCAL* fcalHandler = 0;
    GlueXSensitiveDetectorFTOF* ftofHandler = 0;
+   GlueXSensitiveDetectorPSC* pscHandler = 0;
+   GlueXSensitiveDetectorPS* psHandler = 0;
 
    // During geometry building, certain logical volumes were marked as
    // sensitive by adding them to a list. Now we need to go down that
@@ -325,6 +329,20 @@ void GlueXDetectorConstruction::ConstructSDandField()
             SDman->AddNewDetector(ftofHandler);
          }
          iter->second->SetSensitiveDetector(ftofHandler);
+      }
+      else if (volname == "PSCO") {
+         if (pscHandler == 0) {
+            pscHandler = new GlueXSensitiveDetectorPSC("psc");
+            SDman->AddNewDetector(pscHandler);
+         }
+         iter->second->SetSensitiveDetector(pscHandler);
+      }
+      else if (volname == "PSF1" || volname == "PSF2") {
+         if (psHandler == 0) {
+            psHandler = new GlueXSensitiveDetectorPS("ps");
+            SDman->AddNewDetector(psHandler);
+         }
+         iter->second->SetSensitiveDetector(psHandler);
       }
       else {
          G4cerr << "Warning from GlueXDetectorConstruction"
