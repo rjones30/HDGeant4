@@ -293,10 +293,10 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
 
       std::vector<GlueXHitSTCpaddle::hitinfo_t>::iterator hiter;
       for (hiter = paddle->hits.begin(); hiter != paddle->hits.end(); ++hiter) {
-         if (fabs(hiter->t_ns/ns - tcorr) < TWO_HIT_TIME_RESOL) {
+         if (fabs(hiter->t_ns*ns - tcorr) < TWO_HIT_TIME_RESOL) {
             break;
          }
-         else if (hiter->t_ns/ns > tcorr) {
+         else if (hiter->t_ns*ns > tcorr) {
             hiter = paddle->hits.insert(hiter, GlueXHitSTCpaddle::hitinfo_t());
             hiter->t_ns = 1e99;
             break;

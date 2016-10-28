@@ -209,10 +209,10 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
 
       std::vector<GlueXHitBCALcell::hitinfo_t>::iterator hiter;
       for (hiter = cell->hits.begin(); hiter != cell->hits.end(); ++hiter) {
-         if (fabs(hiter->t_ns/ns - t) < TWO_HIT_TIME_RESOL) {
+         if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
             break;
          }
-         else if (hiter->t_ns/ns > t) {
+         else if (hiter->t_ns*ns > t) {
             hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
             hiter->t_ns = 1e99;
             break;

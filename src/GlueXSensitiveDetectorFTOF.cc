@@ -246,10 +246,10 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
          for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
             if (hiter->end_ == 0) {
-               if (fabs(hiter->t_ns/ns - tnorth) < TWO_HIT_TIME_RESOL) {
+               if (fabs(hiter->t_ns*ns - tnorth) < TWO_HIT_TIME_RESOL) {
                   break;
                }
-               else if (hiter->t_ns/ns > tnorth) {
+               else if (hiter->t_ns*ns > tnorth) {
                   hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
                   hiter->end_ = 0;
                   hiter->t_ns = 1e99;
@@ -309,10 +309,10 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
          for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
             if (hiter->end_ == 1) {
-               if (fabs(hiter->t_ns/ns - tsouth) < TWO_HIT_TIME_RESOL) {
+               if (fabs(hiter->t_ns*ns - tsouth) < TWO_HIT_TIME_RESOL) {
                   break;
                }
-               else if (hiter->t_ns/ns > tsouth) {
+               else if (hiter->t_ns*ns > tsouth) {
                   hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
                   hiter->end_ = 1;
                   hiter->t_ns = 1e99;
