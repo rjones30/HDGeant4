@@ -206,10 +206,10 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
 
       std::vector<GlueXHitFCALblock::hitinfo_t>::iterator hiter;
       for (hiter = block->hits.begin(); hiter != block->hits.end(); ++hiter) {
-         if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+         if (fabs(hiter->t_ns*ns - tcorr) < TWO_HIT_TIME_RESOL) {
             break;
          }
-         else if (hiter->t_ns*ns > t) {
+         else if (hiter->t_ns*ns > tcorr) {
             hiter = block->hits.insert(hiter, GlueXHitFCALblock::hitinfo_t());
             hiter->t_ns = 1e99;
             break;

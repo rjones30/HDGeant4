@@ -32,7 +32,7 @@ class GlueXHitCCALblock : public G4VHit
 
    // no reason to hide hit data
 
-   G4int column_;          // FCal block column, from 1 increasing x
+   G4int column_;          // CCal block column, from 1 increasing x
    G4int row_;             // CCAL block row, from 1 increasing y
 
    struct hitinfo_t {
