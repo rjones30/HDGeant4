@@ -13,6 +13,8 @@
 #include "GlueXSensitiveDetectorSTC.hh"
 #include "GlueXSensitiveDetectorBCAL.hh"
 #include "GlueXSensitiveDetectorFCAL.hh"
+#include "GlueXSensitiveDetectorGCAL.hh"
+#include "GlueXSensitiveDetectorCCAL.hh"
 #include "GlueXSensitiveDetectorFTOF.hh"
 #include "GlueXSensitiveDetectorPSC.hh"
 #include "GlueXSensitiveDetectorPS.hh"
@@ -253,6 +255,8 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorSTC* stcHandler = 0;
    GlueXSensitiveDetectorBCAL* bcalHandler = 0;
    GlueXSensitiveDetectorFCAL* fcalHandler = 0;
+   GlueXSensitiveDetectorGCAL* gcalHandler = 0;
+   GlueXSensitiveDetectorCCAL* ccalHandler = 0;
    GlueXSensitiveDetectorFTOF* ftofHandler = 0;
    GlueXSensitiveDetectorPSC* pscHandler = 0;
    GlueXSensitiveDetectorPS* psHandler = 0;
@@ -322,6 +326,20 @@ void GlueXDetectorConstruction::ConstructSDandField()
             SDman->AddNewDetector(fcalHandler);
          }
          iter->second->SetSensitiveDetector(fcalHandler);
+      }
+      else if (volname == "GCAL") {
+         if (gcalHandler == 0) {
+            gcalHandler = new GlueXSensitiveDetectorGCAL("gcal");
+            SDman->AddNewDetector(gcalHandler);
+         }
+         iter->second->SetSensitiveDetector(gcalHandler);
+      }
+      else if (volname == "LTBL") {
+         if (ccalHandler == 0) {
+            ccalHandler = new GlueXSensitiveDetectorCCAL("ccal");
+            SDman->AddNewDetector(ccalHandler);
+         }
+         iter->second->SetSensitiveDetector(ccalHandler);
       }
       else if (volname == "FTOC" || volname == "FTOX" || volname == "FTOH") {
          if (ftofHandler == 0) {
