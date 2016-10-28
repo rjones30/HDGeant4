@@ -31,7 +31,7 @@ int GlueXHitBCALpoint::operator==(const GlueXHitBCALpoint &right) const
 GlueXHitBCALpoint &GlueXHitBCALpoint::operator+=(const GlueXHitBCALpoint &right)
 {
    G4cerr << "Error in GlueXHitBCALpoint::operator+= - "
-          << "illegal attempt to merge two TruthShower objects in the stc!"
+          << "illegal attempt to merge two TruthShower objects in the bcal!"
           << G4endl;
    return *this;
 }
