@@ -12,6 +12,8 @@
 #ifndef _HDDMOUTPUT_
 #define _HDDMOUTPUT_
 
+#include "GlueXPseudoDetectorTAG.hh"
+
 #include <HDDM/hddm_s.hpp>
 #include <fstream>
 
@@ -26,15 +28,22 @@ class HddmOutput
    static int getEventNo();
    static void setRunNo(int runno);
    static void setEventNo(int eventno);
+   static GlueXPseudoDetectorTAG &getTagger();
 
  protected:
    HddmOutput(HddmOutput &src);
    HddmOutput& operator=(HddmOutput &src);
 
+   static GlueXPseudoDetectorTAG fTagger;
+
    static int fRunNo;
    static int fEventNo;
    static std::ofstream *fHDDMoutfile;
    static hddm_s::ostream *fHDDMostream;
+
+ private:
+   static int instanceCount;
+   static G4Mutex fMutex;
 };
 
 inline int HddmOutput::getRunNo()
@@ -47,14 +56,14 @@ inline int HddmOutput::getEventNo()
    return fEventNo;
 }
 
-inline void HddmOutput::setRunNo(int runno)
-{
-   fRunNo = runno;
-}
-
 inline void HddmOutput::setEventNo(int eventno)
 {
    fEventNo = eventno;
+}
+
+inline GlueXPseudoDetectorTAG &HddmOutput::getTagger()
+{
+   return fTagger;
 }
 
 #endif
