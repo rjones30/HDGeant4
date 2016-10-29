@@ -84,10 +84,11 @@ void GlueXHitFTOFbar::Print() const
 {
    G4cout << "GlueXHitFTOFbar: "
           << "   plane = " << plane_ 
-          << ",  bar = " << bar << G4endl;
+          << ",  bar = " << bar_ << G4endl;
    std::vector<hitinfo_t>::const_iterator hiter;
    for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {
-      G4cout << "   dE = " << hiter->dE_GeV << " GeV" << G4endl
+      G4cout << "   end = " << hiter->end_ << G4endl
+             << "   dE = " << hiter->dE_GeV << " GeV" << G4endl
              << "   t = " << hiter->t_ns << " ns" << G4endl
              << "   itrack = " << hiter->itrack_ << G4endl
              << "   ptype = " << hiter->ptype_G3 << G4endl

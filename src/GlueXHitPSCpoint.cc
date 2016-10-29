@@ -35,7 +35,7 @@ int GlueXHitPSCpoint::operator==(const GlueXHitPSCpoint &right) const
 GlueXHitPSCpoint &GlueXHitPSCpoint::operator+=(const GlueXHitPSCpoint &right)
 {
    G4cerr << "Error in GlueXHitPSCpoint::operator+= - "
-          << "illegal attempt to merge two TruthPoint objects in the ps!"
+          << "illegal attempt to merge two TruthPoint objects in the psc!"
           << G4endl;
    return *this;
 }
