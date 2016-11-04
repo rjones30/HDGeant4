@@ -328,7 +328,7 @@ void CobremsGenerator::applyBeamCrystalConvolution(int nbins, double *xvalues,
    for (int j=0; j < nbins; ++j) {
       norm[j] = 0;
       result[j] = 0;
-      for (int i=-nbins; i <= nbins; ++i) {
+      for (int i=0; i < nbins; ++i) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
          double dalph = dx * alph / (x * (1 - x) + 1e-99);
@@ -350,8 +350,7 @@ void CobremsGenerator::applyBeamCrystalConvolution(int nbins, double *xvalues,
       }
    }
 
-   for (int i=-nbins; i <= nbins; ++i) {
-      int ii = abs(i);
+   for (int i=0; i < nbins; ++i) {
       for (int j=0; j < nbins; ++j) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
@@ -370,7 +369,7 @@ void CobremsGenerator::applyBeamCrystalConvolution(int nbins, double *xvalues,
             term = exp(-dalph*dalph / (2 * var0)) / sqrt(2 * dpi * var0);
          }
          term *= alph / x;
-         result[ii] += term * yvalues[j] / norm[j];
+         result[i] += term * yvalues[j] / norm[j];
       }
    }
 
