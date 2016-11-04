@@ -26,8 +26,9 @@ class GlueXUserEventInformation: public G4VUserEventInformation
 {
  public:
    GlueXUserEventInformation(hddm_s::HDDM *hddmevent=NULL);
-   GlueXUserEventInformation(int geanttype, G4ThreeVector &pos, 
-                                            G4ThreeVector &mom);
+   GlueXUserEventInformation(int geanttype, double t0,
+                             const G4ThreeVector &pos, 
+                             const G4ThreeVector &mom);
    ~GlueXUserEventInformation();
 
    void SetRandomSeeds();
@@ -41,6 +42,10 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    hddm_s::HDDM *fOutputRecord;
    bool fKeepEvent;
    int fNprimaries;
+
+ private:
+   GlueXUserEventInformation(const GlueXUserEventInformation &src);
+   GlueXUserEventInformation &operator=(const GlueXUserEventInformation &src);
 };
 
 #endif // _GLUEXUSEREVENTINFORMATION_
