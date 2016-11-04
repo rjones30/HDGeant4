@@ -49,7 +49,7 @@ G4VDivisionParameterisation( EAxis axis, G4int nDiv,
                              DivisionType divType, G4VSolid* motherSolid )
   : faxis(axis), fnDiv( nDiv), fwidth(step), foffset(offset),
     fDivisionType(divType), fmotherSolid( motherSolid ), fReflectedSolid(false),
-    fDeleteSolid(false), theVoluFirstCopyNo(1), fhgap(0.), fRotMatrix(0)
+    fDeleteSolid(false), theVoluFirstCopyNo(1), fhgap(0.) //, fRotMatrix(0)
 {
 #ifdef G4DIVDEBUG
   if (verbose >= 1)
@@ -67,7 +67,7 @@ G4VDivisionParameterisation( EAxis axis, G4int nDiv,
 G4VDivisionParameterisation::~G4VDivisionParameterisation()
 {
   if (fDeleteSolid) delete fmotherSolid;
-  if (fRotMatrix) { delete fRotMatrix; fRotMatrix=0; }
+  //if (fRotMatrix) { delete fRotMatrix; fRotMatrix=0; }
 }
 
 //--------------------------------------------------------------------------

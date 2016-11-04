@@ -114,7 +114,7 @@ class G4VDivisionParameterisation : public G4VPVParameterisation
 
     G4double fhgap;
 
-    G4RotationMatrix* fRotMatrix;
+    //G4RotationMatrix* fRotMatrix;
 };
 
 #include "G4VDivisionParameterisation.icc"
