@@ -614,10 +614,10 @@ void GlueXSensitiveDetectorCDC::add_cluster(GlueXHitCDCstraw *straw,
 
    std::vector<GlueXHitCDCstraw::hitinfo_t>::iterator hiter;
    for (hiter = straw->hits.begin(); hiter != straw->hits.end(); ++hiter) {
-      if (fabs(hiter->t_ns - total_time) < TWO_HIT_TIME_RESOL) {
+      if (fabs(hiter->t_ns*ns - total_time) < TWO_HIT_TIME_RESOL) {
          break;
       }
-      else if (hiter->t_ns > total_time) {
+      else if (hiter->t_ns*ns > total_time) {
          hiter = straw->hits.insert(hiter, GlueXHitCDCstraw::hitinfo_t());
          hiter->t_ns = 1e99;
          break;
@@ -629,7 +629,7 @@ void GlueXSensitiveDetectorCDC::add_cluster(GlueXHitCDCstraw *straw,
    if (hiter != straw->hits.end()) {             // merge with former hit
       // Use the time from the earlier hit but add the charge
       hiter->q_fC += q_fC;
-      if (hiter->t_ns > total_time) {
+      if (hiter->t_ns*ns > total_time) {
          hiter->t_ns = total_time/ns;
          hiter->d_cm = dradius_cm;
          int pdgtype = track->GetDynamicParticle()->GetPDGcode();
