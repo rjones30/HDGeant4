@@ -26,6 +26,7 @@ class HddmOutput
    static void WriteOutputHDDM(hddm_s::HDDM &record);
    static int getRunNo();
    static int getEventNo();
+   static int incrementEventNo();
    static void setRunNo(int runno);
    static void setEventNo(int eventno);
    static GlueXPseudoDetectorTAG &getTagger();

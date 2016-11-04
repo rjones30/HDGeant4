@@ -65,3 +65,10 @@ void HddmOutput::WriteOutputHDDM(hddm_s::HDDM &record)
       *fHDDMostream << record;
    }
 }
+
+int HddmOutput::incrementEventNo()
+{
+   G4AutoLock barrier(&fMutex);
+   return ++fEventNo;
+}
+
