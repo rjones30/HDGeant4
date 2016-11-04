@@ -15,6 +15,7 @@
 #include "G4SystemOfUnits.hh"
 #include "G4ThreeVector.hh"
 #include "G4AutoLock.hh"
+#include "G4Event.hh"
 
 #include <HDDM/hddm_s.hpp>
 
@@ -24,10 +25,14 @@ class GlueXPseudoDetectorTAG
    GlueXPseudoDetectorTAG(int run_number);
    ~GlueXPseudoDetectorTAG();
 
-   int getRunNo();
+   void Draw() const;
+   void Print() const;
+
+   int getRunNo() const;
    void setRunNo(int runno);
-   int addTaggerHit(G4ThreeVector &vertex, double energy, double time, int bg);
-   int addRFsync(double tsync);
+   int addTaggerPhoton(G4Event *event, G4ThreeVector &vertex, 
+                       double energy, double time, int bg);
+   int addRFsync(G4Event *event, double tsync);
 
  protected:
    GlueXPseudoDetectorTAG(GlueXPseudoDetectorTAG &src);
@@ -36,11 +41,6 @@ class GlueXPseudoDetectorTAG
    int fRunNo;
 
  private:
-   static double TRIGGER_TIME_SIGMA;
-   static double TIME_REFERENCE_PLANE_Z;
-   static double BEAM_BUCKET_PERIOD;
-   static double BEAM_VELOCITY;
-
    static int HODO_MAX_HITS;
    static int MICRO_MAX_HITS;
    static double HODO_TWO_HIT_TIME_RESOL;
@@ -67,7 +67,7 @@ class GlueXPseudoDetectorTAG
    static G4Mutex fMutex;
 };
 
-inline int GlueXPseudoDetectorTAG::getRunNo()
+inline int GlueXPseudoDetectorTAG::getRunNo() const
 {
    return fRunNo;
 }

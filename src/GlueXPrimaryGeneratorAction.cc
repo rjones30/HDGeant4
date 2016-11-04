@@ -8,6 +8,7 @@
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
 #include "GlueXUserOptions.hh"
+#include "HddmOutput.hh"
 
 #include "G4Event.hh"
 #include "G4ParticleGun.hh"
@@ -35,15 +36,16 @@ G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable = 0;
 GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun = 0;
 particle_gun_t GlueXPrimaryGeneratorAction::fGunParticle;
 
-double GlueXPrimaryGeneratorAction::fBeamBucketPeriod = 0;
 double GlueXPrimaryGeneratorAction::fBeamBackgroundRate = 0;
 double GlueXPrimaryGeneratorAction::fBeamBackgroundGateStart = 0;
 double GlueXPrimaryGeneratorAction::fBeamBackgroundGateStop = 0;
+double GlueXPrimaryGeneratorAction::fBeamBucketPeriod = 4. * ns;
 double GlueXPrimaryGeneratorAction::fL1triggerTimeSigma = 10 * ns;
 double GlueXPrimaryGeneratorAction::fBeamStartZ = -24 * m;
 double GlueXPrimaryGeneratorAction::fTargetCenterZ = 65 * cm;
 double GlueXPrimaryGeneratorAction::fTargetLength = 29.9746 * cm;
 double GlueXPrimaryGeneratorAction::fBeamDiameter = 0.5 * cm;
+double GlueXPrimaryGeneratorAction::fBeamVelocity = 2.99792e8 * m/s;
 
 int GlueXPrimaryGeneratorAction::fEventCount = 0;
 
@@ -123,6 +125,13 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          exit(-1);
       }
 
+      // CobremsGenerator has its own standard units that it uses:
+      //  length : m
+      //  angles : radians
+      //  energy : GeV
+      //  time   : s
+      //  current: microAmps
+ 
       fCobremsGenerator = new CobremsGenerator(beamE0, beamEpeak);
       fCobremsGenerator->setPhotonEnergyMin(beamEmin);
       fCobremsGenerator->setCollimatorDistance(radColDist);
@@ -331,7 +340,7 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    // for good efficiency, but not too low so as to avoid excessive
    // warnings about Pcut violations.
    fCoherentPDFx.Pcut = .001;
-   fIncoherentPDFlogx.Pcut = .001;
+   fIncoherentPDFlogx.Pcut = 100.;
 }
 
 //--------------------------------------------
@@ -406,15 +415,20 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
                      p * cos(thetap));
    fParticleGun->SetParticleMomentum(mom);
 
+   // Sync the particle gun generator to the beam bunch clock
+   double tvtx = (pos[2] - fTargetCenterZ) / fBeamVelocity;
+   tvtx -= GenerateTriggerTime();
+   fParticleGun->SetParticleTime(tvtx);
+
+   // Store generated particle info so it can be written to output file
+   int type = fGunParticle.geantType;
+   GlueXUserEventInformation *event_info;
+   event_info = new GlueXUserEventInformation(type, tvtx, pos, mom);
+   anEvent->SetUserInformation(event_info);
+
    // Set the event number and fire the gun
    anEvent->SetEventID(++fEventCount);
    fParticleGun->GeneratePrimaryVertex(anEvent);
-
-   // Store generated particle info so it can be written to output file
-   pos *= 1 / cm; // convert to cm
-   mom *= 1 / GeV; // convert to GeV
-   int type = fGunParticle.geantType;
-   anEvent->SetUserInformation(new GlueXUserEventInformation(type, pos, mom));
 }
 
 //--------------------------------------------
@@ -440,7 +454,9 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
 
    // Store generated event info so it can be written to output file
    ++fEventCount;
-   anEvent->SetUserInformation(new GlueXUserEventInformation(hddmevent));
+   GlueXUserEventInformation *event_info;
+   event_info = new GlueXUserEventInformation(hddmevent);
+   anEvent->SetUserInformation(event_info);
 
    // Unpack generated event and prepare initial state for simulation
    int Nprimaries = 0;
@@ -459,6 +475,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
       double x = origin.getVx() * cm;
       double y = origin.getVy() * cm;
       double z = origin.getVz() * cm;
+      double t = origin.getT() * ns;
       if (x == 0 && y == 0 && z == 0) {
          while (true) {
             x = G4UniformRand() - 0.5;
@@ -469,29 +486,17 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
             }
          }
          z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
+         origin.setVx(x/cm);
+         origin.setVy(y/cm);
+         origin.setVz(z/cm);
+      }
+      if (t == 0) {
+         t = (z - fTargetCenterZ) / fBeamVelocity;
+         t -= GenerateTriggerTime();
+         origin.setT(t/ns);
       }
       G4ThreeVector pos(x, y, z);
-
-      // The primary interaction vertex time is referenced to a clock
-      // whose t=0 is synchronized to the crossing of a beam bunch
-      // through the target midplane. This beam bunch may not contain
-      // the beam particle whose interaction generated the vertex,
-      // but it represents best-guess based on the arrival time of
-      // the L1 trigger signal. The spread in the L1 relative to the
-      // interacting bunch time is parameterized as a Gaussian.
-
-      extern int run_number;
-      if (fBeamBucketPeriod == 0)
-         getBeamBucketPeriod(run_number);
-         // getBeamBucketPeriod(it_vertex->getRunNo());
-
-      double t0, t0rf;
-      double lightSpeed = 2.99792e8 * m/s;
-      t0 = (origin.getT() * ns) + fL1triggerTimeSigma * G4RandGauss::shoot();
-      t0rf = fBeamBucketPeriod * int(t0 / fBeamBucketPeriod + 0.5);
-      t0 = t0rf + (z - fTargetCenterZ) / lightSpeed;
-      G4PrimaryVertex* vertex = new G4PrimaryVertex(pos, t0);
-
+      G4PrimaryVertex* vertex = new G4PrimaryVertex(pos, t);
       hddm_s::ProductList &products = it_vertex->getProducts();
       hddm_s::ProductList::iterator it_product;
       for (it_product = products.begin();
@@ -567,9 +572,6 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    // Its time t0 should identify its beam bucket, ie. the time the photon
    // would reach the midplane of the target. To enable beam motion spreading,
    // define the beam box size below.
-
-#define BEAM_PHOTON_START_Z (-24 * m)
-// #define BEAM_BOX_SIZE (5 * mm)
 
    // The algorithm below generates coherent bremsstrahlung photons using a
    // importance-sampling technique. This algorithm requires that we prepare
@@ -656,12 +658,14 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    fCobremsGenerator->setTargetOrientation(thetax, thetay, thetaz);
 
    // Generate with importance sampling
-   double x, phi, theta2;
+   double x = 0;
+   double phi = 0;
+   double theta2 = 0;
    double polarization = 0;
-   double Scoherent = fCoherentPDFx.Npassed / 
-                      (fCoherentPDFx.Psum / fCoherentPDFx.Npassed);
-   double Sincoherent = fIncoherentPDFlogx.Npassed /
-                        (fIncoherentPDFlogx.Psum / fIncoherentPDFlogx.Npassed);
+   double Scoherent = fCoherentPDFx.Npassed * fCoherentPDFx.Npassed / 
+                      (fCoherentPDFx.Psum + 1e-99);
+   double Sincoherent = fIncoherentPDFlogx.Npassed * fIncoherentPDFlogx.Npassed /
+                        (fIncoherentPDFlogx.Psum + 1e-99);
    if (Scoherent < Sincoherent) {
       while (true) {                             // try coherent generation
          double dNcdxPDF;
@@ -798,17 +802,33 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    G4ThreeVector vtx(colx, coly, fBeamStartZ);
    G4ThreeVector pol(0, polarization, -polarization * py / pz);
 
+   // If beam photon is primary particle, use it to initialize event info
+   int bg = 1;
+   double tvtx;
+   if (t0 == 0) {
+      tvtx = (vtx[2] - fTargetCenterZ) / fBeamVelocity;
+      tvtx -= GenerateTriggerTime();
+      G4ThreeVector mom(px, py, pz);
+      GlueXUserEventInformation *event_info;
+      event_info = new GlueXUserEventInformation(1, tvtx, vtx, mom);
+      anEvent->SetUserInformation(event_info);
+      bg = 0;
+   }
+   else {
+      tvtx = fBeamBucketPeriod * floor(t0 / fBeamBucketPeriod + 0.5);
+      tvtx += (vtx[2] - fTargetCenterZ) / fBeamVelocity;
+   }
+
+   // Register a tagger hit for each beam photon
+   double ttag = tvtx + (fTargetCenterZ - vtx[2]) / fBeamVelocity;
+   HddmOutput::getTagger().addTaggerPhoton(anEvent, vtx, pabs, ttag, bg);
+   //
    // Generate a new primary for the beam photon
-   double lightSpeed = 2.99792e8 * m/s;
-   double t0rf = fBeamBucketPeriod * int(t0 / fBeamBucketPeriod + 0.5);
-   t0rf += (fBeamStartZ - fTargetCenterZ) / lightSpeed;
-   G4PrimaryVertex* vertex = new G4PrimaryVertex(vtx, t0rf);
+   G4PrimaryVertex* vertex = new G4PrimaryVertex(vtx, tvtx);
    G4PrimaryParticle* photon = new G4PrimaryParticle(part, px, py, pz);
    photon->SetPolarization(pol);
    vertex->SetPrimary(photon);
    anEvent->AddPrimaryVertex(vertex);
-      
-   // call hitTagger(vertex,vertex,plab,plab,0.,1,0,0)
 }
 
 // Convert particle types from Geant3 types to PDG scheme
@@ -978,5 +998,25 @@ double GlueXPrimaryGeneratorAction::GetMassPDG(int PDGtype)
 
 double GlueXPrimaryGeneratorAction::GetMass(int Geant3Type)
 {
-   return GetMassPDG(ConvertGeant3ToPdg(fGunParticle.geantType));
+   return GetMassPDG(ConvertGeant3ToPdg(Geant3Type));
+}
+
+double GlueXPrimaryGeneratorAction::GenerateTriggerTime()
+{
+   // The primary interaction vertex time is referenced to a clock
+   // whose t=0 is synchronized to the crossing of a beam bunch
+   // through the target midplane. This beam bunch may not contain
+   // the beam particle whose interaction generated the vertex,
+   // but it represents best-guess based on the arrival time of
+   // the L1 trigger signal. The spread in the L1 relative to the
+   // interacting bunch time is parameterized as a Gaussian.
+
+   extern int run_number;
+   static int last_run_number = 0;
+   if (run_number != last_run_number) {
+      getBeamBucketPeriod(run_number);
+      last_run_number = run_number;
+   }
+   double t0 = fL1triggerTimeSigma * G4RandGauss::shoot();
+   return fBeamBucketPeriod * floor(t0 / fBeamBucketPeriod + 0.5);
 }

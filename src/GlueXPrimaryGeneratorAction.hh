@@ -58,6 +58,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static int ConvertPdgToGeant3(int PDGtype);
    static double GetMassPDG(int PDGtype);
    static double GetMass(int Geant3Type);
+   static double GenerateTriggerTime();
  
  private:
    static int instanceCount;
@@ -93,6 +94,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static double fBeamBackgroundGateStop;
    static double fL1triggerTimeSigma;
    static double fBeamStartZ;
+   static double fBeamVelocity;
 
    static int fEventCount;
 
@@ -109,45 +111,48 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static double fBeamDiameter;
 
  public:
-   void setTargetCenterZ(double Z_cm) {
-      fTargetCenterZ = Z_cm * cm;
+   static void setTargetCenterZ(double Z) {
+      fTargetCenterZ = Z;
    }
-   void setTargetLength(double L_cm) {
-      fTargetLength = L_cm * cm;
+   static void setTargetLength(double L) {
+      fTargetLength = L;
    }
-   void setBeamDiameter(double D_cm) {
-      fBeamDiameter = D_cm * cm;
+   static void setBeamDiameter(double D) {
+      fBeamDiameter = D;
    }
-   double getTargetCenterZ() {
-      return fTargetCenterZ / cm;
+   static double getTargetCenterZ() {
+      return fTargetCenterZ;
    }
-   double getTargetLength() {
-      return fTargetLength / cm;
+   static double getTargetLength() {
+      return fTargetLength;
    }
-   double getBeamDiameter() {
-      return fBeamDiameter / cm;
+   static double getBeamDiameter() {
+      return fBeamDiameter;
+   }
+   static double getBeamVelocity() {
+      return fBeamVelocity;
    }
 
-   double getBeamBucketPeriod(int runno=0);
+   static double getBeamBucketPeriod(int runno=0);
 
    int getEventCount() {
       return fEventCount;
    }
 
-   void setBeamBucketPeriod(double period_ns) {
-      fBeamBucketPeriod = period_ns * ns;
+   static void setBeamBucketPeriod(double period) {
+      fBeamBucketPeriod = period;
    }
-   void setL1triggerTimeSigma(double sigma_ns) {
-      fL1triggerTimeSigma = sigma_ns;
+   static void setL1triggerTimeSigma(double sigma) {
+      fL1triggerTimeSigma = sigma;
    }
-   void setBeamStartZ(double Z_cm) {
-      fBeamStartZ = Z_cm * cm;
+   static void setBeamStartZ(double z) {
+      fBeamStartZ = z;
    }
-   double getL1triggerTimeSigma() {
+   static double getL1triggerTimeSigma() {
       return fL1triggerTimeSigma;
    }
-   double getBeamStartZcm() {
-      return fBeamStartZ / cm;
+   static double getBeamStartZ() {
+      return fBeamStartZ;
    }
 
    // The following tables contain PDFs for importance-sampling the
