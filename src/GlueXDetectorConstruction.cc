@@ -16,6 +16,7 @@
 #include "GlueXSensitiveDetectorGCAL.hh"
 #include "GlueXSensitiveDetectorCCAL.hh"
 #include "GlueXSensitiveDetectorFTOF.hh"
+#include "GlueXSensitiveDetectorDIRC.hh"
 #include "GlueXSensitiveDetectorCERE.hh"
 #include "GlueXSensitiveDetectorUPV.hh"
 #include "GlueXSensitiveDetectorPSC.hh"
@@ -260,6 +261,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorGCAL* gcalHandler = 0;
    GlueXSensitiveDetectorCCAL* ccalHandler = 0;
    GlueXSensitiveDetectorFTOF* ftofHandler = 0;
+   GlueXSensitiveDetectorDIRC* dircHandler = 0;
    GlueXSensitiveDetectorCERE* cereHandler = 0;
    GlueXSensitiveDetectorUPV* upvHandler = 0;
    GlueXSensitiveDetectorPSC* pscHandler = 0;
@@ -352,19 +354,26 @@ void GlueXDetectorConstruction::ConstructSDandField()
          }
          iter->second->SetSensitiveDetector(ftofHandler);
       }
+      else if (volname == "RDCD") {
+         if (dircHandler == 0) {
+            dircHandler = new GlueXSensitiveDetectorDIRC("dirc");
+            SDman->AddNewDetector(dircHandler);
+         }
+         iter->second->SetSensitiveDetector(dircHandler);
+      }
       else if (volname == "CERW" || volname == "CPPC") {
          if (cereHandler == 0) {
             cereHandler = new GlueXSensitiveDetectorCERE("cere");
             SDman->AddNewDetector(cereHandler);
          }
-         iter->second->SetSensitiveDetector(ftofHandler);
+         iter->second->SetSensitiveDetector(cereHandler);
       }
       else if (volname == "UPVP" || volname == "UPVC") {
          if (upvHandler == 0) {
             upvHandler = new GlueXSensitiveDetectorUPV("upv");
             SDman->AddNewDetector(upvHandler);
          }
-         iter->second->SetSensitiveDetector(ftofHandler);
+         iter->second->SetSensitiveDetector(upvHandler);
       }
       else if (volname == "PSCO") {
          if (pscHandler == 0) {
