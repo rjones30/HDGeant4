@@ -271,7 +271,7 @@ void GlueXSensitiveDetectorCERE::EndOfEvent(G4HCofThisEvent*)
       hitview.addCerenkovs();
    hddm_s::Cerenkov &cerenkov = hitview.getCerenkov();
 
-   // Collect and output the tofTruthHits
+   // Collect and output the cereTruthHits
    for (siter = tubes->begin(); siter != tubes->end(); ++siter) {
       std::vector<GlueXHitCEREtube::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
