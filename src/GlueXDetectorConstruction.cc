@@ -18,6 +18,7 @@
 #include "GlueXSensitiveDetectorFTOF.hh"
 #include "GlueXSensitiveDetectorDIRC.hh"
 #include "GlueXSensitiveDetectorCERE.hh"
+#include "GlueXSensitiveDetectorFMWPC.hh"
 #include "GlueXSensitiveDetectorUPV.hh"
 #include "GlueXSensitiveDetectorPSC.hh"
 #include "GlueXSensitiveDetectorPS.hh"
@@ -263,6 +264,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorFTOF* ftofHandler = 0;
    GlueXSensitiveDetectorDIRC* dircHandler = 0;
    GlueXSensitiveDetectorCERE* cereHandler = 0;
+   GlueXSensitiveDetectorFMWPC* fmwpcHandler = 0;
    GlueXSensitiveDetectorUPV* upvHandler = 0;
    GlueXSensitiveDetectorPSC* pscHandler = 0;
    GlueXSensitiveDetectorPS* psHandler = 0;
@@ -367,6 +369,13 @@ void GlueXDetectorConstruction::ConstructSDandField()
             SDman->AddNewDetector(cereHandler);
          }
          iter->second->SetSensitiveDetector(cereHandler);
+      }
+      else if (volname == "CPPG") {
+         if (fmwpcHandler == 0) {
+            fmwpcHandler = new GlueXSensitiveDetectorFMWPC("fmwpc");
+            SDman->AddNewDetector(fmwpcHandler);
+         }
+         iter->second->SetSensitiveDetector(fmwpcHandler);
       }
       else if (volname == "UPVP" || volname == "UPVC") {
          if (upvHandler == 0) {
