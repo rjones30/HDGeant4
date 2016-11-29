@@ -174,10 +174,17 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
             newPoint->E_GeV = Ein/GeV;
          }
       }
-      return true;
+      // The DIRC is a special type of detector in that the volume used
+      // to generate truth points is different from the volume where the
+      // DIRC hits are generated. This is not true in the present pseudo
+      // hits code, but as soon as phototube array hits are implemented,
+      // the following line should be uncommented.
+      //return true;
    }
 
    // Post the hit to the hits map, ordered by time
+   // This code makes pseudo-hits called "flashes", and
+   // needs to be replaced with actual simulated DIRC hits.
 
    if (dEsum > 0) {
       // int bar = GetIdent("bar", touch);
