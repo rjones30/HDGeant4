@@ -174,6 +174,9 @@ G4bool GlueXSensitiveDetectorCERE::ProcessHits(G4Step* step,
             newPoint->E_GeV = Ein/GeV;
          }
       }
+      // This sensitive detector is unique in that different volumes are used
+      // to generate truth points and hits, which means that a single entry
+      // to ProcessEvents can make one or the other, but not both.
       return true;
    }
 
