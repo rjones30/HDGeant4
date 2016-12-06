@@ -7,9 +7,14 @@ name := hdgeant4
 G4TARGET := $(name)
 G4EXLIB := true
 G4LIB_BUILD_SHARED := true
+G4WORKDIR := $(shell pwd)
 
-ifndef $(G4ROOT)
+ifndef G4ROOT
     $(error G4ROOT is not set, please set it and try again)
+endif
+
+ifndef G4SYSTEM
+    $(error Geant4 environment not set up, please source $(G4ROOT)/share/Geant4-10.2.2/geant4make/geant4make.sh and try again)
 endif
 
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
