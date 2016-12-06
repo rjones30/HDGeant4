@@ -8,6 +8,10 @@ G4TARGET := $(name)
 G4EXLIB := true
 G4LIB_BUILD_SHARED := true
 
+ifndef $(G4ROOT)
+    $(error G4ROOT is not set, please set it and try again)
+endif
+
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
 CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
