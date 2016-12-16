@@ -20,6 +20,7 @@ endif
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
 CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
+CPPFLAGS += -I$(shell root-config --incdir)
 CPPFLAGS += -I/usr/include/Qt
 CPPFLAGS += -I/usr/include/python2.6
 CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
