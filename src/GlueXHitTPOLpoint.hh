@@ -40,10 +40,10 @@ class GlueXHitTPOLpoint : public G4VHit
    G4double px_GeV;      // momentum (GeV/c) of track at point, x component
    G4double py_GeV;      // momentum (GeV/c) of track at point, y component
    G4double pz_GeV;      // momentum (GeV/c) of track at point, z component
-   G4double r_cm;        // global sqrt(x*x + y*y) of track at point (cm)
+   G4double x_cm;        // global x coordinate of track at point (cm)
+   G4double y_cm;        // global y coordinate of track at point (cm)
    G4double z_cm;        // global z coordinate of track at point (cm)
    G4double t_ns;        // time of track crossing at point (ns)
-   G4int sector_;        // azimuthal sector number of hit counter
    G4int track_;         // Geant4 track ID of particle making this track
    G4int trackID_;       // GlueX-assigned track ID of particle making this track
 

@@ -8,14 +8,14 @@
 
 G4ThreadLocal G4Allocator<GlueXHitTPOLwedge>* GlueXHitTPOLwedgeAllocator = 0;
 
-GlueXHitTPOLwedge::GlueXHitTPOLwedge(G4int sector)
+GlueXHitTPOLwedge::GlueXHitTPOLwedge(G4int sector, G4int ring)
  : G4VHit(),
-   sector_(sector)
+   ring_(ring), sector_(sector)
 {}
 
 int GlueXHitTPOLwedge::operator==(const GlueXHitTPOLwedge &right) const
 {
-   if (sector_ !=  right.sector_)
+   if (sector_ !=  right.sector_ || ring_ != right.ring_)
       return 0;
    else if (hits.size() != right.hits.size())
       return 0;
@@ -36,7 +36,7 @@ int GlueXHitTPOLwedge::operator==(const GlueXHitTPOLwedge &right) const
 
 GlueXHitTPOLwedge &GlueXHitTPOLwedge::operator+=(const GlueXHitTPOLwedge &right)
 {
-   if (sector_ !=  right.sector_) {
+   if (sector_ !=  right.sector_ || ring_ != right.ring_) {
       G4cerr << "Error in GlueXHitTPOLwedge::operator+=() - "
              << "illegal attempt to merge hits from two different wedges!"
              << G4endl;
@@ -68,6 +68,7 @@ void GlueXHitTPOLwedge::Draw() const
 void GlueXHitTPOLwedge::Print() const
 {
    G4cout << "GlueXHitTPOLwedge: "
+          << "   ring = " << ring_ << G4endl
           << "   sector = " << sector_ << G4endl;
    std::vector<hitinfo_t>::const_iterator hiter;
    for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {

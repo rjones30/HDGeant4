@@ -20,7 +20,7 @@
 class GlueXHitTPOLwedge : public G4VHit
 {
  public:
-   GlueXHitTPOLwedge(G4int sector);
+   GlueXHitTPOLwedge(G4int sector, G4int ring=0);
    int operator==(const GlueXHitTPOLwedge &right) const;
    GlueXHitTPOLwedge &operator+=(const GlueXHitTPOLwedge &right);
 
@@ -32,7 +32,8 @@ class GlueXHitTPOLwedge : public G4VHit
 
    // no reason to hide hit data
 
-   G4int sector_;          // counter number, from 1 at/past phi=0
+   G4int ring_;            // ring number, from 1, inner to outer
+   G4int sector_;          // sector number, from 1 at/past phi=0
 
    struct hitinfo_t {
       G4double dE_MeV;     // energy deposition (MeV)
@@ -44,9 +45,9 @@ class GlueXHitTPOLwedge : public G4VHit
    };
    std::vector<hitinfo_t> hits;
 
-   G4int GetKey() const { return GetKey(sector_); }
-   static G4int GetKey(G4int sector) {
-      return sector;
+   G4int GetKey() const { return GetKey(sector_, ring_); }
+   static G4int GetKey(G4int sector, G4int ring=0) {
+      return (ring << 10) + sector;
    }
 };
 
