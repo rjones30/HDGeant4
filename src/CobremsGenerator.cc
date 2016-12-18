@@ -79,7 +79,7 @@ CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
    setCoherentEdge(Epeak_GeV);
    fPhotonEnergyMin = 0.120; // GeV
    setPolarizedFlag(false);
-   setCollimatedFlag(true);
+   setCollimatedFlag(false);
 
 #if COBREMS_GENERATOR_VERBOSITY > 0
    std::cout << std::endl

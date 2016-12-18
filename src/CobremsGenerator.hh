@@ -274,7 +274,7 @@ inline void CobremsGenerator::setTargetThetaz(double thetaz) {
 inline void CobremsGenerator::setTargetOrientation(double thetax,
                                                    double thetay,
                                                    double thetaz) {
-   fTargetThetax = thetay;
+   fTargetThetax = thetax;
    fTargetThetay = thetay;
    fTargetThetaz = thetaz;
    updateTargetOrientation();
