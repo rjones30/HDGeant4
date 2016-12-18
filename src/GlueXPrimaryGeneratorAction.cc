@@ -281,10 +281,13 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    double xmin = Emin / Emax;
    double dx = (1 - xmin) / Ndim;
    double xarr[Ndim + 1], yarr[Ndim + 1];
-   for (int i=0; i <= Ndim; ++i) {
+   for (int i=0; i < Ndim; ++i) {
       xarr[i] = xmin + i * dx;
-      yarr[i] = twopi * fCobremsGenerator->Rate_dNcdxdp(xarr[i], pi/2);
+      yarr[i] = twopi * fCobremsGenerator->Rate_dNcdxdp(xarr[i], pi/4);
+      yarr[i] = (yarr[i] > 0)? yarr[i] : 0;
    }
+   xarr[Ndim] = 1;
+   yarr[Ndim] = yarr[Ndim - 1];
    fCobremsGenerator->applyBeamCrystalConvolution(Ndim + 1, xarr, yarr);
    sum = 0;
    for (int i=0; i <= Ndim; ++i) {
@@ -301,17 +304,21 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    // Compute approximate PDF for dNi/dx
    double logxmin = log(xmin);
    double dlogx = -logxmin / Ndim;
+   double dNidlogx;
    sum = 0;
-   for (int i=0; i <= Ndim; ++i) {
+   for (int i=0; i < Ndim; ++i) {
       double logx = logxmin + i * dlogx;
       double x = exp(logx);
-      double dNidx = fCobremsGenerator->Rate_dNidxdt2(x, 0);
-      double dNidlogx = dNidx * x;
+      dNidlogx = fCobremsGenerator->Rate_dNidxdt2(x, 0) * x;
+      dNidlogx = (dNidlogx > 0)? dNidlogx : 0;
       fIncoherentPDFlogx.randvar.push_back(logx);
       fIncoherentPDFlogx.density.push_back(dNidlogx);
       fIncoherentPDFlogx.integral.push_back(sum);
       sum += (i < Ndim)? dNidlogx : 0;
    }
+   fIncoherentPDFlogx.randvar.push_back(0);
+   fIncoherentPDFlogx.density.push_back(dNidlogx);
+   fIncoherentPDFlogx.integral.push_back(sum);
    for (int i=0; i <= Ndim; ++i) {
       fIncoherentPDFlogx.density[i] /= sum * dlogx;
       fIncoherentPDFlogx.integral[i] /= sum;
@@ -321,16 +328,22 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    fIncoherentPDFtheta02 = 1.8;
    double ymin = 1e-3;
    double dy = (1 - ymin) / Ndim;
+   double dNidxdy;
    sum = 0;
-   for (int i=0; i <= Ndim; ++i) {
+   for (int i=0; i < Ndim; ++i) {
       double y = ymin + i * dy;
       double theta2 = fIncoherentPDFtheta02 * (1 / y - 1);
-      double dNidxdt2 = fCobremsGenerator->Rate_dNidxdt2(0.5, theta2);
+      dNidxdy = fCobremsGenerator->Rate_dNidxdt2(0.5, theta2) *
+                fIncoherentPDFtheta02 / (y*y);
+      dNidxdy = (dNidxdy > 0)? dNidxdy : 0;
       fIncoherentPDFy.randvar.push_back(y);
-      fIncoherentPDFy.density.push_back(dNidxdt2);
+      fIncoherentPDFy.density.push_back(dNidxdy);
       fIncoherentPDFy.integral.push_back(sum);
-      sum += (i < Ndim)? dNidxdt2 : 0;
+      sum += (i < Ndim)? dNidxdy : 0;
    }
+   fIncoherentPDFy.randvar.push_back(1);
+   fIncoherentPDFy.density.push_back(dNidxdy);
+   fIncoherentPDFy.integral.push_back(sum);
    for (int i=0; i <= Ndim; ++i) {
       fIncoherentPDFy.density[i] /= sum * dy;
       fIncoherentPDFy.integral[i] /= sum;
@@ -339,8 +352,8 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    // These cutoffs should be set empirically, as low as possible
    // for good efficiency, but not too low so as to avoid excessive
    // warnings about Pcut violations.
-   fCoherentPDFx.Pcut = .001;
-   fIncoherentPDFlogx.Pcut = 100.;
+   fCoherentPDFx.Pcut = .0003;
+   fIncoherentPDFlogx.Pcut = .003;
 }
 
 //--------------------------------------------
@@ -633,21 +646,25 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
 
    double phiMosaic = twopi * G4UniformRand();
    double rhoMosaic = sqrt(-2 * log(G4UniformRand()));
-   rhoMosaic *= fCobremsGenerator->getTargetCrystalMosaicSpread() * m*radian;
+   rhoMosaic *= fCobremsGenerator->getTargetCrystalMosaicSpread() * radian;
    double thxMosaic = rhoMosaic * cos(phiMosaic);
    double thyMosaic = rhoMosaic * sin(phiMosaic);
 
-   double xemittance = fCobremsGenerator->getBeamEmittance() * m;
+   double xemittance = fCobremsGenerator->getBeamEmittance() * m*radian;
    double yemittance = xemittance / 2.5; // nominal, should be checked
    double xspotsize = fCobremsGenerator->getCollimatorSpotrms() * m;
    double yspotsize = xspotsize; // nominal, should be checked
-   double thxBeam = (xemittance / xspotsize) * sqrt(-2 * log(G4UniformRand()));
-   double thyBeam = (yemittance / yspotsize) * sqrt(-2 * log(G4UniformRand()));
+   double phiBeam = twopi * G4UniformRand();
+   double rhoBeam = sqrt(-2 * log(G4UniformRand()));
+   double thxBeam = (xemittance / xspotsize) * rhoBeam * cos(phiBeam);
+   double thyBeam = (yemittance / yspotsize) * rhoBeam * sin(phiBeam);
 
    double raddz = fCobremsGenerator->getTargetThickness() * m;
-   double varMS = fCobremsGenerator->Sigma2MS(raddz * G4UniformRand());
-   double thxMS = sqrt(-2 * varMS * log(G4UniformRand()));
-   double thyMS = sqrt(-2 * varMS * log(G4UniformRand()));
+   double varMS = fCobremsGenerator->Sigma2MS(raddz/m * G4UniformRand());
+   double rhoMS = sqrt(-2 * varMS * log(G4UniformRand()));
+   double phiMS = twopi * G4UniformRand();
+   double thxMS = rhoMS * cos(phiMS);
+   double thyMS = rhoMS * sin(phiMS);
 
    double targetThetax = fCobremsGenerator->getTargetThetax() * radian;
    double targetThetay = fCobremsGenerator->getTargetThetay() * radian;
@@ -690,7 +707,15 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
          if (Pfactor > fCoherentPDFx.Pcut) {
             G4cout << "Warning in GenerateBeamPhoton - Pfactor " << Pfactor
                    << " exceeds fCoherentPDFx.Pcut = " << fCoherentPDFx.Pcut
-                   << ", please increase." << G4endl;
+                   << G4endl
+                   << "  present x = " << x << G4endl
+                   << "  present maximum Pfactor = "
+                   << fCoherentPDFx.Pmax << G4endl
+                   << "  current generator efficiency = "
+                   << fCoherentPDFx.Npassed /
+                      (fCoherentPDFx.Npassed +
+                       fCoherentPDFx.Nfailed + 1e-99)
+                   << G4endl;
          }
          if (G4UniformRand() * fCoherentPDFx.Pcut > Pfactor) {
             ++fCoherentPDFx.Nfailed;
@@ -730,8 +755,8 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
                double u0 = fIncoherentPDFlogx.integral[i - 1];
                double u1 = fIncoherentPDFlogx.integral[i];
                double logx = (logx0 * (u1 - u) + logx1 * (u - u0)) / (u1 - u0);
-               dNidxdyPDF = (f0 * (u1 - u) + f1 * (u - u0)) / (u1 - u0);
                x = exp(logx);
+               dNidxdyPDF = (f0 * (u1 - u) + f1 * (u - u0)) / (u1 - u0) / x;
                break;
             }
          }
@@ -759,14 +784,23 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
          if (Pfactor > fIncoherentPDFlogx.Pcut) {
             G4cout << "Warning in GenerateBeamPhoton - Pfactor " << Pfactor
                    << " exceeds fIncoherentPDFlogx.Pcut = " 
-                   << fIncoherentPDFlogx.Pcut << ", please increase."
+                   << fIncoherentPDFlogx.Pcut
+                   << G4endl
+                   << "  present x = " << x << G4endl
+                   << "  present y = " << y << G4endl
+                   << "  present maximum Pfactor = "
+                   << fIncoherentPDFlogx.Pmax << G4endl
+                   << "  current generator efficiency = "
+                   << fIncoherentPDFlogx.Npassed /
+                      (fIncoherentPDFlogx.Npassed +
+                       fIncoherentPDFlogx.Nfailed + 1e-99)
                    << G4endl;
          }
          if (G4UniformRand() * fIncoherentPDFlogx.Pcut > Pfactor) {
             ++fIncoherentPDFlogx.Nfailed;
             continue;
          }
-         ++fIncoherentPDFlogx.Psum += Pfactor;
+         fIncoherentPDFlogx.Psum += Pfactor;
          ++fIncoherentPDFlogx.Npassed;
 
          phi = twopi * G4UniformRand();
@@ -774,6 +808,11 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
          break;
       }
    }
+
+   // Put the radiator back the way your found it
+   fCobremsGenerator->setTargetOrientation(targetThetax,
+                                           targetThetay,
+                                           targetThetaz);
 
    // Define the particle kinematics and polarization in lab coordinates
    G4ParticleDefinition *part = fParticleTable->FindParticle("gamma");
@@ -829,6 +868,23 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    photon->SetPolarization(pol);
    vertex->SetPrimary(photon);
    anEvent->AddPrimaryVertex(vertex);
+}
+
+void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(G4Step* step)
+{
+   // Unlike the other GenerateXXX methods in this class, this method should
+   // be invoked after tracking of an event is already underway. Its purpose
+   // is to generate pair conversion / triplet production by gamma rays in a
+   // converter target with the full polarization-dependent QED differential
+   // cross section. Both incoherent (triplet) and nuclear + atomic coherent
+   // scattering is simulated by this method. It should be called from your
+   // G4SteppingAction::UserSteppingAction method to force pair conversion
+   // in special simulations dedicated to the study of the analyzing power
+   // of this reaction. The incident gamma ray is stopped and the pair (plus
+   // recoil electron, if any) are added to the event stack as new primary
+   // particles.
+
+   G4cout << "bang!!" << G4endl;
 }
 
 // Convert particle types from Geant3 types to PDG scheme

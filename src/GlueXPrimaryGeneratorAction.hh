@@ -23,6 +23,7 @@
 #include "G4ParticleDefinition.hh"
 #include "GlueXParticleGun.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4Step.hh"
 
 #include "globals.hh"
 
@@ -53,6 +54,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    void GeneratePrimariesParticleGun(G4Event* anEvent);
    void GeneratePrimariesCobrems(G4Event* anEvent);
    void GenerateBeamPhoton(G4Event* anEvent, double t0);
+   void GenerateBeamPairConversion(G4Step* step);
 
    static int ConvertGeant3ToPdg(int Geant3Type);
    static int ConvertPdgToGeant3(int PDGtype);
