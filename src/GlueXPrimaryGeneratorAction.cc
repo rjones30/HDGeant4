@@ -433,15 +433,14 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    tvtx -= GenerateTriggerTime();
    fParticleGun->SetParticleTime(tvtx);
 
-   // Store generated particle info so it can be written to output file
-   int type = fGunParticle.geantType;
-   GlueXUserEventInformation *event_info;
-   event_info = new GlueXUserEventInformation(type, tvtx, pos, mom);
-   anEvent->SetUserInformation(event_info);
-
    // Set the event number and fire the gun
    anEvent->SetEventID(++fEventCount);
    fParticleGun->GeneratePrimaryVertex(anEvent);
+
+   // Store generated particle info so it can be written to output file
+   GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
+   event_info->AddPrimaryVertex(*anEvent->GetPrimaryVertex());
+   anEvent->SetUserInformation(event_info);
 }
 
 //--------------------------------------------
@@ -643,7 +642,6 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    // with that applied to dNi/(dx dy) and then replace the fake variable y'
    // with the true y that was sampled as described above.
 
-
    double phiMosaic = twopi * G4UniformRand();
    double rhoMosaic = sqrt(-2 * log(G4UniformRand()));
    rhoMosaic *= fCobremsGenerator->getTargetCrystalMosaicSpread() * radian;
@@ -679,10 +677,11 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    double phi = 0;
    double theta2 = 0;
    double polarization = 0;
-   double Scoherent = fCoherentPDFx.Npassed * fCoherentPDFx.Npassed / 
-                      (fCoherentPDFx.Psum + 1e-99);
-   double Sincoherent = fIncoherentPDFlogx.Npassed * fIncoherentPDFlogx.Npassed /
-                        (fIncoherentPDFlogx.Psum + 1e-99);
+   double Scoherent = fCoherentPDFx.Npassed * 
+                     (fCoherentPDFx.Npassed / (fCoherentPDFx.Psum + 1e-99));
+   double Sincoherent = fIncoherentPDFlogx.Npassed *
+                       (fIncoherentPDFlogx.Npassed /
+                       (fIncoherentPDFlogx.Psum + 1e-99));
    if (Scoherent < Sincoherent) {
       while (true) {                             // try coherent generation
          double dNcdxPDF;
@@ -840,6 +839,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
 #endif
    G4ThreeVector vtx(colx, coly, fBeamStartZ);
    G4ThreeVector pol(0, polarization, -polarization * py / pz);
+   G4ThreeVector mom(px, py, pz);
 
    // If beam photon is primary particle, use it to initialize event info
    int bg = 1;
@@ -847,10 +847,9 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    if (t0 == 0) {
       tvtx = (vtx[2] - fTargetCenterZ) / fBeamVelocity;
       tvtx -= GenerateTriggerTime();
-      G4ThreeVector mom(px, py, pz);
-      GlueXUserEventInformation *event_info;
-      event_info = new GlueXUserEventInformation(1, tvtx, vtx, mom);
+      GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
       anEvent->SetUserInformation(event_info);
+      event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
       bg = 0;
    }
    else {
@@ -868,6 +867,24 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    photon->SetPolarization(pol);
    vertex->SetPrimary(photon);
    anEvent->AddPrimaryVertex(vertex);
+   if (bg) {
+      GlueXUserEventInformation *info;
+      info = (GlueXUserEventInformation *)anEvent->GetUserInformation();
+      if (info)
+         info->AddPrimaryVertex(*vertex);
+   }
+
+   if (fIncoherentPDFlogx.Npassed / 100 * 100 == fIncoherentPDFlogx.Npassed) {
+      G4cout << "coherent rate is "
+             << fCoherentPDFx.Psum / fCoherentPDFx.Npassed << G4endl
+             << "incoherent rate is "
+             << fIncoherentPDFlogx.Psum / fIncoherentPDFlogx.Npassed << G4endl
+             << "counts are "
+             << fCoherentPDFx.Npassed << " / " << fIncoherentPDFlogx.Npassed
+             << " = "
+             << fCoherentPDFx.Npassed / (fIncoherentPDFlogx.Npassed + 1e-99)
+             << G4endl;
+   }
 }
 
 void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(G4Step* step)

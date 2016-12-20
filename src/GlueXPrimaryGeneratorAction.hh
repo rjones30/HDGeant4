@@ -167,8 +167,8 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
       double Psum;
       double Pcut;
       double Pmax;
-      int Nfailed;
-      int Npassed;
+      long int Nfailed;
+      long int Npassed;
 
       ImportanceSampler()
        : Psum(0), Pcut(1), Pmax(0), Nfailed(0), Npassed(0) {}

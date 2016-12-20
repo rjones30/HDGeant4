@@ -30,38 +30,6 @@ GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
    SetRandomSeeds();
 }
 
-GlueXUserEventInformation::GlueXUserEventInformation(int geanttype, double t0,
-                                                     const G4ThreeVector &pos, 
-                                                     const G4ThreeVector &mom)
- : fKeepEvent(true)
-{
-   fOutputRecord = new hddm_s::HDDM();
-   hddm_s::PhysicsEventList pev = fOutputRecord->addPhysicsEvents();
-   pev(0).setRunNo(HddmOutput::getRunNo());
-   pev(0).setEventNo(HddmOutput::incrementEventNo());
-   hddm_s::ReactionList rea = pev(0).addReactions();
-   hddm_s::VertexList ver = rea(0).addVertices();
-   hddm_s::OriginList ori = ver(0).addOrigins();
-   ori(0).setVx(pos[0]/cm);
-   ori(0).setVy(pos[1]/cm);
-   ori(0).setVz(pos[2]/cm);
-   ori(0).setT(t0/ns);
-   hddm_s::ProductList pro = ver(0).addProducts();
-   pro(0).setType((Particle_t)geanttype);
-   pro(0).setPdgtype(GlueXPrimaryGeneratorAction::ConvertGeant3ToPdg(geanttype));
-   pro(0).setId(1);
-   pro(0).setParentid(0);
-   pro(0).setMech(0);
-   hddm_s::MomentumList pmo = pro(0).addMomenta();
-   pmo(0).setPx(mom[0]/GeV);
-   pmo(0).setPy(mom[1]/GeV);
-   pmo(0).setPz(mom[2]/GeV);
-   double mass = GlueXPrimaryGeneratorAction::GetMass(geanttype);
-   double E = sqrt(mass*mass + mom[0]*mom[0] + mom[1]*mom[1] + mom[2]*mom[2]);
-   pmo(0).setE(E/GeV);
-   SetRandomSeeds();
-}
-
 GlueXUserEventInformation::~GlueXUserEventInformation()
 {
    static bool geometry_record_written = false;
@@ -75,6 +43,133 @@ GlueXUserEventInformation::~GlueXUserEventInformation()
          HddmOutput::WriteOutputHDDM(*fOutputRecord);
       }
       delete fOutputRecord;
+   }
+}
+
+void GlueXUserEventInformation::AddBeamParticle(int geanttype, double t0,
+                                                const G4ThreeVector &pos, 
+                                                const G4ThreeVector &mom)
+{
+   hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+   if (pev.size() == 0) {
+      pev = fOutputRecord->addPhysicsEvents();
+      pev(0).setRunNo(HddmOutput::getRunNo());
+      pev(0).setEventNo(HddmOutput::incrementEventNo());
+   }
+   hddm_s::ReactionList rea = pev(0).getReactions();
+   if (rea.size() == 0) {
+      rea = pev(0).addReactions();
+   }
+   hddm_s::BeamList beam = rea(0).addBeams();
+   beam(0).setType((Particle_t)geanttype);
+   hddm_s::MomentumList pmo = beam(0).addMomenta();
+   pmo(0).setPx(mom[0]/GeV);
+   pmo(0).setPy(mom[1]/GeV);
+   pmo(0).setPz(mom[2]/GeV);
+   double mass = GlueXPrimaryGeneratorAction::GetMass(geanttype);
+   double E = sqrt(mass*mass + mom[0]*mom[0] + mom[1]*mom[1] + mom[2]*mom[2]);
+   pmo(0).setE(E/GeV);
+}
+
+void GlueXUserEventInformation::AddBeamParticle(int geanttype, double t0,
+                                                const G4ThreeVector &pos, 
+                                                const G4ThreeVector &mom,
+                                                const G4ThreeVector &pol)
+{
+   AddBeamParticle(geanttype, t0, pos, mom);
+   hddm_s::BeamList beam = fOutputRecord->getBeams();
+   hddm_s::PolarizationList polar = beam(0).addPolarizations();
+   polar(0).setPx(pol[0]);
+   polar(0).setPy(pol[1]);
+   polar(0).setPz(pol[2]);
+}
+
+void GlueXUserEventInformation::AddTargetParticle(int geanttype, double t0,
+                                                  const G4ThreeVector &pos,
+                                                  const G4ThreeVector &mom)
+{
+   hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+   if (pev.size() == 0) {
+      pev = fOutputRecord->addPhysicsEvents();
+      pev(0).setRunNo(HddmOutput::getRunNo());
+      pev(0).setEventNo(HddmOutput::incrementEventNo());
+   }
+   hddm_s::ReactionList rea = pev(0).getReactions();
+   if (rea.size() == 0) {
+      rea = pev(0).addReactions();
+   }
+   hddm_s::TargetList beam = rea(0).addTargets();
+   beam(0).setType((Particle_t)geanttype);
+   hddm_s::MomentumList pmo = beam(0).addMomenta();
+   pmo(0).setPx(mom[0]/GeV);
+   pmo(0).setPy(mom[1]/GeV);
+   pmo(0).setPz(mom[2]/GeV);
+   double mass = GlueXPrimaryGeneratorAction::GetMass(geanttype);
+   double E = sqrt(mass*mass + mom[0]*mom[0] + mom[1]*mom[1] + mom[2]*mom[2]);
+   pmo(0).setE(E/GeV);
+}
+
+void GlueXUserEventInformation::AddTargetParticle(int geanttype, double t0,
+                                                  const G4ThreeVector &pos, 
+                                                  const G4ThreeVector &mom,
+                                                  const G4ThreeVector &pol)
+{
+   AddTargetParticle(geanttype, t0, pos, mom);
+   hddm_s::TargetList beam = fOutputRecord->getTargets();
+   hddm_s::PolarizationList polar = beam(0).addPolarizations();
+   polar(0).setPx(pol[0]);
+   polar(0).setPy(pol[1]);
+   polar(0).setPz(pol[2]);
+}
+
+void GlueXUserEventInformation::AddPrimaryVertex(const G4PrimaryVertex &vertex)
+{
+   hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+   if (pev.size() == 0) {
+      pev = fOutputRecord->addPhysicsEvents();
+      pev(0).setRunNo(HddmOutput::getRunNo());
+      pev(0).setEventNo(HddmOutput::incrementEventNo());
+   }
+   hddm_s::ReactionList rea = pev(0).getReactions();
+   if (rea.size() == 0) {
+      rea = pev(0).addReactions();
+   }
+   hddm_s::VertexList ver = rea(0).addVertices();
+   hddm_s::OriginList ori = ver(0).addOrigins();
+   ori(0).setVx(vertex.GetX0()/cm);
+   ori(0).setVy(vertex.GetY0()/cm);
+   ori(0).setVz(vertex.GetZ0()/cm);
+   ori(0).setT(vertex.GetT0()/ns);
+   int np = vertex.GetNumberOfParticle();
+   hddm_s::ProductList pro = ver(0).addProducts(np);
+   for (int ip=0; ip < np; ++ip) {
+       G4PrimaryParticle *part = vertex.GetPrimary(ip);
+       int pdgtype = part->GetPDGcode();
+       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+       pro(ip).setType((Particle_t)g3type);
+       pro(ip).setPdgtype(pdgtype);
+       pro(ip).setId(ip);
+       pro(ip).setParentid(0);
+       pro(ip).setMech(0);
+       hddm_s::MomentumList pmo = pro(ip).addMomenta();
+       double px = part->GetPx()/GeV;
+       double py = part->GetPy()/GeV;
+       double pz = part->GetPz()/GeV;
+       double mass = part->GetMass()/GeV;
+       double E = sqrt(mass*mass + px*px + py*py + pz*pz);
+       pmo(ip).setPx(px);
+       pmo(ip).setPy(py);
+       pmo(ip).setPz(pz);
+       pmo(ip).setE(E);
+       double polx = part->GetPolX();
+       double poly = part->GetPolY();
+       double polz = part->GetPolZ();
+       if (polx != 0 || poly != 0 || polz != 0) {
+          hddm_s::PolarizationList polar = pro(ip).addPolarizations();
+          polar(0).setPx(px);
+          polar(0).setPy(py);
+          polar(0).setPz(pz);
+       }
    }
 }
 

@@ -17,6 +17,7 @@
 
 #include "G4UImanager.hh"
 #include "G4VUserEventInformation.hh"
+#include "G4PrimaryVertex.hh"
 #include "G4ThreeVector.hh"
 #include "Randomize.hh"
 
@@ -26,10 +27,19 @@ class GlueXUserEventInformation: public G4VUserEventInformation
 {
  public:
    GlueXUserEventInformation(hddm_s::HDDM *hddmevent=NULL);
-   GlueXUserEventInformation(int geanttype, double t0,
-                             const G4ThreeVector &pos, 
-                             const G4ThreeVector &mom);
    ~GlueXUserEventInformation();
+
+   void AddBeamParticle(int geanttype, double t0, const G4ThreeVector &pos, 
+                                                  const G4ThreeVector &mom);
+   void AddBeamParticle(int geanttype, double t0, const G4ThreeVector &pos, 
+                                                  const G4ThreeVector &mom,
+                                                  const G4ThreeVector &pol);
+   void AddTargetParticle(int geanttype, double t0, const G4ThreeVector &pos, 
+                                                    const G4ThreeVector &mom);
+   void AddTargetParticle(int geanttype, double t0, const G4ThreeVector &pos, 
+                                                    const G4ThreeVector &mom,
+                                                    const G4ThreeVector &pol);
+   void AddPrimaryVertex(const G4PrimaryVertex &vertex);
 
    void SetRandomSeeds();
    void Print() const;
