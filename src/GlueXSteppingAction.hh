@@ -12,11 +12,16 @@
 #define GlueXSteppingAction_h 1
 
 #include "G4UserSteppingAction.hh"
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
 
 class GlueXSteppingAction : public G4UserSteppingAction
 {
   public:
     void UserSteppingAction(const G4Step*);
+
+ private:
+   static G4Mutex fMutex;
 };
 
 #endif
