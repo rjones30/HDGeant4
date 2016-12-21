@@ -20,6 +20,7 @@
 
 #include "CobremsGenerator.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
+#include "GlueXPseudoDetectorTAG.hh"
 #include "G4ParticleDefinition.hh"
 #include "GlueXParticleGun.hh"
 #include "G4SystemOfUnits.hh"
@@ -54,7 +55,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    void GeneratePrimariesParticleGun(G4Event* anEvent);
    void GeneratePrimariesCobrems(G4Event* anEvent);
    void GenerateBeamPhoton(G4Event* anEvent, double t0);
-   void GenerateBeamPairConversion(G4Step* step);
+   void GenerateBeamPairConversion(const G4Step* step) const;
 
    static int ConvertGeant3ToPdg(int Geant3Type);
    static int ConvertPdgToGeant3(int PDGtype);
@@ -62,6 +63,8 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static double GetMass(int Geant3Type);
    static double GenerateTriggerTime();
  
+   static const GlueXPrimaryGeneratorAction* GetInstance();
+
  private:
    static int instanceCount;
    static source_type_t fSourceType;
@@ -70,6 +73,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static CobremsGenerator *fCobremsGenerator;
    static G4ParticleTable *fParticleTable;
    static GlueXParticleGun *fParticleGun;
+   static GlueXPseudoDetectorTAG *fTagger;
 
  public:
    struct single_particle_gun_t {
@@ -185,6 +189,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 
  private:
    static G4Mutex fMutex;
+   static std::list<GlueXPrimaryGeneratorAction*> fInstance;
 };
 
 #endif

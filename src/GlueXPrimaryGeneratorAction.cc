@@ -34,6 +34,7 @@ hddm_s::istream *GlueXPrimaryGeneratorAction::fHDDMistream = 0;
 CobremsGenerator *GlueXPrimaryGeneratorAction::fCobremsGenerator = 0;
 G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable = 0;
 GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun = 0;
+GlueXPseudoDetectorTAG *GlueXPrimaryGeneratorAction::fTagger = 0;
 particle_gun_t GlueXPrimaryGeneratorAction::fGunParticle;
 
 double GlueXPrimaryGeneratorAction::fBeamBackgroundRate = 0;
@@ -55,6 +56,7 @@ ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFy;
 double GlueXPrimaryGeneratorAction::fIncoherentPDFtheta02;
 
 G4Mutex GlueXPrimaryGeneratorAction::fMutex = G4MUTEX_INITIALIZER;
+std::list<GlueXPrimaryGeneratorAction*> GlueXPrimaryGeneratorAction::fInstance;
 
 //--------------------------------------------
 // GlueXPrimaryGeneratorAction (constructor)
@@ -63,6 +65,7 @@ G4Mutex GlueXPrimaryGeneratorAction::fMutex = G4MUTEX_INITIALIZER;
 GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 {
    G4AutoLock barrier(&fMutex);
+   fInstance.push_back(this);
    ++instanceCount;
 
    // Initializaton is driven by the control.in file, which
@@ -239,6 +242,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction(const
  : G4VUserPrimaryGeneratorAction(src)
 {
    G4AutoLock barrier(&fMutex);
+   fInstance.push_back(this);
    ++instanceCount;
 }
 
@@ -256,6 +260,7 @@ GlueXPrimaryGeneratorAction &GlueXPrimaryGeneratorAction::operator=(const
 GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()
 {
    G4AutoLock barrier(&fMutex);
+   fInstance.remove(this);
    if (--instanceCount == 0) {
       if (fHDDMistream)
          delete fHDDMistream;
@@ -265,6 +270,18 @@ GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()
          delete fCobremsGenerator;
       delete fParticleGun;
    }
+}
+
+const GlueXPrimaryGeneratorAction *GlueXPrimaryGeneratorAction::GetInstance()
+{
+   // Generally one only needs a single instance of this object
+   // per process, and this static method lets any component in the
+   // application obtain the primary instance, if any. If none has
+   // yet been constructed, it returns zero.
+
+   if (fInstance.size() > 0)
+      return *fInstance.begin();
+   return 0;
 }
 
 void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
@@ -352,7 +369,7 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    // These cutoffs should be set empirically, as low as possible
    // for good efficiency, but not too low so as to avoid excessive
    // warnings about Pcut violations.
-   fCoherentPDFx.Pcut = .0003;
+   fCoherentPDFx.Pcut = .003;
    fIncoherentPDFlogx.Pcut = .003;
 }
 
@@ -842,38 +859,49 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    G4ThreeVector mom(px, py, pz);
 
    // If beam photon is primary particle, use it to initialize event info
+   GlueXUserEventInformation *event_info;
    int bg = 1;
    double tvtx;
    if (t0 == 0) {
+      event_info = new GlueXUserEventInformation();
+      anEvent->SetUserInformation(event_info);
       tvtx = (vtx[2] - fTargetCenterZ) / fBeamVelocity;
       tvtx -= GenerateTriggerTime();
-      GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
-      anEvent->SetUserInformation(event_info);
       event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
       bg = 0;
    }
    else {
+      event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
+      assert (event_info != 0);
       tvtx = fBeamBucketPeriod * floor(t0 / fBeamBucketPeriod + 0.5);
       tvtx += (vtx[2] - fTargetCenterZ) / fBeamVelocity;
    }
 
-   // Register a tagger hit for each beam photon
-   double ttag = tvtx + (fTargetCenterZ - vtx[2]) / fBeamVelocity;
-   HddmOutput::getTagger().addTaggerPhoton(anEvent, vtx, pabs, ttag, bg);
-   //
-   // Generate a new primary for the beam photon
+   // Generate new primary for the beam photon
    G4PrimaryVertex* vertex = new G4PrimaryVertex(vtx, tvtx);
    G4PrimaryParticle* photon = new G4PrimaryParticle(part, px, py, pz);
    photon->SetPolarization(pol);
    vertex->SetPrimary(photon);
    anEvent->AddPrimaryVertex(vertex);
+
+   // If bg beam particle, append to MC record
    if (bg) {
-      GlueXUserEventInformation *info;
-      info = (GlueXUserEventInformation *)anEvent->GetUserInformation();
-      if (info)
-         info->AddPrimaryVertex(*vertex);
+      event_info->AddPrimaryVertex(*vertex);
    }
 
+   // Register a tagger hit for each beam photon
+   int runNo = HddmOutput::getRunNo();
+   if (fTagger == 0) {
+      fTagger = new GlueXPseudoDetectorTAG(runNo);
+   }
+   else if (fTagger->getRunNo() != runNo) {
+      delete fTagger;
+      fTagger = new GlueXPseudoDetectorTAG(runNo);
+   }
+   double ttag = tvtx + (fTargetCenterZ - vtx[2]) / fBeamVelocity;
+   fTagger->addTaggerPhoton(anEvent, vtx, pabs, ttag, bg);
+
+#if VERBOSE_COBREMS_SPLITTING
    if (fIncoherentPDFlogx.Npassed / 100 * 100 == fIncoherentPDFlogx.Npassed) {
       G4cout << "coherent rate is "
              << fCoherentPDFx.Psum / fCoherentPDFx.Npassed << G4endl
@@ -885,9 +913,10 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
              << fCoherentPDFx.Npassed / (fIncoherentPDFlogx.Npassed + 1e-99)
              << G4endl;
    }
+#endif
 }
 
-void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(G4Step* step)
+void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step) const
 {
    // Unlike the other GenerateXXX methods in this class, this method should
    // be invoked after tracking of an event is already underway. Its purpose
