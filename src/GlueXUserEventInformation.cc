@@ -15,6 +15,7 @@ GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
 {
    if (hddmevent == 0) {
       fOutputRecord = new hddm_s::HDDM();
+      fOutputRecord->addPhysicsEvents();
       fNprimaries = 0;
    }
    else {
