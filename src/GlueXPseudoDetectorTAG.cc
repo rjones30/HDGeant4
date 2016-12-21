@@ -186,7 +186,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
          if (fabs(t - hiter->getT()*ns) < MICRO_TWO_HIT_TIME_RESOL)
             break;
          else if (hiter->getT()*ns > t) {
-            hits = citer->addTaggerTruthHits(1, ++hit);
+            hits = citer->addTaggerTruthHits(1, hit);
             hiter = hits.begin();
             hiter->setE(energy/GeV);
             hiter->setT(1e99);
@@ -235,7 +235,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
          if (fabs(t - hiter->getT()*ns) < HODO_TWO_HIT_TIME_RESOL)
             break;
          else if (hiter->getT()*ns > t) {
-            hits = citer->addTaggerTruthHits(1, ++hit);
+            hits = citer->addTaggerTruthHits(1, hit);
             hiter = hits.begin();
             hiter->setE(energy/GeV);
             hiter->setT(1e99);
