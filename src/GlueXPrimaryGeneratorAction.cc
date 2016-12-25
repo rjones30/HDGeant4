@@ -1270,10 +1270,6 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step)
          }
          fTripletPDF.Psum += Pfactor;
          if (G4UniformRand() * fTripletPDF.Pcut > Pfactor) {
-            if (fTripletPDF.Ntested / 100 * 100 == fTripletPDF.Ntested) {
-               G4cout << "rate is " << fTripletPDF.Psum / fTripletPDF.Ntested
-                      << G4endl;
-            }
             continue;
          }
          ++fTripletPDF.Npassed;
@@ -1355,10 +1351,6 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step)
          }
          fPaircohPDF.Psum += Pfactor;
          if (G4UniformRand() * fPaircohPDF.Pcut > Pfactor) {
-            if (fPaircohPDF.Ntested / 100 * 100 == fPaircohPDF.Ntested) {
-               G4cout << "rate is " << fPaircohPDF.Psum / fPaircohPDF.Ntested
-                      << G4endl;
-            }
             continue;
          }
          ++fPaircohPDF.Npassed;
