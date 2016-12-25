@@ -16,6 +16,9 @@
 #include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4PhysicalConstants.hh"
+#include "G4RunManager.hh"
+#include "G4Positron.hh"
+#include "G4Electron.hh"
 #include "Randomize.hh"
 
 #include <JANA/jerror.h>
@@ -32,6 +35,9 @@ source_type_t GlueXPrimaryGeneratorAction::fSourceType = SOURCE_TYPE_NONE;
 std::ifstream *GlueXPrimaryGeneratorAction::fHDDMinfile = 0;
 hddm_s::istream *GlueXPrimaryGeneratorAction::fHDDMistream = 0;
 CobremsGenerator *GlueXPrimaryGeneratorAction::fCobremsGenerator = 0;
+#ifdef USING_DIRACXX
+PairConversionGenerator *GlueXPrimaryGeneratorAction::fPairsGenerator = 0;
+#endif
 G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable = 0;
 GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun = 0;
 GlueXPseudoDetectorTAG *GlueXPrimaryGeneratorAction::fTagger = 0;
@@ -54,6 +60,8 @@ ImportanceSampler GlueXPrimaryGeneratorAction::fCoherentPDFx;
 ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFlogx;
 ImportanceSampler GlueXPrimaryGeneratorAction::fIncoherentPDFy;
 double GlueXPrimaryGeneratorAction::fIncoherentPDFtheta02;
+ImportanceSampler GlueXPrimaryGeneratorAction::fPaircohPDF;
+ImportanceSampler GlueXPrimaryGeneratorAction::fTripletPDF;
 
 G4Mutex GlueXPrimaryGeneratorAction::fMutex = G4MUTEX_INITIALIZER;
 std::list<GlueXPrimaryGeneratorAction*> GlueXPrimaryGeneratorAction::fInstance;
@@ -141,7 +149,15 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       fCobremsGenerator->setCollimatorDiameter(colDiam);
       fCobremsGenerator->setBeamEmittance(beamEmit);
       fCobremsGenerator->setTargetThickness(radThick);
-      prepareCobremsImportanceSamplingPDFs();
+      fPairsGenerator = new PairConversionGenerator();
+
+      // These cutoffs should be set empirically, as low as possible
+      // for good efficiency, but not too low so as to avoid excessive
+      // warnings about Pcut violations.
+      fCoherentPDFx.Pcut = .003;
+      fIncoherentPDFlogx.Pcut = .003;
+      fPaircohPDF.Pcut = 10;
+      fTripletPDF.Pcut = 2.5;
 
       std::map<int, double> bgratepars;
       std::map<int, double> bggatepars;
@@ -268,6 +284,8 @@ GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()
          delete fHDDMinfile;
       if (fCobremsGenerator)
          delete fCobremsGenerator;
+      if (fPairsGenerator)
+         delete fPairsGenerator;
       delete fParticleGun;
    }
 }
@@ -297,46 +315,41 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    // Compute approximate PDF for dNc/dx
    double xmin = Emin / Emax;
    double dx = (1 - xmin) / Ndim;
-   double xarr[Ndim + 1], yarr[Ndim + 1];
+   double xarr[Ndim], yarr[Ndim];
    for (int i=0; i < Ndim; ++i) {
-      xarr[i] = xmin + i * dx;
-      yarr[i] = twopi * fCobremsGenerator->Rate_dNcdxdp(xarr[i], pi/4);
+      xarr[i] = xmin + (i + 0.5) * dx;
+      yarr[i] = fCobremsGenerator->Rate_dNcdxdp(xarr[i], pi/4);
       yarr[i] = (yarr[i] > 0)? yarr[i] : 0;
    }
-   xarr[Ndim] = 1;
-   yarr[Ndim] = yarr[Ndim - 1];
-   fCobremsGenerator->applyBeamCrystalConvolution(Ndim + 1, xarr, yarr);
+   fCobremsGenerator->applyBeamCrystalConvolution(Ndim, xarr, yarr);
    sum = 0;
-   for (int i=0; i <= Ndim; ++i) {
-      sum += (i > 0)? (yarr[i] + yarr[i - 1]) / 2 : 0;
+   for (int i=0; i < Ndim; ++i) {
+      sum += yarr[i];
       fCoherentPDFx.randvar.push_back(xarr[i]);
       fCoherentPDFx.density.push_back(yarr[i]);
       fCoherentPDFx.integral.push_back(sum);
    }
-   for (int i=0; i <= Ndim; ++i) {
+   for (int i=0; i < Ndim; ++i) {
       fCoherentPDFx.density[i] /= sum * dx;
       fCoherentPDFx.integral[i] /= sum;
    }
 
-   // Compute approximate PDF for dNi/dx
+   // Compute approximate PDF for dNi/dlogx
    double logxmin = log(xmin);
    double dlogx = -logxmin / Ndim;
    double dNidlogx;
    sum = 0;
    for (int i=0; i < Ndim; ++i) {
-      double logx = logxmin + i * dlogx;
+      double logx = logxmin + (i + 0.5) * dlogx;
       double x = exp(logx);
       dNidlogx = fCobremsGenerator->Rate_dNidxdt2(x, 0) * x;
       dNidlogx = (dNidlogx > 0)? dNidlogx : 0;
+      sum += dNidlogx;
       fIncoherentPDFlogx.randvar.push_back(logx);
       fIncoherentPDFlogx.density.push_back(dNidlogx);
       fIncoherentPDFlogx.integral.push_back(sum);
-      sum += (i < Ndim)? dNidlogx : 0;
    }
-   fIncoherentPDFlogx.randvar.push_back(0);
-   fIncoherentPDFlogx.density.push_back(dNidlogx);
-   fIncoherentPDFlogx.integral.push_back(sum);
-   for (int i=0; i <= Ndim; ++i) {
+   for (int i=0; i < Ndim; ++i) {
       fIncoherentPDFlogx.density[i] /= sum * dlogx;
       fIncoherentPDFlogx.integral[i] /= sum;
    }
@@ -348,29 +361,158 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    double dNidxdy;
    sum = 0;
    for (int i=0; i < Ndim; ++i) {
-      double y = ymin + i * dy;
+      double y = ymin + (i + 0.5) * dy;
       double theta2 = fIncoherentPDFtheta02 * (1 / y - 1);
       dNidxdy = fCobremsGenerator->Rate_dNidxdt2(0.5, theta2) *
                 fIncoherentPDFtheta02 / (y*y);
       dNidxdy = (dNidxdy > 0)? dNidxdy : 0;
+      sum += dNidxdy;
       fIncoherentPDFy.randvar.push_back(y);
       fIncoherentPDFy.density.push_back(dNidxdy);
       fIncoherentPDFy.integral.push_back(sum);
-      sum += (i < Ndim)? dNidxdy : 0;
    }
-   fIncoherentPDFy.randvar.push_back(1);
-   fIncoherentPDFy.density.push_back(dNidxdy);
-   fIncoherentPDFy.integral.push_back(sum);
-   for (int i=0; i <= Ndim; ++i) {
+   for (int i=0; i < Ndim; ++i) {
       fIncoherentPDFy.density[i] /= sum * dy;
       fIncoherentPDFy.integral[i] /= sum;
    }
+   fCoherentPDFx.Pmax = 0;
+   fCoherentPDFx.Psum = 0;
+   fIncoherentPDFlogx.Pmax = 0;
+   fIncoherentPDFlogx.Psum = 0;
+   fIncoherentPDFy.Pmax = 0;
+   fIncoherentPDFy.Psum = 0;
+}
 
-   // These cutoffs should be set empirically, as low as possible
-   // for good efficiency, but not too low so as to avoid excessive
-   // warnings about Pcut violations.
-   fCoherentPDFx.Pcut = .003;
-   fIncoherentPDFlogx.Pcut = .003;
+void GlueXPrimaryGeneratorAction::preparePairsImportanceSamplingPDFs()
+{
+   // Construct lookup tables representing the PDFs used for
+   // importance-sampling the gamma pair conversion kinematics.
+
+   // Compute 2D histogram containing rate as a function of u0,u1
+   // where u0 is the (originally uniform [0,1]) random number used
+   // to generate Mpair and u1 generates qR. The algorithm succeeds
+   // because the mapping u0->Mpair and u1->qR used here is the
+   // same as is used in GenerateBeamPairConversion.
+
+   double kin = 9.; // GeV
+   TPhoton g0;
+   TLepton p1(mElectron);
+   TLepton e2(mElectron);
+   TLepton e3(mElectron);
+   TThreeVectorReal p;
+   g0.SetMom(p.SetPolar(kin,0,0));
+   g0.SetPol(TThreeVector(0,0,0));
+   p1.AllPol();
+   e2.AllPol();
+   e3.AllPol();
+
+   double Epos = kin / 2;
+   double Mmin = 2 * mElectron;
+   double Mcut = 5e-3; // 5 MeV cutoff parameter
+   double um0 = 1 + sqr(Mcut / Mmin);
+   double qRcut = 1e-3; // 1 MeV/c cutoff parameter
+
+   int Nbins = 50;
+   fTripletPDF.Psum = 0;
+   fPaircohPDF.Psum = 0;
+   for (int i0=0; i0 < Nbins; ++i0) {
+      double u0 = (i0 + 0.5) / Nbins;
+      double um = pow(um0, u0);
+      double Mpair = Mcut / sqrt(um - 1);
+      double k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+      double qRmin = sqr(Mpair) / (2 * kin);
+      double uq0 = qRmin / (qRcut + sqrt(sqr(qRcut) + sqr(qRmin)));
+      double weight0 = sqr(Mpair) * (sqr(Mcut) + sqr(Mpair));
+      for (int i1=0; i1 < Nbins; ++i1) {
+         double u1 = (i1 + 0.5) / Nbins;
+         double uq = pow(uq0, u1);
+         double qR = 2 * qRcut * uq / (1 - sqr(uq));
+         double weight = weight0 * sqr(qR) * sqrt(sqr(qRcut) + sqr(qR));
+         double E3 = sqrt(sqr(qR) + sqr(mElectron));
+         double E12 = kin + mElectron - E3;
+         if (k12star2 < 0 || E12 < Mpair) {
+            fPaircohPDF.density.push_back(0);
+            fTripletPDF.density.push_back(0);
+            fPaircohPDF.integral.push_back(fPaircohPDF.Psum);
+            fTripletPDF.integral.push_back(fTripletPDF.Psum);
+            continue;
+         }
+         double k12star = sqrt(k12star2);
+         double q12mag = sqrt(sqr(E12) - sqr(Mpair));
+         double costhetastar = (Epos - E12 / 2) * 
+                               Mpair / (k12star * q12mag);
+         double costhetaR = (sqr(Mpair) / 2 + (kin + mElectron) *
+                             (E3 - mElectron)) / (kin * qR);
+         if (fabs(costhetastar) > 1 || fabs(costhetaR) > 1) {
+            fPaircohPDF.density.push_back(0);
+            fTripletPDF.density.push_back(0);
+            fPaircohPDF.integral.push_back(fPaircohPDF.Psum);
+            fTripletPDF.integral.push_back(fTripletPDF.Psum);
+            continue;
+         }
+         double qRlong = qR * costhetaR;
+         double qRperp = sqrt(sqr(qR) - sqr(qRlong));
+         TThreeVectorReal q3(0, qRperp, qRlong);
+         double sinthetastar = sqrt(1 - sqr(costhetastar));
+         TThreeVectorReal k12(k12star * sinthetastar, 0, 
+                              k12star * costhetastar);
+         TFourVectorReal q1(Mpair / 2, k12);
+         TFourVectorReal q2(Mpair / 2, -k12);
+         TLorentzBoost tolab(q3[1] / E12, q3[2] / E12, (q3[3] - kin) / E12);
+         q1.Boost(tolab);
+         q2.Boost(tolab);
+         p1.SetMom(q1);
+         e2.SetMom(q2);
+         e3.SetMom(q3);
+         double tripXS = fPairsGenerator->DiffXS_triplet(g0,p1,e2,e3);
+         double pairXS = fPairsGenerator->DiffXS_pair(g0,p1,e2);
+         fTripletPDF.Psum += fTripletPDF.Pmax = tripXS * weight;
+         fPaircohPDF.Psum += fPaircohPDF.Pmax = pairXS * weight;
+         fTripletPDF.density.push_back(fTripletPDF.Pmax);
+         fPaircohPDF.density.push_back(fPaircohPDF.Pmax);
+         fPaircohPDF.integral.push_back(fPaircohPDF.Psum);
+         fTripletPDF.integral.push_back(fTripletPDF.Psum);
+      }
+   }
+
+   double du2 = 1. / sqr(Nbins);
+   for (int i0=0, index=0; i0 < Nbins; ++i0) {
+      for (int i1=0; i1 < Nbins; ++i1, ++index) {
+         double randvar = i0 + (i1 + 0.5) / Nbins;
+         fTripletPDF.randvar.push_back(randvar);
+         fPaircohPDF.randvar.push_back(randvar);
+         fTripletPDF.density[index] /= fTripletPDF.Psum * du2;
+         fPaircohPDF.density[index] /= fPaircohPDF.Psum * du2;
+         fTripletPDF.integral[index] /= fTripletPDF.Psum;
+         fPaircohPDF.integral[index] /= fPaircohPDF.Psum;
+      }
+   }
+   fTripletPDF.Pmax = 0;
+   fTripletPDF.Psum = 0;
+   fPaircohPDF.Pmax = 0;
+   fPaircohPDF.Psum = 0;
+}
+
+unsigned int ImportanceSampler::search(double u, const std::vector<double> &list)
+{
+   // Perform a fast search through non-decreasing list
+   // for the index of the first element not less than u.
+
+   int imin = -1;
+   int imax = list.size() - 1;
+   while (imax > imin + 1) {
+      int i = (imin + imax) / 2;
+      if (list[i] >= u)
+         imax = i;
+      else
+         imin = i;
+   }
+   return imax;
+}
+
+unsigned int ImportanceSampler::search(double u) const
+{
+   return search(u, integral);
 }
 
 //--------------------------------------------
@@ -659,6 +801,10 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    // with that applied to dNi/(dx dy) and then replace the fake variable y'
    // with the true y that was sampled as described above.
 
+   if (fCoherentPDFx.density.size() == 0) {
+      prepareCobremsImportanceSamplingPDFs();
+   }
+
    double phiMosaic = twopi * G4UniformRand();
    double rhoMosaic = sqrt(-2 * log(G4UniformRand()));
    rhoMosaic *= fCobremsGenerator->getTargetCrystalMosaicSpread() * radian;
@@ -695,27 +841,23 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    double theta2 = 0;
    double polarization = 0;
    double Scoherent = fCoherentPDFx.Npassed * 
-                     (fCoherentPDFx.Npassed / (fCoherentPDFx.Psum + 1e-99));
+                     (fCoherentPDFx.Ntested / (fCoherentPDFx.Psum + 1e-99));
    double Sincoherent = fIncoherentPDFlogx.Npassed *
-                       (fIncoherentPDFlogx.Npassed /
+                       (fIncoherentPDFlogx.Ntested /
                        (fIncoherentPDFlogx.Psum + 1e-99));
    if (Scoherent < Sincoherent) {
       while (true) {                             // try coherent generation
-         double dNcdxPDF;
+         ++fCoherentPDFx.Ntested;
+
          double u = G4UniformRand();
-         for (unsigned int i=1; i < fCoherentPDFx.randvar.size(); ++i) {
-            if (u <= fCoherentPDFx.integral[i]) {
-               double x0 = fCoherentPDFx.randvar[i - 1];
-               double x1 = fCoherentPDFx.randvar[i];
-               double f0 = fCoherentPDFx.density[i - 1];
-               double f1 = fCoherentPDFx.density[i];
-               double u0 = fCoherentPDFx.integral[i - 1];
-               double u1 = fCoherentPDFx.integral[i];
-               x = (x0 * (u1 - u) + x1 * (u - u0)) / (u1 - u0);
-               dNcdxPDF = (f0 * (u1 - u) + f1 * (u - u0)) / (u1 - u0);
-               break;
-            }
-         }
+         int i = fCoherentPDFx.search(u);
+         double fi = fCoherentPDFx.density[i];
+         double ui = fCoherentPDFx.integral[i];
+         double xi = fCoherentPDFx.randvar[i];
+         double dx = (i > 0)? xi - fCoherentPDFx.randvar[i-1]:
+                              fCoherentPDFx.randvar[i+1] - xi;
+         x = xi + dx / 2 - (ui - u) / fi;
+         double dNcdxPDF = fi;
          double dNcdx = twopi * fCobremsGenerator->Rate_dNcdxdp(x, pi / 4);
          double Pfactor = dNcdx / dNcdxPDF;
          if (Pfactor > fCoherentPDFx.Pmax)
@@ -729,68 +871,53 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
                    << fCoherentPDFx.Pmax << G4endl
                    << "  current generator efficiency = "
                    << fCoherentPDFx.Npassed /
-                      (fCoherentPDFx.Npassed +
-                       fCoherentPDFx.Nfailed + 1e-99)
+                      (fCoherentPDFx.Ntested + 1e-99)
                    << G4endl;
          }
+         fCoherentPDFx.Psum += Pfactor;
          if (G4UniformRand() * fCoherentPDFx.Pcut > Pfactor) {
-            ++fCoherentPDFx.Nfailed;
             continue;
          }
-         fCoherentPDFx.Psum += Pfactor;
          ++fCoherentPDFx.Npassed;
 
+         double freq;
          double fmax = dNcdx / pi;
          while (true) {
             phi = twopi * G4UniformRand();
-            double f = fCobremsGenerator->Rate_dNcdxdp(x, phi);
-            if (G4UniformRand() * fmax < f)
+            freq = fCobremsGenerator->Rate_dNcdxdp(x, phi);
+            if (G4UniformRand() * fmax < freq)
                break;
          }
-         double uq = G4UniformRand();
-         for (unsigned int i=0; i < fCobremsGenerator->fQ2theta2.size(); ++i) {
-            if (uq <= fCobremsGenerator->fQ2weight[i]) {
-               theta2 = fCobremsGenerator->fQ2theta2[i];
-               break;
-            }
-         }
+         double uq = freq * G4UniformRand();
+         int j = ImportanceSampler::search(uq, fCobremsGenerator->fQ2weight);
+         theta2 = fCobremsGenerator->fQ2theta2[j];
          polarization = fCobremsGenerator->Polarization(x, theta2);
          break;
       }
    }
    else {
       while (true) {                           // try incoherent generation
-         double dNidxdyPDF;
-         double u = G4UniformRand();
-         for (unsigned int i=1; i < fIncoherentPDFlogx.randvar.size(); ++i) {
-            if (u <= fIncoherentPDFlogx.integral[i]) {
-               double logx0 = fIncoherentPDFlogx.randvar[i - 1];
-               double logx1 = fIncoherentPDFlogx.randvar[i];
-               double f0 = fIncoherentPDFlogx.density[i - 1];
-               double f1 = fIncoherentPDFlogx.density[i];
-               double u0 = fIncoherentPDFlogx.integral[i - 1];
-               double u1 = fIncoherentPDFlogx.integral[i];
-               double logx = (logx0 * (u1 - u) + logx1 * (u - u0)) / (u1 - u0);
-               x = exp(logx);
-               dNidxdyPDF = (f0 * (u1 - u) + f1 * (u - u0)) / (u1 - u0) / x;
-               break;
-            }
-         }
-         double y;
+         ++fIncoherentPDFlogx.Ntested;
+
+         double ux = G4UniformRand();
+         int i = fIncoherentPDFlogx.search(ux);
+         double fi = fIncoherentPDFlogx.density[i];
+         double ui = fIncoherentPDFlogx.integral[i];
+         double logxi = fIncoherentPDFlogx.randvar[i];
+         double dlogx = (i > 0)? logxi - fIncoherentPDFlogx.randvar[i-1]:
+                                 fIncoherentPDFlogx.randvar[i+1] - logxi;
+         double logx = logxi + dlogx / 2 - (ui - ux) / fi;
+         x = exp(logx);
+         double dNidxdyPDF = fi / x;
          double uy = G4UniformRand();
-         for (unsigned int i=1; i < fIncoherentPDFy.randvar.size(); ++i) {
-            if (uy <= fIncoherentPDFy.integral[i]) {
-               double y0 = fIncoherentPDFy.randvar[i - 1];
-               double y1 = fIncoherentPDFy.randvar[i];
-               double f0 = fIncoherentPDFy.density[i - 1];
-               double f1 = fIncoherentPDFy.density[i];
-               double u0 = fIncoherentPDFy.integral[i - 1];
-               double u1 = fIncoherentPDFy.integral[i];
-               y = (y0 * (u1 - uy) + y1 * (uy - u0)) / (u1 - u0);
-               dNidxdyPDF *= (f0 * (u1 - uy) + f1 * (uy - u0)) / (u1 - u0);
-               break;
-            }
-         }
+         int j = fIncoherentPDFy.search(uy);
+         double fj = fIncoherentPDFy.density[j];
+         double uj = fIncoherentPDFy.integral[j];
+         double yj = fIncoherentPDFy.randvar[j];
+         double dy = (j > 0)? yj - fIncoherentPDFy.randvar[j-1]:
+                             fIncoherentPDFy.randvar[j+1] - yj;
+         double y = yj + dy / 2 - (uj - uy) / fj;
+         dNidxdyPDF *= fj;
          theta2 = fIncoherentPDFtheta02 * (1 / (y + 1e-99) - 1);
          double dNidxdy = fCobremsGenerator->Rate_dNidxdt2(x, theta2) *
                           fIncoherentPDFtheta02 / (y*y + 1e-99);
@@ -808,15 +935,13 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
                    << fIncoherentPDFlogx.Pmax << G4endl
                    << "  current generator efficiency = "
                    << fIncoherentPDFlogx.Npassed /
-                      (fIncoherentPDFlogx.Npassed +
-                       fIncoherentPDFlogx.Nfailed + 1e-99)
+                      (fIncoherentPDFlogx.Ntested + 1e-99)
                    << G4endl;
          }
+         fIncoherentPDFlogx.Psum += Pfactor;
          if (G4UniformRand() * fIncoherentPDFlogx.Pcut > Pfactor) {
-            ++fIncoherentPDFlogx.Nfailed;
             continue;
          }
-         fIncoherentPDFlogx.Psum += Pfactor;
          ++fIncoherentPDFlogx.Npassed;
 
          phi = twopi * G4UniformRand();
@@ -904,9 +1029,15 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
 #if VERBOSE_COBREMS_SPLITTING
    if (fIncoherentPDFlogx.Npassed / 100 * 100 == fIncoherentPDFlogx.Npassed) {
       G4cout << "coherent rate is "
-             << fCoherentPDFx.Psum / fCoherentPDFx.Npassed << G4endl
+             << fCoherentPDFx.Psum / (fCoherentPDFx.Ntested + 1e-99)
+             << ", efficiency is "
+             << fCoherentPDFx.Npassed / (fCoherentPDFx.Ntested + 1e-99)
+             << G4endl
              << "incoherent rate is "
-             << fIncoherentPDFlogx.Psum / fIncoherentPDFlogx.Npassed << G4endl
+             << fIncoherentPDFlogx.Psum / (fIncoherentPDFlogx.Ntested + 1e-99)
+             << ", efficiency is "
+             << fIncoherentPDFlogx.Npassed / (fIncoherentPDFlogx.Ntested + 1e-99)
+             << G4endl
              << "counts are "
              << fCoherentPDFx.Npassed << " / " << fIncoherentPDFlogx.Npassed
              << " = "
@@ -916,7 +1047,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
 #endif
 }
 
-void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step) const
+void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step)
 {
    // Unlike the other GenerateXXX methods in this class, this method should
    // be invoked after tracking of an event is already underway. Its purpose
@@ -930,7 +1061,361 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step)
    // recoil electron, if any) are added to the event stack as new primary
    // particles.
 
-   G4cout << "bang!!" << G4endl;
+   G4AutoLock barrier(&fMutex);
+
+#ifndef USING_DIRACXX
+
+   G4cerr << "GlueXPrimaryGeneratorAction::GeneratorBeamPairConversion error:"
+          << G4endl
+          << "  You have enabled pair/triplet conversion in the PTAR target,"
+          << G4endl
+          << "  but your have built HDGeant4 without support for the Dirac++"
+		  << G4endl
+          << "  library. Either rebuild with Dirac++ support or else jack up"
+		  << G4endl
+          << "  the value of constant FORCED_PTAR_PAIR_CONVERSION_THRESHOLD"
+		  << G4endl
+          << "  in GlueXSteppingAction.cc and try again. Aborting this run..."
+		  << G4endl;
+   exit(1);
+
+#else
+
+#if defined DO_TRIPLET_IMPORTANCE_SAMPLE || defined DO_PAIRCOH_IMPORTANCE_SAMPLE
+   if (fTripletPDF.density.size() == 0) {
+      G4cout << "GlueXPrimaryGeneratorAction::GenerateBeamPairConversion:"
+             << G4endl
+             << "   Setting up cross section tables, please wait... "
+             << std::flush;
+      preparePairsImportanceSamplingPDFs();
+      G4cout << "finished." << G4endl;
+   }
+#endif
+
+   TPhoton gIn;
+   TLepton p1(mElectron);
+   TLepton e2(mElectron);
+   TLepton e3(mElectron);
+   p1.AllPol();
+   e2.AllPol();
+   e3.AllPol();
+   const G4Track *track = step->GetTrack();
+   double kin = track->GetKineticEnergy()/GeV;
+   G4ThreeVector mom(track->GetMomentum());
+   TThreeVectorReal mom0(mom[0]/GeV, mom[1]/GeV, mom[2]/GeV);
+   gIn.SetMom(mom0);
+   G4ThreeVector pol(track->GetPolarization());
+   TThreeVectorReal pol0(pol[0], pol[1], pol[2]);
+   gIn.SetPol(pol0);
+
+   // Define an angle and axis that rotates zhat into the direction
+   // of the incidentn gamma, so that the generated kinematics is
+   // defined with the incident gamma aligned with zhat, and then
+   // rotated at the end into the final spatial direction.
+   TThreeVectorReal rockaxis(mom0);
+   rockaxis.Cross(TThreeVectorReal(0,0,1));
+   double rockangle = rockaxis.Length() / kin;
+   rockaxis /= rockaxis.Length();
+
+   while (true) {
+      double weight = 1;
+
+      // Generate uniform in E+, phi12, phiR
+      double Epos = kin * G4UniformRand();
+      while (Epos < mElectron) {
+         Epos = kin * G4UniformRand();
+      }
+      weight *= kin - mElectron;
+      double phi12 = 2*M_PI * G4UniformRand();
+      weight *= 2*M_PI;
+      double phiR = 2*M_PI * G4UniformRand();
+      weight *= 2*M_PI;
+
+      double u0 = G4UniformRand();
+      double u1 = G4UniformRand();
+
+#if DO_TRIPLET_IMPORTANCE_SAMPLE
+
+      int i = fTripletPDF.search(u1);
+      double fi = fTripletPDF.density[i];
+      double ui = fTripletPDF.integral[i];
+      double ri = fTripletPDF.randvar[i];
+      double xi = ri - floor(ri);
+      double dx = (xi > 0.5)? ri - fTripletPDF.randvar[i-1]:
+                              fTripletPDF.randvar[i+1] - ri;
+      u1 = xi + dx / 2 - (ui - u1) / (fi * dx);
+      u0 = (u0 + floor(ri)) * dx;
+      weight /= fi;
+
+#elif DO_PAIRCOH_IMPORTANCE_SAMPLE
+
+      int i = fPaircohPDF.search(u1);
+      double fi = fPaircohPDF.density[i];
+      double ui = fPaircohPDF.integral[i];
+      double ri = fPaircohPDF.randvar[i];
+      double xi = ri - floor(ri);
+      double dx = (xi > 0.5)? ri - fPaircohPDF.randvar[i-1]:
+                              fPaircohPDF.randvar[i+1] - ri;
+      u1 = xi + dx / 2 - (ui - u1) / (fi * dx);
+      u0 = (u0 + floor(ri)) * dx;
+      weight /= fi;
+
+#endif
+   
+      // Generate Mpair as 1 / (M [M^2 + Mcut^2])
+      double Mmin = 2 * mElectron;
+      double Mcut = 0.005;  // GeV
+      double um0 = 1 + sqr(Mcut / Mmin);
+      double um = pow(um0, u0);
+      double Mpair = Mcut / sqrt(um - 1 + 1e-99);
+      weight *= Mpair * (sqr(Mcut) + sqr(Mpair)) * log(um0) / (2 * sqr(Mcut));
+   
+      // Generate qR^2 with weight 1 / [qR^2 sqrt(qRcut^2 + qR^2)]
+      double qRmin = sqr(Mpair) /(2 * kin);
+      double qRcut = 1e-3; // GeV
+      double uq0 = qRmin / (qRcut + sqrt(sqr(qRcut) + sqr(qRmin)));
+      double uq = pow(uq0, u1);
+      double qR = 2 * qRcut * uq / (1 - sqr(uq));
+      double qR2 = qR * qR;
+      weight *= qR2 * sqrt(1 + qR2 / sqr(qRcut)) * (-2 * log(uq0));
+   
+      // Include overall measure Jacobian factor
+      weight *= Mpair / (2 * kin);
+   
+      // Generate with importance sampling
+      double Striplet = fTripletPDF.Npassed * 
+                        (fTripletPDF.Ntested / (fTripletPDF.Psum + 1e-99));
+      double Spaircoh = fPaircohPDF.Npassed *
+                        (fPaircohPDF.Ntested / (fPaircohPDF.Psum + 1e-99));
+      if (Striplet < Spaircoh) {                     // try incoherent generation
+         ++fTripletPDF.Ntested;
+   
+         // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
+         double k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+         if (k12star2 < 0) {
+            // try again (this should never happen!)
+            continue;
+         }
+         double k12star = sqrt(k12star2);
+         double E3 = sqrt(qR2 + sqr(mElectron));
+         double E12 = kin + mElectron - E3;
+         if (E12 < Mpair) {
+            // no kinematic solution because E12 < Mpair, try again
+            continue;
+         }
+         double q12mag = sqrt(sqr(E12) - sqr(Mpair));
+         double costhetastar = (Epos - E12 / 2) * Mpair / (k12star * q12mag);
+         if (Epos > E12 - mElectron) {
+            // no kinematic solution because Epos > E12 - mElectron, try again
+            continue;
+         }
+         else if (fabs(costhetastar) > 1) {
+            // no kinematic solution because |costhetastar| > 1, try again
+            continue;
+         }
+   
+         // Solve for the recoil electron kinematics
+         double costhetaR = (sqr(Mpair) / 2 + (kin + mElectron) *
+                             (E3 - mElectron)) / (kin * qR);
+         if (fabs(costhetaR) > 1) {
+            // no kinematic solution because |costhetaR| > 1, try again
+            continue;
+         }
+         double sinthetaR = sqrt(1 - sqr(costhetaR));
+         TFourVectorReal q3(E3, qR * sinthetaR * cos(phiR),
+                                qR * sinthetaR * sin(phiR),
+                                qR * costhetaR);
+   
+         // Boost the pair momenta into the lab
+         double sinthetastar = sqrt(1 - sqr(costhetastar));
+         TThreeVectorReal k12(k12star * sinthetastar * cos(phi12),
+                              k12star * sinthetastar * sin(phi12),
+                              k12star * costhetastar);
+         TFourVectorReal q1(Mpair / 2, k12);
+         TFourVectorReal q2(Mpair / 2, -k12);
+         TLorentzBoost toLab(q3[1] / E12, q3[2] / E12, (q3[3] - kin) / E12);
+         q1.Boost(toLab);
+         q2.Boost(toLab);
+   
+         // To avoid double-counting, return zero if recoil electron
+         // momentum is greater than the momentum of the pair electron.
+         if (q2.Length() < qR) {
+            // recoil/pair electrons switched, try again
+            continue;
+         }
+
+         // Compute the differential cross section (barnes/GeV^4)
+         // returned as d(sigma)/(dE+ dphi+ d^3qR)
+         p1.SetMom(q1.Rotate(rockaxis, rockangle));
+         e2.SetMom(q2.Rotate(rockaxis, rockangle));
+         e3.SetMom(q3.Rotate(rockaxis, rockangle));
+         double diffXS = fPairsGenerator->DiffXS_triplet(gIn, p1, e2, e3);
+   
+         // Use keep/discard algorithm
+         double Pfactor = diffXS * weight;
+         if (Pfactor > fTripletPDF.Pmax)
+            fTripletPDF.Pmax = Pfactor;
+         if (Pfactor > fTripletPDF.Pcut) {
+            G4cout << "Warning in GenerateBeamPairConversion - Pfactor " 
+                   << Pfactor << " exceeds fTripletPDF.Pcut = " 
+                   << fTripletPDF.Pcut << G4endl
+                   << "  present qR = " << qR << G4endl
+                   << "  present Mpair = " << Mpair << G4endl
+                   << "  present maximum Pfactor = "
+                   << fTripletPDF.Pmax << G4endl
+                   << "  current generator efficiency = "
+                   << fTripletPDF.Npassed /
+                      (fTripletPDF.Ntested + 1e-99)
+                   << G4endl;
+         }
+         fTripletPDF.Psum += Pfactor;
+         if (G4UniformRand() * fTripletPDF.Pcut > Pfactor) {
+            if (fTripletPDF.Ntested / 100 * 100 == fTripletPDF.Ntested) {
+               G4cout << "rate is " << fTripletPDF.Psum / fTripletPDF.Ntested
+                      << G4endl;
+            }
+            continue;
+         }
+         ++fTripletPDF.Npassed;
+         break;
+      }
+
+      else {                          // try coherent generation
+         ++fPaircohPDF.Ntested;
+   
+         // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
+         // assuming that the atomic target absorbs zero energy
+         double k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+         if (k12star2 < 0) {
+            // try again (this should never happen!)
+            continue;
+         }
+         double k12star = sqrt(k12star2);
+         double Eele = kin - Epos;
+         if (kin < Mpair) {
+            // no kinematic solution because kin < Mpair, try again
+            continue;
+         }
+         else if (Eele < mElectron) {
+            // no kinematic solution because Eele < mElectron, try again
+            continue;
+         }
+         double q12mag = sqrt(sqr(kin) - sqr(Mpair));
+         double costhetastar = (Epos - kin / 2) * Mpair / (k12star * q12mag);
+         if (fabs(costhetastar) > 1) {
+            // no kinematic solution because |costhetastar| > 1, try again
+            continue;
+         }
+   
+         // Solve for the recoil kinematics kinematics
+         double costhetaR = (sqr(Mpair) + qR2) / (2 * kin * qR);
+         if (fabs(costhetaR) > 1) {
+            // no kinematic solution because |costhetaR| > 1, try again
+            continue;
+         }
+         double sinthetaR = sqrt(1 - sqr(costhetaR));
+         TThreeVectorReal q3(qR * sinthetaR * cos(phiR),
+                             qR * sinthetaR * sin(phiR),
+                             qR * costhetaR);
+   
+         // Boost the pair momenta into the lab
+         double sinthetastar = sqrt(1 - sqr(costhetastar));
+         TThreeVectorReal k12(k12star * sinthetastar * cos(phi12),
+                              k12star * sinthetastar * sin(phi12),
+                              k12star * costhetastar);
+         TFourVectorReal q1(Mpair / 2, k12);
+         TFourVectorReal q2(Mpair / 2, -k12);
+         TLorentzBoost toLab(q3[1] / kin, q3[2] / kin, (q3[3] - kin) / kin);
+         q1.Boost(toLab);
+         q2.Boost(toLab);
+   
+         // Compute the differential cross section (barnes/GeV^4)
+         // returned as d(sigma)/(dE+ dphi+ d^3qR)
+         p1.SetMom(q1.Rotate(rockaxis, rockangle));
+         e2.SetMom(q2.Rotate(rockaxis, rockangle));
+         e3.SetMom(TThreeVectorReal(0,0,0));
+         double diffXS = fPairsGenerator->DiffXS_pair(gIn, p1, e2);
+   
+         // Use keep/discard algorithm
+         double Pfactor = diffXS * weight;
+         if (Pfactor > fPaircohPDF.Pmax)
+            fPaircohPDF.Pmax = Pfactor;
+         if (Pfactor > fPaircohPDF.Pcut) {
+            G4cout << "Warning in GenerateBeamPairConversion - Pfactor " 
+                   << Pfactor << " exceeds fPaircohPDF.Pcut = " 
+                   << fPaircohPDF.Pcut << G4endl
+                   << "  present qR = " << qR << G4endl
+                   << "  present Mpair = " << Mpair << G4endl
+                   << "  present maximum Pfactor = "
+                   << fPaircohPDF.Pmax << G4endl
+                   << "  current generator efficiency = "
+                   << fPaircohPDF.Npassed /
+                      (fPaircohPDF.Ntested + 1e-99)
+                   << G4endl;
+         }
+         fPaircohPDF.Psum += Pfactor;
+         if (G4UniformRand() * fPaircohPDF.Pcut > Pfactor) {
+            if (fPaircohPDF.Ntested / 100 * 100 == fPaircohPDF.Ntested) {
+               G4cout << "rate is " << fPaircohPDF.Psum / fPaircohPDF.Ntested
+                      << G4endl;
+            }
+            continue;
+         }
+         ++fPaircohPDF.Npassed;
+         break;
+      }
+   }
+
+   // Generate new primaries for the pair
+   G4PrimaryVertex* vertex = new G4PrimaryVertex(track->GetPosition(),
+                                                 track->GetGlobalTime());
+   vertex->SetPrimary(new G4PrimaryParticle(G4Positron::Positron(),
+                                            p1.Mom()[1]*GeV,
+                                            p1.Mom()[2]*GeV,
+                                            p1.Mom()[3]*GeV));
+   vertex->SetPrimary(new G4PrimaryParticle(G4Electron::Electron(),
+                                            e2.Mom()[1]*GeV,
+                                            e2.Mom()[2]*GeV,
+                                            e2.Mom()[3]*GeV));
+   if (e3.Mom().Length() > 0) {
+      vertex->SetPrimary(new G4PrimaryParticle(G4Electron::Electron(),
+                                               e3.Mom()[1]*GeV,
+                                               e3.Mom()[2]*GeV,
+                                               e3.Mom()[3]*GeV));
+   }
+#if 0
+   const G4Event *anEvent = G4RunManager::GetRunManager()->GetCurrentEvent();
+   ((G4Event*)anEvent)->AddPrimaryVertex(vertex);
+
+   // If bg beam particle, append to MC record
+   GlueXUserEventInformation *event_info;
+   event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
+   if (event_info) {
+      event_info->AddPrimaryVertex(*vertex);
+   }
+#endif
+
+#if VERBOSE_PAIRS_SPLITTING
+   if (fTripletPDF.Npassed / 100 * 100 == fTripletPDF.Npassed) {
+      G4cout << "triplet rate is "
+             << fTripletPDF.Psum / (fTripletPDF.Ntested + 1e-99) 
+             << ", efficiency is " 
+             << fTripletPDF.Npassed / (fTripletPDF.Ntested + 1e-99)
+             << G4endl
+             << "pair rate is "
+             << fPaircohPDF.Psum / (fPaircohPDF.Ntested + 1e-99) 
+             << ", efficiency is " 
+             << fPaircohPDF.Npassed / (fPaircohPDF.Ntested + 1e-99) 
+             << G4endl
+             << "counts are "
+             << fTripletPDF.Npassed << " / " << fPaircohPDF.Npassed
+             << " = "
+             << fTripletPDF.Npassed / (fPaircohPDF.Npassed + 1e-99)
+             << G4endl;
+   }
+#endif
+
+#endif
 }
 
 // Convert particle types from Geant3 types to PDG scheme

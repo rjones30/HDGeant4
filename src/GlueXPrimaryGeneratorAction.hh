@@ -19,6 +19,7 @@
 #include "G4AutoLock.hh"
 
 #include "CobremsGenerator.hh"
+#include "PairConversionGenerator.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "GlueXPseudoDetectorTAG.hh"
 #include "G4ParticleDefinition.hh"
@@ -55,7 +56,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    void GeneratePrimariesParticleGun(G4Event* anEvent);
    void GeneratePrimariesCobrems(G4Event* anEvent);
    void GenerateBeamPhoton(G4Event* anEvent, double t0);
-   void GenerateBeamPairConversion(const G4Step* step) const;
+   void GenerateBeamPairConversion(const G4Step* step);
 
    static int ConvertGeant3ToPdg(int Geant3Type);
    static int ConvertPdgToGeant3(int PDGtype);
@@ -71,6 +72,9 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static std::ifstream *fHDDMinfile;
    static hddm_s::istream *fHDDMistream;
    static CobremsGenerator *fCobremsGenerator;
+#if USING_DIRACXX
+   static PairConversionGenerator *fPairsGenerator;
+#endif
    static G4ParticleTable *fParticleTable;
    static GlueXParticleGun *fParticleGun;
    static GlueXPseudoDetectorTAG *fTagger;
@@ -171,11 +175,14 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
       double Psum;
       double Pcut;
       double Pmax;
-      long int Nfailed;
+      long int Ntested;
       long int Npassed;
 
       ImportanceSampler()
-       : Psum(0), Pcut(1), Pmax(0), Nfailed(0), Npassed(0) {}
+       : Psum(0), Pcut(1), Pmax(0), Ntested(0), Npassed(0) {}
+
+      unsigned int search(double u) const;
+      static unsigned int search(double u, const std::vector<double> &list);
    };
 
  private:
@@ -186,6 +193,10 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static double fIncoherentPDFtheta02;
 
    void prepareCobremsImportanceSamplingPDFs();
+   void preparePairsImportanceSamplingPDFs();
+
+   static ImportanceSampler fPaircohPDF;
+   static ImportanceSampler fTripletPDF;
 
  private:
    static G4Mutex fMutex;
