@@ -52,11 +52,6 @@ void GlueXUserEventInformation::AddBeamParticle(int geanttype, double t0,
                                                 const G4ThreeVector &mom)
 {
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
-   if (pev.size() == 0) {
-      pev = fOutputRecord->addPhysicsEvents();
-      pev(0).setRunNo(HddmOutput::getRunNo());
-      pev(0).setEventNo(HddmOutput::incrementEventNo());
-   }
    hddm_s::ReactionList rea = pev(0).getReactions();
    if (rea.size() == 0) {
       rea = pev(0).addReactions();
@@ -90,11 +85,6 @@ void GlueXUserEventInformation::AddTargetParticle(int geanttype, double t0,
                                                   const G4ThreeVector &mom)
 {
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
-   if (pev.size() == 0) {
-      pev = fOutputRecord->addPhysicsEvents();
-      pev(0).setRunNo(HddmOutput::getRunNo());
-      pev(0).setEventNo(HddmOutput::incrementEventNo());
-   }
    hddm_s::ReactionList rea = pev(0).getReactions();
    if (rea.size() == 0) {
       rea = pev(0).addReactions();
@@ -126,11 +116,6 @@ void GlueXUserEventInformation::AddTargetParticle(int geanttype, double t0,
 void GlueXUserEventInformation::AddPrimaryVertex(const G4PrimaryVertex &vertex)
 {
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
-   if (pev.size() == 0) {
-      pev = fOutputRecord->addPhysicsEvents();
-      pev(0).setRunNo(HddmOutput::getRunNo());
-      pev(0).setEventNo(HddmOutput::incrementEventNo());
-   }
    hddm_s::ReactionList rea = pev(0).getReactions();
    if (rea.size() == 0) {
       rea = pev(0).addReactions();
@@ -178,6 +163,9 @@ void GlueXUserEventInformation::SetRandomSeeds()
 {
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
    hddm_s::ReactionList rea = pev(0).getReactions();
+   if (rea.size() == 0) {
+      rea = pev(0).addReactions();
+   }
    hddm_s::RandomList rnd = rea(0).getRandoms();
    if (rnd.size() > 0) {
       long int seed[2];
