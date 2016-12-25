@@ -18,8 +18,8 @@
 #include "G4Threading.hh"
 #include "G4AutoLock.hh"
 
-#include "CobremsGenerator.hh"
-#include "PairConversionGenerator.hh"
+#include "CobremsGeneration.hh"
+#include "PairConversionGeneration.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "GlueXPseudoDetectorTAG.hh"
 #include "G4ParticleDefinition.hh"
@@ -71,9 +71,9 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static source_type_t fSourceType;
    static std::ifstream *fHDDMinfile;
    static hddm_s::istream *fHDDMistream;
-   static CobremsGenerator *fCobremsGenerator;
+   static CobremsGeneration *fCobremsGeneration;
 #if USING_DIRACXX
-   static PairConversionGenerator *fPairsGenerator;
+   static PairConversionGeneration *fPairsGeneration;
 #endif
    static G4ParticleTable *fParticleTable;
    static GlueXParticleGun *fParticleGun;

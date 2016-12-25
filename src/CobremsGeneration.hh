@@ -1,5 +1,5 @@
 //
-// CobremsGenerator class header
+// CobremsGeneration class header
 //
 // author: richard.t.jones at uconn.edu
 // version: july 27, 2015
@@ -19,8 +19,8 @@
 // Any length is in m; energy,momentum,mass in GeV (c=1); angles in
 // radians; time in seconds; current in microAmps.
 
-#ifndef CobremsGenerator_h
-#define CobremsGenerator_h 1
+#ifndef CobremsGeneration_h
+#define CobremsGeneration_h 1
 
 #include <string>
 #include <vector>
@@ -29,12 +29,12 @@
 #include <boost/python.hpp>
 #endif
 
-class CobremsGenerator {
+class CobremsGeneration {
  public:
-   CobremsGenerator(double Emax_GeV, double Epeak_GeV);
-   CobremsGenerator(const CobremsGenerator &src);
-   CobremsGenerator &operator=(const CobremsGenerator &src);
-   ~CobremsGenerator();
+   CobremsGeneration(double Emax_GeV, double Epeak_GeV);
+   CobremsGeneration(const CobremsGeneration &src);
+   CobremsGeneration &operator=(const CobremsGeneration &src);
+   ~CobremsGeneration();
 
    void setBeamEnergy(double Ebeam_GeV);
    void setBeamErms(double Erms_GeV);
@@ -228,50 +228,50 @@ class CobremsGenerator {
    double fPhotonEnergyMin;            // GeV
 };
 
-inline void CobremsGenerator::setBeamEmittance(double emit_m_r) {
+inline void CobremsGeneration::setBeamEmittance(double emit_m_r) {
    fBeamEmittance = emit_m_r;
 }
 
-inline void CobremsGenerator::setBeamEnergy(double Ebeam_GeV) {
+inline void CobremsGeneration::setBeamEnergy(double Ebeam_GeV) {
    fBeamEnergy = Ebeam_GeV;
 }
 
-inline void CobremsGenerator::setBeamErms(double Erms_GeV) {
+inline void CobremsGeneration::setBeamErms(double Erms_GeV) {
    fBeamErms = Erms_GeV;
 }
 
-inline void CobremsGenerator::setCollimatorSpotrms(double spotrms_m) {
+inline void CobremsGeneration::setCollimatorSpotrms(double spotrms_m) {
    fCollimatorSpotrms = spotrms_m;
 }
 
-inline void CobremsGenerator::setCollimatorDistance(double distance_m) {
+inline void CobremsGeneration::setCollimatorDistance(double distance_m) {
    fCollimatorDistance = distance_m;
 }
 
-inline void CobremsGenerator::setCollimatorDiameter(double diameter_m) {
+inline void CobremsGeneration::setCollimatorDiameter(double diameter_m) {
    fCollimatorDiameter = diameter_m;
 }
 
-inline void CobremsGenerator::setTargetThickness(double thickness_m) {
+inline void CobremsGeneration::setTargetThickness(double thickness_m) {
    fTargetThickness = thickness_m;
 }
 
-inline void CobremsGenerator::setTargetThetax(double thetax) {
+inline void CobremsGeneration::setTargetThetax(double thetax) {
    fTargetThetax = thetax;
    updateTargetOrientation();
 }
 
-inline void CobremsGenerator::setTargetThetay(double thetay) {
+inline void CobremsGeneration::setTargetThetay(double thetay) {
    fTargetThetay = thetay;
    updateTargetOrientation();
 }
 
-inline void CobremsGenerator::setTargetThetaz(double thetaz) {
+inline void CobremsGeneration::setTargetThetaz(double thetaz) {
    fTargetThetaz = thetaz;
    updateTargetOrientation();
 }
 
-inline void CobremsGenerator::setTargetOrientation(double thetax,
+inline void CobremsGeneration::setTargetOrientation(double thetax,
                                                    double thetay,
                                                    double thetaz) {
    fTargetThetax = thetax;
@@ -280,19 +280,19 @@ inline void CobremsGenerator::setTargetOrientation(double thetax,
    updateTargetOrientation();
 }
 
-inline void CobremsGenerator::setPhotonEnergyMin(double Emin_GeV) {
+inline void CobremsGeneration::setPhotonEnergyMin(double Emin_GeV) {
    fPhotonEnergyMin = Emin_GeV;
 }
 
-inline void CobremsGenerator::setCollimatedFlag(bool flag) {
+inline void CobremsGeneration::setCollimatedFlag(bool flag) {
    fCollimatedFlag = flag;
 }
 
-inline void CobremsGenerator::setPolarizedFlag(bool flag) {
+inline void CobremsGeneration::setPolarizedFlag(bool flag) {
    fPolarizedFlag = flag;
 }
 
-inline void CobremsGenerator::resetTargetOrientation() {
+inline void CobremsGeneration::resetTargetOrientation() {
    fTargetRmatrix[0][0] = 1;
    fTargetRmatrix[0][1] = 0;
    fTargetRmatrix[0][2] = 0;

@@ -1,5 +1,5 @@
 //
-// PairConversionGenerator class implementation
+// PairConversionGeneration class implementation
 //
 // author: richard.t.jones at uconn.edu
 // version: december 17, 2016
@@ -31,7 +31,7 @@
 #ifdef USING_DIRACXX
 #define BOOST_PYTHON_WRAPPING 1
 
-#include <PairConversionGenerator.hh>
+#include <PairConversionGeneration.hh>
 #include <TRandom2.h>
 
 #include "G4ios.hh"
@@ -52,16 +52,16 @@ const TThreeVectorReal negYhat(0,-1,0);
 const TThreeVectorReal posZhat(0,0,1);
 const TThreeVectorReal negZhat(0,0,-1);
 
-PairConversionGenerator::PairConversionGenerator()
+PairConversionGeneration::PairConversionGeneration()
  : fConverterZ(4)
 {
    SetPolarization(posXhat);
 }
 
-PairConversionGenerator::~PairConversionGenerator()
+PairConversionGeneration::~PairConversionGeneration()
 {}
 
-double PairConversionGenerator::FFatomic(double qRecoil)
+double PairConversionGeneration::FFatomic(double qRecoil)
 {
    // return the atomic form factor of the pair converter
    // normalized to unity at zero momentum transfer qRecoil (GeV/c).
@@ -93,9 +93,9 @@ double PairConversionGenerator::FFatomic(double qRecoil)
    return ff;
 }
 
-double PairConversionGenerator::DiffXS_pair(const TPhoton &gIn, 
-                                            const TLepton &pOut,
-                                            const TLepton &eOut)
+double PairConversionGeneration::DiffXS_pair(const TPhoton &gIn, 
+                                             const TLepton &pOut,
+                                             const TLepton &eOut)
 {
    // Calculates the e+e- pair production cross section for a
    // gamma ray off an atom at a particular recoil momentum vector q.
@@ -153,10 +153,10 @@ double PairConversionGenerator::DiffXS_pair(const TPhoton &gIn,
    return result * 1e-6;
 }
 
-double PairConversionGenerator::DiffXS_triplet(const TPhoton &gIn,
-                                               const TLepton &pOut,
-                                               const TLepton &eOut2,
-                                               const TLepton &eOut3)
+double PairConversionGeneration::DiffXS_triplet(const TPhoton &gIn,
+                                                const TLepton &pOut,
+                                                const TLepton &eOut2,
+                                                const TLepton &eOut3)
 {
    // Calculates the e+e- pair production rate on a free electron target,
    // including incident photon polarization effects, for a given set of

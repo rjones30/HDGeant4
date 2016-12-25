@@ -1,5 +1,5 @@
 //
-// CobremsGenerator - class implementation
+// CobremsGeneration - class implementation
 //
 // author: richard.t.jones at uconn.edu
 // version: july 27, 2015
@@ -52,16 +52,16 @@
 #define BOOST_PYTHON_WRAPPING 1
 
 #include <stdio.h>
-#include <CobremsGenerator.hh>
+#include <CobremsGeneration.hh>
 #include <boost/math/special_functions/expint.hpp>
 #include <boost/math/special_functions/erf.hpp>
 
-const double CobremsGenerator::dpi = 3.1415926535897;
-const double CobremsGenerator::me = 0.510998910e-3;
-const double CobremsGenerator::alpha = 7.2973525698e-3;
-const double CobremsGenerator::hbarc = 0.1973269718e-15;
+const double CobremsGeneration::dpi = 3.1415926535897;
+const double CobremsGeneration::me = 0.510998910e-3;
+const double CobremsGeneration::alpha = 7.2973525698e-3;
+const double CobremsGeneration::hbarc = 0.1973269718e-15;
 
-CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
+CobremsGeneration::CobremsGeneration(double Emax_GeV, double Epeak_GeV)
 {
    // Unique constructor for this class, initialize for the given
    // endpoint energy and peak position but these can be changed.
@@ -89,7 +89,7 @@ CobremsGenerator::CobremsGenerator(double Emax_GeV, double Epeak_GeV)
 #endif
 }
 
-void CobremsGenerator::updateTargetOrientation()
+void CobremsGeneration::updateTargetOrientation()
 {
    resetTargetOrientation();
    RotateTarget(0, dpi/2, 0);      // point (1,0,0) along beam
@@ -99,7 +99,7 @@ void CobremsGenerator::updateTargetOrientation()
    RotateTarget(0, 0, -fTargetThetaz);
 }
 
-void CobremsGenerator::setTargetCrystal(std::string crystal)
+void CobremsGeneration::setTargetCrystal(std::string crystal)
 {
    // declare the radiator target crystal type by name
 
@@ -120,7 +120,7 @@ void CobremsGenerator::setTargetCrystal(std::string crystal)
       fTargetCrystal.Debye_Waller_const = 1.5e9; // 1/GeV^2
    }
    else {
-      std::cerr << "Error in CobremsGenerator::setTargetCrystal - "
+      std::cerr << "Error in CobremsGeneration::setTargetCrystal - "
                 << "unknown crystal " << crystal << " requested, "
                 << "cannot continue." << std::endl;
       exit(1);
@@ -149,7 +149,7 @@ void CobremsGenerator::setTargetCrystal(std::string crystal)
    fTargetCrystal.radiation_length = getTargetRadiationLength_Schiff();
 }
 
-double CobremsGenerator::getTargetDebyeWallerConstant(double DebyeT_K, 
+double CobremsGeneration::getTargetDebyeWallerConstant(double DebyeT_K, 
                                                       double T_K)
 {
    // Computes the Debye-Waller constant A for a simple model
@@ -179,7 +179,7 @@ double CobremsGenerator::getTargetDebyeWallerConstant(double DebyeT_K,
    return A0 * f;
 }
 
-void CobremsGenerator::printBeamlineInfo()
+void CobremsGeneration::printBeamlineInfo()
 {
    // Print a summary of the target crystal model parameters
 
@@ -211,7 +211,7 @@ void CobremsGenerator::printBeamlineInfo()
              << std::endl << std::endl;
 }
 
-void CobremsGenerator::printTargetCrystalInfo()
+void CobremsGeneration::printTargetCrystalInfo()
 {
    // Print a summary of the target crystal model parameters
 
@@ -224,7 +224,7 @@ void CobremsGenerator::printTargetCrystalInfo()
                       pow(2 * dpi * 300 * kBoltzmann / DebyeTheta300, 2) / 6);
    }
 
-   std::cout << "CobremsGenerator crystal type is " << fTargetCrystal.name
+   std::cout << "CobremsGeneration crystal type is " << fTargetCrystal.name
              << std::endl
              << "  atomic number Z=" << fTargetCrystal.Z
              << ", atomic weight A=" << fTargetCrystal.A << " amu"
@@ -267,7 +267,7 @@ void CobremsGenerator::printTargetCrystalInfo()
    }
 }
 
-void CobremsGenerator::applyBeamCrystalConvolution(int nbins, double *xvalues,
+void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
                                                               double *yvalues)
 {
    // Electron beam emittance produces two effects in the coherent
@@ -386,7 +386,7 @@ void CobremsGenerator::applyBeamCrystalConvolution(int nbins, double *xvalues,
    delete [] result;
 }
 
-double CobremsGenerator::getTargetRadiationLength_PDG()
+double CobremsGeneration::getTargetRadiationLength_PDG()
 {
    // PDG formula for radiation length, converted to meters
 
@@ -402,7 +402,7 @@ double CobremsGenerator::getTargetRadiationLength_PDG()
    return 1/s;
 }
 
-double CobremsGenerator::getTargetRadiationLength_Schiff()
+double CobremsGeneration::getTargetRadiationLength_Schiff()
 {
    // Schiff formula for radiation length, converted to meters
  
@@ -415,7 +415,7 @@ double CobremsGenerator::getTargetRadiationLength_Schiff()
    return 1/s;
 }
 
-void CobremsGenerator::setCoherentEdge(double Epeak_GeV)
+void CobremsGeneration::setCoherentEdge(double Epeak_GeV)
 {
    // Adjust theta_x of the target to align the coherent edge at
    // energy Epeak_GeV in the photon spectrum, then orient the
@@ -430,7 +430,7 @@ void CobremsGenerator::setCoherentEdge(double Epeak_GeV)
    updateTargetOrientation();
 }
 
-CobremsGenerator::CobremsGenerator(const CobremsGenerator &src)
+CobremsGeneration::CobremsGeneration(const CobremsGeneration &src)
 {
    // copy constructor
 
@@ -452,7 +452,7 @@ CobremsGenerator::CobremsGenerator(const CobremsGenerator &src)
    fQ2weight = src.fQ2weight;
 }
 
-CobremsGenerator &CobremsGenerator::operator=(const CobremsGenerator &src)
+CobremsGeneration &CobremsGeneration::operator=(const CobremsGeneration &src)
 {
    // assignment operator
 
@@ -475,9 +475,9 @@ CobremsGenerator &CobremsGenerator::operator=(const CobremsGenerator &src)
    return *this;
 }
 
-CobremsGenerator::~CobremsGenerator() { }
+CobremsGeneration::~CobremsGeneration() { }
 
-double CobremsGenerator::CoherentEnhancement(double x)
+double CobremsGeneration::CoherentEnhancement(double x)
 {
    // Returns ratio of total bremsstrahlung yield over incoherent yield
    // for photon energy k = x*fBeamEnergy
@@ -487,7 +487,7 @@ double CobremsGenerator::CoherentEnhancement(double x)
    return (yi + yc) / (yi + 1e-99);
 }
 
-double CobremsGenerator::Rate_dNtdx(double x)
+double CobremsGeneration::Rate_dNtdx(double x)
 {
    // Returns total bremsstrahlung probability density differential in
    // x (scaled photon energy) at photon energy k = x*fBeamEnergy.
@@ -495,7 +495,7 @@ double CobremsGenerator::Rate_dNtdx(double x)
    return Rate_dNcdx(x) + Rate_dNidx(x);
 }
 
-double CobremsGenerator::Rate_dNtdx(double x, 
+double CobremsGeneration::Rate_dNtdx(double x, 
                                     double distance_m, double diameter_m)
 {
    // Returns total bremsstrahlung probability density differential in x
@@ -516,7 +516,7 @@ double CobremsGenerator::Rate_dNtdx(double x,
    return rate;
 }
 
-double CobremsGenerator::Rate_dNtdk(double k_GeV)
+double CobremsGeneration::Rate_dNtdk(double k_GeV)
 {
    // Returns total bremsstrahlung probability density differential
    // in photon energy k (GeV).
@@ -524,7 +524,7 @@ double CobremsGenerator::Rate_dNtdk(double k_GeV)
    return Rate_dNtdx(k_GeV / fBeamEnergy) / fBeamEnergy;
 }
 
-double CobremsGenerator::Rate_dNcdx(double x)
+double CobremsGeneration::Rate_dNcdx(double x)
 {
    // Returns the coherent bremsstrahlung probability density differential
    // in x (scaled photon energy) at photon energy k = x*fBeamEnergy.
@@ -532,7 +532,7 @@ double CobremsGenerator::Rate_dNcdx(double x)
    return 2 * dpi * Rate_dNcdxdp(x, dpi/4);
 }
 
-double CobremsGenerator::Rate_dNcdx(double x, 
+double CobremsGeneration::Rate_dNcdx(double x, 
                                     double distance_m, double diameter_m)
 {
    // Returns the coherent bremsstrahlung probability density differential
@@ -553,7 +553,7 @@ double CobremsGenerator::Rate_dNcdx(double x,
    return rate;
 }
 
-double CobremsGenerator::Rate_dNcdxdp(double x, double phi)
+double CobremsGeneration::Rate_dNcdxdp(double x, double phi)
 {
    // Returns the coherent bremsstrahlung probabililty density differential
    // in x (scaled photon energy) and phi (azimuthal emission angle) for
@@ -659,7 +659,7 @@ double CobremsGenerator::Rate_dNcdxdp(double x, double phi)
    return sum;
 }
 
-double CobremsGenerator::Rate_dNidx(double x)
+double CobremsGeneration::Rate_dNidx(double x)
 {
    // Returns the incoherent bremsstrahlung probabililty density differential
    // in x (scaled photon energy) at fixed photon energy k = x*fBeamEnergy.
@@ -680,7 +680,7 @@ double CobremsGenerator::Rate_dNidx(double x)
    return dNidx;
 }
 
-double CobremsGenerator::Rate_dNBidx(double x)
+double CobremsGeneration::Rate_dNBidx(double x)
 {
    // In the following paper, a closed form is given for the integral that
    // is being performed analytically by dNidx.  I include this second form
@@ -728,7 +728,7 @@ double CobremsGenerator::Rate_dNBidx(double x)
    return dNBidx;
 }
 
-double CobremsGenerator::Rate_dNidxdt2(double x, double theta2)
+double CobremsGeneration::Rate_dNidxdt2(double x, double theta2)
 {
    // Returns the incoherent bremsstrahlung probabililty density differential
    // in x (scaled photon energy) and theta^2 at fixed photon energy 
@@ -756,7 +756,7 @@ double CobremsGenerator::Rate_dNidxdt2(double x, double theta2)
    return dNidxdt2;
 }
 
-double CobremsGenerator::Rate_para(double x, double theta2, double phi)
+double CobremsGeneration::Rate_para(double x, double theta2, double phi)
 {
    // Returns the relative rate of in-plane polarized flux from coherent
    // bremsstrahlung at production angles theta and phi and photon energy
@@ -769,7 +769,7 @@ double CobremsGenerator::Rate_para(double x, double theta2, double phi)
           8 * pow(theta2, 2) * (1 - x) * pow(cos(phi), 2) * pow(sin(phi), 2);
 }
 
-double CobremsGenerator::Rate_ortho(double x, double theta2, double phi)
+double CobremsGeneration::Rate_ortho(double x, double theta2, double phi)
 {
    // Returns the relative rate of out-of-plane polarized flux from coherent
    // bremsstrahlung at production angles theta and phi and photon energy k
@@ -781,7 +781,7 @@ double CobremsGenerator::Rate_ortho(double x, double theta2, double phi)
           8 * pow(theta2, 2) * (1 - x) * pow(cos(phi), 2) * pow(sin(phi), 2);
 }
 
-double CobremsGenerator::Polarization(double x, double theta2)
+double CobremsGeneration::Polarization(double x, double theta2)
 {
    // Returns the degree of linear polarization in a coherent bremsstrahlung
    // beam at photon energy k = x*fBeamEnergy and production angle theta.
@@ -794,7 +794,7 @@ double CobremsGenerator::Polarization(double x, double theta2)
                          4 * theta2 * (1 - x));
 }
 
-double CobremsGenerator::Acceptance(double theta2, double phi,
+double CobremsGeneration::Acceptance(double theta2, double phi,
                                     double xshift_m, double yshift_m)
 {
    // Returns the acceptance of the collimator for photons emitted at
@@ -813,7 +813,7 @@ double CobremsGenerator::Acceptance(double theta2, double phi,
    return Acceptance(pow(thetaprime * fBeamEnergy/me, 2));
 }
 
-double CobremsGenerator::Acceptance(double theta2)
+double CobremsGeneration::Acceptance(double theta2)
 {
    // Returns the acceptance of the collimator for photons emitted at
    // polar angle theta at the radiator, under the assumption that the
@@ -874,7 +874,7 @@ double CobremsGenerator::Acceptance(double theta2)
    return acceptance;
 }
    
-void CobremsGenerator::RotateTarget(double thetax, 
+void CobremsGeneration::RotateTarget(double thetax, 
                                     double thetay,
                                     double thetaz)
 {
@@ -914,7 +914,7 @@ void CobremsGenerator::RotateTarget(double thetax,
    }
 }
 
-double CobremsGenerator::Sigma2MS(double thickness_m)
+double CobremsGeneration::Sigma2MS(double thickness_m)
 {
    // Returns the mean-square multiple-scattering angle of the
    // electron beam inside the radiator crystal target, in radians.
@@ -926,7 +926,7 @@ double CobremsGenerator::Sigma2MS(double thickness_m)
    return fabs(Sigma2MS_Geant(thickness_m));
 }
 
-double CobremsGenerator::Sigma2MS_Kaune(double thickness_m)
+double CobremsGeneration::Sigma2MS_Kaune(double thickness_m)
 {
    // Multiple scattering formula of Kaune et.al. 
    // with a correction factor from a multiple-scattering calculation
@@ -955,7 +955,7 @@ double CobremsGenerator::Sigma2MS_Kaune(double thickness_m)
           carboncor;
 }
 
-double CobremsGenerator::Sigma2MS_PDG(double thickness_m)
+double CobremsGeneration::Sigma2MS_PDG(double thickness_m)
 {
    // Evaluates the PDG formula for multiple scattering of the beam electron
    // inside the target crystal, with beta=1, charge=1. This formula is said
@@ -965,7 +965,7 @@ double CobremsGenerator::Sigma2MS_PDG(double thickness_m)
    return pow(13.6e-3 / fBeamEnergy, 2) * t * pow(1 + 0.038 * log(t), 2);
 }
 
-double CobremsGenerator::Sigma2MS_Geant(double thickness_m)
+double CobremsGeneration::Sigma2MS_Geant(double thickness_m)
 {
    // Returns the Geant3 formula for the rms multiple-scattering angle
    // This formula is based on the theory of Moliere scattering.  It contains
@@ -989,7 +989,7 @@ double CobremsGenerator::Sigma2MS_Geant(double thickness_m)
    return chi2c / (1 + pow(F, 2)) * ((1 + gnu) / gnu * log(1 + gnu) -1);
 }
 
-double CobremsGenerator::Sigma2MS_Hanson(double thickness_m)
+double CobremsGeneration::Sigma2MS_Hanson(double thickness_m)
 {
    // Formulation of the rms projected angle attributed to Hanson et.al.
    // in reference Phys.Rev. vol.3 no.2, (1958), p.647.  This is just Moliere
@@ -1029,7 +1029,7 @@ double CobremsGenerator::Sigma2MS_Hanson(double thickness_m)
 
 #ifdef BOOST_PYTHON_WRAPPING
 
-void CobremsGenerator::pyApplyBeamCrystalConvolution(int nbins, pyobject xarr,
+void CobremsGeneration::pyApplyBeamCrystalConvolution(int nbins, pyobject xarr,
                                                                 pyobject yarr)
 {
    using boost::python::extract;
@@ -1041,12 +1041,12 @@ void CobremsGenerator::pyApplyBeamCrystalConvolution(int nbins, pyobject xarr,
    applyBeamCrystalConvolution(nbins, xbuf, ybuf);
 }
 
-double (CobremsGenerator::*Rate_dNtdx_1)(double) = &CobremsGenerator::Rate_dNtdx;
-double (CobremsGenerator::*Rate_dNtdx_3)(double, double, double) = &CobremsGenerator::Rate_dNtdx;
-double (CobremsGenerator::*Rate_dNcdx_1)(double) = &CobremsGenerator::Rate_dNcdx;
-double (CobremsGenerator::*Rate_dNcdx_3)(double, double, double) = &CobremsGenerator::Rate_dNcdx;
-double (CobremsGenerator::*Acceptance_1)(double) = &CobremsGenerator::Acceptance;
-double (CobremsGenerator::*Acceptance_4)(double, double, double, double) = &CobremsGenerator::Acceptance;
+double (CobremsGeneration::*Rate_dNtdx_1)(double) = &CobremsGeneration::Rate_dNtdx;
+double (CobremsGeneration::*Rate_dNtdx_3)(double, double, double) = &CobremsGeneration::Rate_dNtdx;
+double (CobremsGeneration::*Rate_dNcdx_1)(double) = &CobremsGeneration::Rate_dNcdx;
+double (CobremsGeneration::*Rate_dNcdx_3)(double, double, double) = &CobremsGeneration::Rate_dNcdx;
+double (CobremsGeneration::*Acceptance_1)(double) = &CobremsGeneration::Acceptance;
+double (CobremsGeneration::*Acceptance_4)(double, double, double, double) = &CobremsGeneration::Acceptance;
 
 BOOST_PYTHON_MODULE(libcobrems)
 {
@@ -1054,79 +1054,79 @@ BOOST_PYTHON_MODULE(libcobrems)
    using boost::python::enum_;
    using boost::python::def;
 
-   class_<CobremsGenerator, CobremsGenerator*>
-         ("CobremsGenerator", 
+   class_<CobremsGeneration, CobremsGeneration*>
+         ("CobremsGeneration", 
           "coherent bremsstrahlung spectrum and polarization calculator, "
           "with methods for generating random Monte Carlo samples",
           boost::python::init<double, double>())
-      .def("setBeamEnergy", &CobremsGenerator::setBeamEnergy)
-      .def("setBeamErms", &CobremsGenerator::setBeamErms)
-      .def("setBeamEmittance", &CobremsGenerator::setBeamEmittance)
-      .def("setCollimatorSpotrms", &CobremsGenerator::setCollimatorSpotrms)
-      .def("setCollimatorDistance", &CobremsGenerator::setCollimatorDistance)
-      .def("setCollimatorDiameter", &CobremsGenerator::setCollimatorDiameter)
-      .def("setTargetThickness", &CobremsGenerator::setTargetThickness)
-      .def("setTargetCrystal", &CobremsGenerator::setTargetCrystal)
-      .def("setCoherentEdge", &CobremsGenerator::setCoherentEdge)
-      .def("setTargetThetax", &CobremsGenerator::setTargetThetax)
-      .def("setTargetThetay", &CobremsGenerator::setTargetThetay)
-      .def("setTargetThetaz", &CobremsGenerator::setTargetThetaz)
-      .def("setTargetOrientation", &CobremsGenerator::setTargetOrientation)
-      .def("RotateTarget", &CobremsGenerator::RotateTarget)
-      .def("getBeamEnergy", &CobremsGenerator::getBeamEnergy)
-      .def("getBeamErms", &CobremsGenerator::getBeamErms)
-      .def("getBeamEmittance", &CobremsGenerator::getBeamEmittance)
-      .def("getCollimatorSpotrms", &CobremsGenerator::getCollimatorSpotrms)
-      .def("getCollimatorDistance", &CobremsGenerator::getCollimatorDistance)
-      .def("getCollimatorDiameter", &CobremsGenerator::getCollimatorDiameter)
-      .def("getTargetThickness", &CobremsGenerator::getTargetThickness)
-      .def("getTargetCrystal", &CobremsGenerator::getTargetCrystal)
-      .def("getTargetCrystalNsites", &CobremsGenerator::getTargetCrystalNsites)
-      .def("getTargetCrystalAtomicNumber", &CobremsGenerator::getTargetCrystalAtomicNumber)
-      .def("getTargetCrystalAtomicWeight", &CobremsGenerator::getTargetCrystalAtomicWeight)
-      .def("getTargetCrystalDensity", &CobremsGenerator::getTargetCrystalDensity)
-      .def("getTargetCrystalLatticeConstant", &CobremsGenerator::getTargetCrystalLatticeConstant)
-      .def("getTargetCrystalRadiationLength", &CobremsGenerator::getTargetCrystalRadiationLength)
-      .def("getTargetCrystalDebyeWallerConst", &CobremsGenerator::getTargetCrystalDebyeWallerConst)
-      .def("getTargetCrystalMosaicSpread", &CobremsGenerator::getTargetCrystalMosaicSpread)
-      .def("getTargetCrystalBetaFF", &CobremsGenerator::getTargetCrystalBetaFF)
-      .def("getTargetThetax", &CobremsGenerator::getTargetThetax)
-      .def("getTargetThetay", &CobremsGenerator::getTargetThetay)
-      .def("getTargetThetaz", &CobremsGenerator::getTargetThetaz)
-      .def("getTargetRadiationLength_PDG", &CobremsGenerator::getTargetRadiationLength_PDG)
-      .def("getTargetRadiationLength_Schiff", &CobremsGenerator::getTargetRadiationLength_Schiff)
-      .def("getTargetDebyeWallerConstant", &CobremsGenerator::getTargetDebyeWallerConstant)
-      .def("getCollimatedFlag", &CobremsGenerator::getCollimatedFlag)
-      .def("setCollimatedFlag", &CobremsGenerator::setCollimatedFlag)
-      .def("getPolarizedFlag", &CobremsGenerator::getPolarizedFlag)
-      .def("setPolarizedFlag", &CobremsGenerator::setPolarizedFlag)
-      .def("applyBeamCrystalConvolution", &CobremsGenerator::pyApplyBeamCrystalConvolution)
-      .def("printBeamlineInfo", &CobremsGenerator::printBeamlineInfo)
-      .def("printTargetCrystalInfo", &CobremsGenerator::printTargetCrystalInfo)
-      .def("CoherentEnhancement", &CobremsGenerator::CoherentEnhancement)
+      .def("setBeamEnergy", &CobremsGeneration::setBeamEnergy)
+      .def("setBeamErms", &CobremsGeneration::setBeamErms)
+      .def("setBeamEmittance", &CobremsGeneration::setBeamEmittance)
+      .def("setCollimatorSpotrms", &CobremsGeneration::setCollimatorSpotrms)
+      .def("setCollimatorDistance", &CobremsGeneration::setCollimatorDistance)
+      .def("setCollimatorDiameter", &CobremsGeneration::setCollimatorDiameter)
+      .def("setTargetThickness", &CobremsGeneration::setTargetThickness)
+      .def("setTargetCrystal", &CobremsGeneration::setTargetCrystal)
+      .def("setCoherentEdge", &CobremsGeneration::setCoherentEdge)
+      .def("setTargetThetax", &CobremsGeneration::setTargetThetax)
+      .def("setTargetThetay", &CobremsGeneration::setTargetThetay)
+      .def("setTargetThetaz", &CobremsGeneration::setTargetThetaz)
+      .def("setTargetOrientation", &CobremsGeneration::setTargetOrientation)
+      .def("RotateTarget", &CobremsGeneration::RotateTarget)
+      .def("getBeamEnergy", &CobremsGeneration::getBeamEnergy)
+      .def("getBeamErms", &CobremsGeneration::getBeamErms)
+      .def("getBeamEmittance", &CobremsGeneration::getBeamEmittance)
+      .def("getCollimatorSpotrms", &CobremsGeneration::getCollimatorSpotrms)
+      .def("getCollimatorDistance", &CobremsGeneration::getCollimatorDistance)
+      .def("getCollimatorDiameter", &CobremsGeneration::getCollimatorDiameter)
+      .def("getTargetThickness", &CobremsGeneration::getTargetThickness)
+      .def("getTargetCrystal", &CobremsGeneration::getTargetCrystal)
+      .def("getTargetCrystalNsites", &CobremsGeneration::getTargetCrystalNsites)
+      .def("getTargetCrystalAtomicNumber", &CobremsGeneration::getTargetCrystalAtomicNumber)
+      .def("getTargetCrystalAtomicWeight", &CobremsGeneration::getTargetCrystalAtomicWeight)
+      .def("getTargetCrystalDensity", &CobremsGeneration::getTargetCrystalDensity)
+      .def("getTargetCrystalLatticeConstant", &CobremsGeneration::getTargetCrystalLatticeConstant)
+      .def("getTargetCrystalRadiationLength", &CobremsGeneration::getTargetCrystalRadiationLength)
+      .def("getTargetCrystalDebyeWallerConst", &CobremsGeneration::getTargetCrystalDebyeWallerConst)
+      .def("getTargetCrystalMosaicSpread", &CobremsGeneration::getTargetCrystalMosaicSpread)
+      .def("getTargetCrystalBetaFF", &CobremsGeneration::getTargetCrystalBetaFF)
+      .def("getTargetThetax", &CobremsGeneration::getTargetThetax)
+      .def("getTargetThetay", &CobremsGeneration::getTargetThetay)
+      .def("getTargetThetaz", &CobremsGeneration::getTargetThetaz)
+      .def("getTargetRadiationLength_PDG", &CobremsGeneration::getTargetRadiationLength_PDG)
+      .def("getTargetRadiationLength_Schiff", &CobremsGeneration::getTargetRadiationLength_Schiff)
+      .def("getTargetDebyeWallerConstant", &CobremsGeneration::getTargetDebyeWallerConstant)
+      .def("getCollimatedFlag", &CobremsGeneration::getCollimatedFlag)
+      .def("setCollimatedFlag", &CobremsGeneration::setCollimatedFlag)
+      .def("getPolarizedFlag", &CobremsGeneration::getPolarizedFlag)
+      .def("setPolarizedFlag", &CobremsGeneration::setPolarizedFlag)
+      .def("applyBeamCrystalConvolution", &CobremsGeneration::pyApplyBeamCrystalConvolution)
+      .def("printBeamlineInfo", &CobremsGeneration::printBeamlineInfo)
+      .def("printTargetCrystalInfo", &CobremsGeneration::printTargetCrystalInfo)
+      .def("CoherentEnhancement", &CobremsGeneration::CoherentEnhancement)
       .def("Rate_dNtdx", Rate_dNtdx_1)
       .def("Rate_dNtdx", Rate_dNtdx_3)
-      .def("Rate_dNtdk", &CobremsGenerator::Rate_dNtdk)
+      .def("Rate_dNtdk", &CobremsGeneration::Rate_dNtdk)
       .def("Rate_dNcdx", Rate_dNcdx_1)
       .def("Rate_dNcdx", Rate_dNcdx_3)
-      .def("Rate_dNcdxdp", &CobremsGenerator::Rate_dNcdxdp)
-      .def("Rate_dNidx", &CobremsGenerator::Rate_dNidx)
-      .def("Rate_dNBidx", &CobremsGenerator::Rate_dNBidx)
-      .def("Rate_dNidxdt2", &CobremsGenerator::Rate_dNidxdt2)
-      .def("Rate_para", &CobremsGenerator::Rate_para)
-      .def("Rate_ortho", &CobremsGenerator::Rate_ortho)
-      .def("Polarization", &CobremsGenerator::Polarization)
+      .def("Rate_dNcdxdp", &CobremsGeneration::Rate_dNcdxdp)
+      .def("Rate_dNidx", &CobremsGeneration::Rate_dNidx)
+      .def("Rate_dNBidx", &CobremsGeneration::Rate_dNBidx)
+      .def("Rate_dNidxdt2", &CobremsGeneration::Rate_dNidxdt2)
+      .def("Rate_para", &CobremsGeneration::Rate_para)
+      .def("Rate_ortho", &CobremsGeneration::Rate_ortho)
+      .def("Polarization", &CobremsGeneration::Polarization)
       .def("Acceptance", Acceptance_1)
       .def("Acceptance", Acceptance_4)
-      .def("Sigma2MS", &CobremsGenerator::Sigma2MS)
-      .def("Sigma2MS_Kaune", &CobremsGenerator::Sigma2MS_Kaune)
-      .def("Sigma2MS_PDG", &CobremsGenerator::Sigma2MS_PDG)
-      .def("Sigma2MS_Geant", &CobremsGenerator::Sigma2MS_Geant)
-      .def("Sigma2MS_Hanson", &CobremsGenerator::Sigma2MS_Hanson)
-      .def_readonly("dpi", &CobremsGenerator::dpi)
-      .def_readonly("me", &CobremsGenerator::me)
-      .def_readonly("alpha", &CobremsGenerator::alpha)
-      .def_readonly("hbarc", &CobremsGenerator::hbarc)
+      .def("Sigma2MS", &CobremsGeneration::Sigma2MS)
+      .def("Sigma2MS_Kaune", &CobremsGeneration::Sigma2MS_Kaune)
+      .def("Sigma2MS_PDG", &CobremsGeneration::Sigma2MS_PDG)
+      .def("Sigma2MS_Geant", &CobremsGeneration::Sigma2MS_Geant)
+      .def("Sigma2MS_Hanson", &CobremsGeneration::Sigma2MS_Hanson)
+      .def_readonly("dpi", &CobremsGeneration::dpi)
+      .def_readonly("me", &CobremsGeneration::me)
+      .def_readonly("alpha", &CobremsGeneration::alpha)
+      .def_readonly("hbarc", &CobremsGeneration::hbarc)
    ;
 }
 

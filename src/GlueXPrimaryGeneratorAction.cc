@@ -34,9 +34,9 @@ source_type_t GlueXPrimaryGeneratorAction::fSourceType = SOURCE_TYPE_NONE;
 
 std::ifstream *GlueXPrimaryGeneratorAction::fHDDMinfile = 0;
 hddm_s::istream *GlueXPrimaryGeneratorAction::fHDDMistream = 0;
-CobremsGenerator *GlueXPrimaryGeneratorAction::fCobremsGenerator = 0;
+CobremsGeneration *GlueXPrimaryGeneratorAction::fCobremsGeneration = 0;
 #ifdef USING_DIRACXX
-PairConversionGenerator *GlueXPrimaryGeneratorAction::fPairsGenerator = 0;
+PairConversionGeneration *GlueXPrimaryGeneratorAction::fPairsGeneration = 0;
 #endif
 G4ParticleTable *GlueXPrimaryGeneratorAction::fParticleTable = 0;
 GlueXParticleGun *GlueXPrimaryGeneratorAction::fParticleGun = 0;
@@ -136,20 +136,20 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          exit(-1);
       }
 
-      // CobremsGenerator has its own standard units that it uses:
+      // CobremsGeneration has its own standard units that it uses:
       //  length : m
       //  angles : radians
       //  energy : GeV
       //  time   : s
       //  current: microAmps
  
-      fCobremsGenerator = new CobremsGenerator(beamE0, beamEpeak);
-      fCobremsGenerator->setPhotonEnergyMin(beamEmin);
-      fCobremsGenerator->setCollimatorDistance(radColDist);
-      fCobremsGenerator->setCollimatorDiameter(colDiam);
-      fCobremsGenerator->setBeamEmittance(beamEmit);
-      fCobremsGenerator->setTargetThickness(radThick);
-      fPairsGenerator = new PairConversionGenerator();
+      fCobremsGeneration = new CobremsGeneration(beamE0, beamEpeak);
+      fCobremsGeneration->setPhotonEnergyMin(beamEmin);
+      fCobremsGeneration->setCollimatorDistance(radColDist);
+      fCobremsGeneration->setCollimatorDiameter(colDiam);
+      fCobremsGeneration->setBeamEmittance(beamEmit);
+      fCobremsGeneration->setTargetThickness(radThick);
+      fPairsGeneration = new PairConversionGeneration();
 
       // These cutoffs should be set empirically, as low as possible
       // for good efficiency, but not too low so as to avoid excessive
@@ -282,10 +282,10 @@ GlueXPrimaryGeneratorAction::~GlueXPrimaryGeneratorAction()
          delete fHDDMistream;
       if (fHDDMinfile)
          delete fHDDMinfile;
-      if (fCobremsGenerator)
-         delete fCobremsGenerator;
-      if (fPairsGenerator)
-         delete fPairsGenerator;
+      if (fCobremsGeneration)
+         delete fCobremsGeneration;
+      if (fPairsGeneration)
+         delete fPairsGeneration;
       delete fParticleGun;
    }
 }
@@ -308,8 +308,8 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    // importance-sampling the coherent bremsstrahlung kinematics.
 
    const int Ndim = 500;
-   double Emin = fCobremsGenerator->getPhotonEnergyMin() * GeV;
-   double Emax = fCobremsGenerator->getBeamEnergy() * GeV;
+   double Emin = fCobremsGeneration->getPhotonEnergyMin() * GeV;
+   double Emax = fCobremsGeneration->getBeamEnergy() * GeV;
    double sum;
 
    // Compute approximate PDF for dNc/dx
@@ -318,10 +318,10 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    double xarr[Ndim], yarr[Ndim];
    for (int i=0; i < Ndim; ++i) {
       xarr[i] = xmin + (i + 0.5) * dx;
-      yarr[i] = fCobremsGenerator->Rate_dNcdxdp(xarr[i], pi/4);
+      yarr[i] = fCobremsGeneration->Rate_dNcdxdp(xarr[i], pi/4);
       yarr[i] = (yarr[i] > 0)? yarr[i] : 0;
    }
-   fCobremsGenerator->applyBeamCrystalConvolution(Ndim, xarr, yarr);
+   fCobremsGeneration->applyBeamCrystalConvolution(Ndim, xarr, yarr);
    sum = 0;
    for (int i=0; i < Ndim; ++i) {
       sum += yarr[i];
@@ -342,7 +342,7 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    for (int i=0; i < Ndim; ++i) {
       double logx = logxmin + (i + 0.5) * dlogx;
       double x = exp(logx);
-      dNidlogx = fCobremsGenerator->Rate_dNidxdt2(x, 0) * x;
+      dNidlogx = fCobremsGeneration->Rate_dNidxdt2(x, 0) * x;
       dNidlogx = (dNidlogx > 0)? dNidlogx : 0;
       sum += dNidlogx;
       fIncoherentPDFlogx.randvar.push_back(logx);
@@ -363,7 +363,7 @@ void GlueXPrimaryGeneratorAction::prepareCobremsImportanceSamplingPDFs()
    for (int i=0; i < Ndim; ++i) {
       double y = ymin + (i + 0.5) * dy;
       double theta2 = fIncoherentPDFtheta02 * (1 / y - 1);
-      dNidxdy = fCobremsGenerator->Rate_dNidxdt2(0.5, theta2) *
+      dNidxdy = fCobremsGeneration->Rate_dNidxdt2(0.5, theta2) *
                 fIncoherentPDFtheta02 / (y*y);
       dNidxdy = (dNidxdy > 0)? dNidxdy : 0;
       sum += dNidxdy;
@@ -464,8 +464,8 @@ void GlueXPrimaryGeneratorAction::preparePairsImportanceSamplingPDFs()
          p1.SetMom(q1);
          e2.SetMom(q2);
          e3.SetMom(q3);
-         double tripXS = fPairsGenerator->DiffXS_triplet(g0,p1,e2,e3);
-         double pairXS = fPairsGenerator->DiffXS_pair(g0,p1,e2);
+         double tripXS = fPairsGeneration->DiffXS_triplet(g0,p1,e2,e3);
+         double pairXS = fPairsGeneration->DiffXS_pair(g0,p1,e2);
          fTripletPDF.Psum += fTripletPDF.Pmax = tripXS * weight;
          fPaircohPDF.Psum += fPaircohPDF.Pmax = pairXS * weight;
          fTripletPDF.density.push_back(fTripletPDF.Pmax);
@@ -737,7 +737,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
                                                      double t0)
 {
    // Generates a single beam photon according to the coherent bremsstrahlung
-   // model defined by class CobremsGenerator.  The photon begins its lifetime
+   // model defined by class CobremsGeneration.  The photon begins its lifetime
    // just upstream of the primary collimator (WARNING: position is hard-wired
    // in the code below) and is tracked by the simulation from there forward.
    // Its time t0 should identify its beam bucket, ie. the time the photon
@@ -807,33 +807,33 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
 
    double phiMosaic = twopi * G4UniformRand();
    double rhoMosaic = sqrt(-2 * log(G4UniformRand()));
-   rhoMosaic *= fCobremsGenerator->getTargetCrystalMosaicSpread() * radian;
+   rhoMosaic *= fCobremsGeneration->getTargetCrystalMosaicSpread() * radian;
    double thxMosaic = rhoMosaic * cos(phiMosaic);
    double thyMosaic = rhoMosaic * sin(phiMosaic);
 
-   double xemittance = fCobremsGenerator->getBeamEmittance() * m*radian;
+   double xemittance = fCobremsGeneration->getBeamEmittance() * m*radian;
    double yemittance = xemittance / 2.5; // nominal, should be checked
-   double xspotsize = fCobremsGenerator->getCollimatorSpotrms() * m;
+   double xspotsize = fCobremsGeneration->getCollimatorSpotrms() * m;
    double yspotsize = xspotsize; // nominal, should be checked
    double phiBeam = twopi * G4UniformRand();
    double rhoBeam = sqrt(-2 * log(G4UniformRand()));
    double thxBeam = (xemittance / xspotsize) * rhoBeam * cos(phiBeam);
    double thyBeam = (yemittance / yspotsize) * rhoBeam * sin(phiBeam);
 
-   double raddz = fCobremsGenerator->getTargetThickness() * m;
-   double varMS = fCobremsGenerator->Sigma2MS(raddz/m * G4UniformRand());
+   double raddz = fCobremsGeneration->getTargetThickness() * m;
+   double varMS = fCobremsGeneration->Sigma2MS(raddz/m * G4UniformRand());
    double rhoMS = sqrt(-2 * varMS * log(G4UniformRand()));
    double phiMS = twopi * G4UniformRand();
    double thxMS = rhoMS * cos(phiMS);
    double thyMS = rhoMS * sin(phiMS);
 
-   double targetThetax = fCobremsGenerator->getTargetThetax() * radian;
-   double targetThetay = fCobremsGenerator->getTargetThetay() * radian;
-   double targetThetaz = fCobremsGenerator->getTargetThetaz() * radian;
+   double targetThetax = fCobremsGeneration->getTargetThetax() * radian;
+   double targetThetay = fCobremsGeneration->getTargetThetay() * radian;
+   double targetThetaz = fCobremsGeneration->getTargetThetaz() * radian;
    double thetax = thxBeam + thxMS - targetThetax - thxMosaic;
    double thetay = thyBeam + thyMS - targetThetay - thyMosaic;
    double thetaz = -targetThetaz;
-   fCobremsGenerator->setTargetOrientation(thetax, thetay, thetaz);
+   fCobremsGeneration->setTargetOrientation(thetax, thetay, thetaz);
 
    // Generate with importance sampling
    double x = 0;
@@ -858,7 +858,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
                               fCoherentPDFx.randvar[i+1] - xi;
          x = xi + dx / 2 - (ui - u) / fi;
          double dNcdxPDF = fi;
-         double dNcdx = twopi * fCobremsGenerator->Rate_dNcdxdp(x, pi / 4);
+         double dNcdx = twopi * fCobremsGeneration->Rate_dNcdxdp(x, pi / 4);
          double Pfactor = dNcdx / dNcdxPDF;
          if (Pfactor > fCoherentPDFx.Pmax)
             fCoherentPDFx.Pmax = Pfactor;
@@ -884,14 +884,14 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
          double fmax = dNcdx / pi;
          while (true) {
             phi = twopi * G4UniformRand();
-            freq = fCobremsGenerator->Rate_dNcdxdp(x, phi);
+            freq = fCobremsGeneration->Rate_dNcdxdp(x, phi);
             if (G4UniformRand() * fmax < freq)
                break;
          }
          double uq = freq * G4UniformRand();
-         int j = ImportanceSampler::search(uq, fCobremsGenerator->fQ2weight);
-         theta2 = fCobremsGenerator->fQ2theta2[j];
-         polarization = fCobremsGenerator->Polarization(x, theta2);
+         int j = ImportanceSampler::search(uq, fCobremsGeneration->fQ2weight);
+         theta2 = fCobremsGeneration->fQ2theta2[j];
+         polarization = fCobremsGeneration->Polarization(x, theta2);
          break;
       }
    }
@@ -919,7 +919,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
          double y = yj + dy / 2 - (uj - uy) / fj;
          dNidxdyPDF *= fj;
          theta2 = fIncoherentPDFtheta02 * (1 / (y + 1e-99) - 1);
-         double dNidxdy = fCobremsGenerator->Rate_dNidxdt2(x, theta2) *
+         double dNidxdy = fCobremsGeneration->Rate_dNidxdt2(x, theta2) *
                           fIncoherentPDFtheta02 / (y*y + 1e-99);
          double Pfactor = dNidxdy / dNidxdyPDF;
          if (Pfactor > fIncoherentPDFlogx.Pmax)
@@ -951,14 +951,14 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    }
 
    // Put the radiator back the way your found it
-   fCobremsGenerator->setTargetOrientation(targetThetax,
+   fCobremsGeneration->setTargetOrientation(targetThetax,
                                            targetThetay,
                                            targetThetaz);
 
    // Define the particle kinematics and polarization in lab coordinates
    G4ParticleDefinition *part = fParticleTable->FindParticle("gamma");
-   double Emax = fCobremsGenerator->getBeamEnergy() * GeV;
-   double Erms = fCobremsGenerator->getBeamErms() * GeV;
+   double Emax = fCobremsGeneration->getBeamEnergy() * GeV;
+   double Erms = fCobremsGeneration->getBeamErms() * GeV;
    double Ebeam = Emax + Erms * G4RandGauss::shoot();
    double theta = sqrt(theta2) * electron_mass_c2 / Emax;
    double alphax = thxBeam + thxMS + theta * cos(phi);
@@ -968,9 +968,9 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPhoton(G4Event* anEvent,
    double py = pabs * alphay;
    double pz = sqrt(pabs*pabs - px*px - py*py);
    double colphi = twopi * G4UniformRand();
-   double vspotrms = fCobremsGenerator->getCollimatorSpotrms() * m;
+   double vspotrms = fCobremsGeneration->getCollimatorSpotrms() * m;
    double colrho = vspotrms * sqrt(-2 * log(G4UniformRand()));
-   double colDist = fCobremsGenerator->getCollimatorDistance() * m;
+   double colDist = fCobremsGeneration->getCollimatorDistance() * m;
    double radx = colrho * cos(colphi) - colDist * thxBeam;
    double rady = colrho * sin(colphi) - colDist * thyBeam;
    double colx = radx + colDist * alphax;
@@ -1065,7 +1065,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step)
 
 #ifndef USING_DIRACXX
 
-   G4cerr << "GlueXPrimaryGeneratorAction::GeneratorBeamPairConversion error:"
+   G4cerr << "GlueXPrimaryGeneratorAction::GenerateBeamPairConversion error:"
           << G4endl
           << "  You have enabled pair/triplet conversion in the PTAR target,"
           << G4endl
@@ -1249,7 +1249,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step)
          p1.SetMom(q1.Rotate(rockaxis, rockangle));
          e2.SetMom(q2.Rotate(rockaxis, rockangle));
          e3.SetMom(q3.Rotate(rockaxis, rockangle));
-         double diffXS = fPairsGenerator->DiffXS_triplet(gIn, p1, e2, e3);
+         double diffXS = fPairsGeneration->DiffXS_triplet(gIn, p1, e2, e3);
    
          // Use keep/discard algorithm
          double Pfactor = diffXS * weight;
@@ -1330,7 +1330,7 @@ void GlueXPrimaryGeneratorAction::GenerateBeamPairConversion(const G4Step* step)
          p1.SetMom(q1.Rotate(rockaxis, rockangle));
          e2.SetMom(q2.Rotate(rockaxis, rockangle));
          e3.SetMom(TThreeVectorReal(0,0,0));
-         double diffXS = fPairsGenerator->DiffXS_pair(gIn, p1, e2);
+         double diffXS = fPairsGeneration->DiffXS_pair(gIn, p1, e2);
    
          // Use keep/discard algorithm
          double Pfactor = diffXS * weight;

@@ -1,5 +1,5 @@
 //
-// PairConversionGenerator class header
+// PairConversionGeneration class header
 //
 // author: richard.t.jones at uconn.edu
 // version: december 17, 2016
@@ -27,8 +27,8 @@
 // radians; time in seconds; cross section in barns.
 
 #ifdef USING_DIRACXX
-#ifndef PairConversionGenerator_h
-#define PairConversionGenerator_h 1
+#ifndef PairConversionGeneration_h
+#define PairConversionGeneration_h 1
 
 #include <string>
 #include <vector>
@@ -43,10 +43,10 @@
 #include <boost/python.hpp>
 #endif
 
-class PairConversionGenerator {
+class PairConversionGeneration {
  public:
-   PairConversionGenerator();
-   ~PairConversionGenerator();
+   PairConversionGeneration();
+   ~PairConversionGeneration();
 
    double FFatomic(double qRecoil);
    double DiffXS_pair(const TPhoton &gIn, 
@@ -66,41 +66,41 @@ class PairConversionGenerator {
    unsigned int fConverterZ;  // atomic number of converter material
 
  private:
-   PairConversionGenerator(const PairConversionGenerator &src);
-   PairConversionGenerator &operator=(const PairConversionGenerator &src);
+   PairConversionGeneration(const PairConversionGeneration &src);
+   PairConversionGeneration &operator=(const PairConversionGeneration &src);
 };
 
-inline const TThreeVectorReal &PairConversionGenerator::GetPolarization() {
+inline const TThreeVectorReal &PairConversionGeneration::GetPolarization() {
    return fPolar;
 }
 
-inline void PairConversionGenerator::SetPolarization(double polx,
-                                                     double poly,
-                                                     double polz)
+inline void PairConversionGeneration::SetPolarization(double polx,
+                                                      double poly,
+                                                      double polz)
 {
    fPolar[0] = polx;
    fPolar[1] = poly;
    fPolar[2] = polz;
 }
 
-inline void PairConversionGenerator::SetPolarization(const TThreeVectorReal &pol)
+inline void PairConversionGeneration::SetPolarization(const TThreeVectorReal &pol)
 {
    fPolar = pol;
 }
 
-inline void PairConversionGenerator::SetPolarization(double pol[3])
+inline void PairConversionGeneration::SetPolarization(double pol[3])
 {
    fPolar[0] = pol[0];
    fPolar[1] = pol[1];
    fPolar[2] = pol[2];
 }
 
-inline unsigned int PairConversionGenerator::GetConverterZ()
+inline unsigned int PairConversionGeneration::GetConverterZ()
 {
    return fConverterZ;
 }
 
-inline void PairConversionGenerator::SetConverterZ(unsigned int Z)
+inline void PairConversionGeneration::SetConverterZ(unsigned int Z)
 {
    fConverterZ = Z;
 }
