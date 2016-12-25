@@ -88,7 +88,7 @@ hdds:  $(G4TMPDIR)/libhdds.so
 
 CXXFLAGS = -g -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
-$(G4TMPDIR)/libcobrems.so: src/CobremsGenerator.cc
+$(G4TMPDIR)/libcobrems.so: src/CobremsGeneration.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
 	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
