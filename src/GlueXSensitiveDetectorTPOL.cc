@@ -284,7 +284,7 @@ void GlueXSensitiveDetectorTPOL::EndOfEvent(G4HCofThisEvent*)
       hitview.addTripletPolarimeters();
    hddm_s::TripletPolarimeter &polarimeter = hitview.getTripletPolarimeter();
 
-   // Collect and output the stcTruthHits
+   // Collect and output the tpolTruthHits
    for (siter = wedges->begin(); siter != wedges->end(); ++siter) {
       std::vector<GlueXHitTPOLwedge::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
