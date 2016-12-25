@@ -28,11 +28,13 @@
 // Any length is in m; energy,momentum,mass in GeV (c=1); angles in
 // radians; time in seconds; cross section in barns.
 
-#if USING_DIRACXX
+#ifdef USING_DIRACXX
 #define BOOST_PYTHON_WRAPPING 1
 
 #include <PairConversionGenerator.hh>
 #include <TRandom2.h>
+
+#include "G4ios.hh"
 
 #include <iostream>
 
@@ -120,7 +122,8 @@ double PairConversionGenerator::DiffXS_pair(const TPhoton &gIn,
    // Multiply the basic cross section by the converter atomic form factor
    double result = TCrossSection::PairProduction(g0, e2, p1);
    TFourVectorReal qR(gIn.Mom() - eOut.Mom() - pOut.Mom());
-   result *= sqr(fConverterZ * (1 - FFatomic(sqrt(-qR.Invariant()))));
+   double Q2 = fabs(qR.InvariantSqr());
+   result *= sqr(fConverterZ * (1 - FFatomic(sqrt(Q2))));
    return result * 1e-6;
 
    // The unpolarized Bethe-Heitler cross section is given here for comparison
@@ -177,7 +180,7 @@ double PairConversionGenerator::DiffXS_triplet(const TPhoton &gIn,
 
    // Set the initial,final polarizations
    g0.SetPol(fPolar);
-   e0.AllPol();
+   e0.SetPol(zeroVector);
    p1.AllPol();
    e2.AllPol();
    e3.AllPol();
@@ -185,7 +188,8 @@ double PairConversionGenerator::DiffXS_triplet(const TPhoton &gIn,
    // Correct the basic cross section by the converter atomic form factor
    double result = TCrossSection::TripletProduction(g0, e0, p1, e2, e3);
    TFourVectorReal qR(e3.Mom() - e0.Mom());
-   result *= sqr(fConverterZ) * (1 - sqr(FFatomic(sqrt(-qR.Invariant()))));
+   double Q2 = fabs(qR.InvariantSqr());
+   result *= fConverterZ * (1 - sqr(FFatomic(sqrt(Q2))));
    return result * 1e-6;
 }
 

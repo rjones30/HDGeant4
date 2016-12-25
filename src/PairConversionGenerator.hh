@@ -26,7 +26,7 @@
 // Any length is in m; energy,momentum,mass in GeV (c=1); angles in
 // radians; time in seconds; cross section in barns.
 
-#if USING_DIRACXX
+#ifdef USING_DIRACXX
 #ifndef PairConversionGenerator_h
 #define PairConversionGenerator_h 1
 
