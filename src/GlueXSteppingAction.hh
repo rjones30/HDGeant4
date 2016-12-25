@@ -17,10 +17,17 @@
 
 class GlueXSteppingAction : public G4UserSteppingAction
 {
-  public:
-    void UserSteppingAction(const G4Step*);
+ public:
+   GlueXSteppingAction();
+   GlueXSteppingAction(const GlueXSteppingAction &src);
+   ~GlueXSteppingAction();
+   void UserSteppingAction(const G4Step*);
 
  private:
+   GlueXSteppingAction &operator=(const GlueXSteppingAction &src);
+
+ protected:
+   int fShowersInCollimator;
    static G4Mutex fMutex;
 };
 
