@@ -138,8 +138,8 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
       return false;
 
    double time_ref_plane_z = GlueXPrimaryGeneratorAction::getTargetCenterZ();
-   double beam_period = GlueXPrimaryGeneratorAction::getBeamBucketPeriod();
-   double beam_velocity = GlueXPrimaryGeneratorAction::getBeamVelocity();
+   double beam_period = GlueXPhotonBeamGenerator::getBeamBucketPeriod();
+   double beam_velocity = GlueXPhotonBeamGenerator::getBeamVelocity();
    double t = time - (vtx[2] - time_ref_plane_z) / beam_velocity;
    t = floor(t / beam_period + 0.5) * beam_period;
 

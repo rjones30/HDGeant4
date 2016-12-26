@@ -27,7 +27,7 @@ class GlueXSteppingAction : public G4UserSteppingAction
    GlueXSteppingAction &operator=(const GlueXSteppingAction &src);
 
  protected:
-   int fShowersInCollimator;
+   int fStopTracksInCollimator;
    static G4Mutex fMutex;
 };
 

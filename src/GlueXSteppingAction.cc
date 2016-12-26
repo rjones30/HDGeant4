@@ -6,13 +6,8 @@
 
 #include "GlueXSteppingAction.hh"
 #include "G4SteppingManager.hh"
-#include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserOptions.hh"
 #include "GlueXPathFinder.hh"
-
-// Jack up this threshold to 20GeV to disable this feature
-// and let your application run without Dirac++ support.
-#define FORCED_PTAR_PAIR_CONVERSION_THRESHOLD 3*GeV
 
 G4Mutex GlueXSteppingAction::fMutex = G4MUTEX_INITIALIZER;
 
@@ -28,13 +23,13 @@ GlueXSteppingAction::GlueXSteppingAction()
 
    std::map<int,double> showersInCol;
    if (user_opts->Find("SHOWERSINCOL", showersInCol)) {
-      fShowersInCollimator = (showersInCol[1] != 0);
+      fStopTracksInCollimator = (showersInCol[1] == 0);
    }
 }
 
 GlueXSteppingAction::GlueXSteppingAction(const GlueXSteppingAction &src)
 {
-   fShowersInCollimator = src.fShowersInCollimator;
+   fStopTracksInCollimator = src.fStopTracksInCollimator;
 }
 
 GlueXSteppingAction::~GlueXSteppingAction()
@@ -42,22 +37,13 @@ GlueXSteppingAction::~GlueXSteppingAction()
 
 void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
 { 
-   G4Track *track = step->GetTrack();
-   G4int id = track->GetTrackID();
-   G4int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-   G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
-   if (pvol && pvol->GetName() == "PTAR" && id == 1 && pdgtype == 22 &&
-       track->GetKineticEnergy() > FORCED_PTAR_PAIR_CONVERSION_THRESHOLD)
-   {
-      const GlueXPrimaryGeneratorAction *generator;
-      generator = GlueXPrimaryGeneratorAction::GetInstance();
-      ((GlueXPrimaryGeneratorAction*)generator)->GenerateBeamPairConversion(step);
-      track->SetTrackStatus(fStopAndKill);
-   }
-   else if (pvol && (pvol->GetName() == "INSU" ||
-                     pvol->GetName() == "PCTT" ||
-                     pvol->GetName() == "PCPB") )
-   {
-      track->SetTrackStatus(fStopAndKill);
+   if (fStopTracksInCollimator) {
+      G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
+      if (pvol && (pvol->GetName() == "INSU" ||
+                   pvol->GetName() == "PCTT" ||
+                   pvol->GetName() == "PCPB") )
+      {
+         step->GetTrack()->SetTrackStatus(fStopAndKill);
+      }
    }
 }
