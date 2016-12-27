@@ -19,7 +19,6 @@
 #include "G4AutoLock.hh"
 
 #include "CobremsGeneration.hh"
-#include "PairConversionGeneration.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "GlueXPhotonBeamGenerator.hh"
 #include "GlueXPrimaryGenerator.hh"
@@ -73,9 +72,6 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static hddm_s::istream *fHDDMistream;
    static CobremsGeneration *fCobremsGeneration;
    static GlueXPhotonBeamGenerator *fPhotonBeamGenerator;
-#if USING_DIRACXX
-   static PairConversionGeneration *fPairsGeneration;
-#endif
    static G4ParticleTable *fParticleTable;
    static GlueXParticleGun *fParticleGun;
    static GlueXPrimaryGenerator *fPrimaryGenerator;
