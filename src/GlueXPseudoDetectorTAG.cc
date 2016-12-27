@@ -137,11 +137,8 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
    if (micro_channel < 0 && hodo_channel < 0)
       return false;
 
-   double time_ref_plane_z = GlueXPrimaryGeneratorAction::getTargetCenterZ();
    double beam_period = GlueXPhotonBeamGenerator::getBeamBucketPeriod();
-   double beam_velocity = GlueXPhotonBeamGenerator::getBeamVelocity();
-   double t = time - (vtx[2] - time_ref_plane_z) / beam_velocity;
-   t = floor(t / beam_period + 0.5) * beam_period;
+   double t = floor(time / beam_period + 0.5) * beam_period;
 
    // pack hit into ouptut hddm record
  
