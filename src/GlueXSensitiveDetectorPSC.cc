@@ -37,7 +37,7 @@ double GlueXSensitiveDetectorPSC::TWO_HIT_TIME_RESOL = 25*ns;
 double GlueXSensitiveDetectorPSC::THRESH_MEV = 0.010;
 
 // Geometric parameters
-int GlueXSensitiveDetectorPSC::NUM_COLUMNS_PER_ARM = 8;
+int GlueXSensitiveDetectorPSC::NUM_MODULES_PER_ARM = 8;
 
 int GlueXSensitiveDetectorPSC::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorPSC::fMutex = G4MUTEX_INITIALIZER;
@@ -145,9 +145,9 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
    // Post the hit to the points list in the
    // order of appearance in the event simulation.
 
-   int column = GetIdent("column", touch);
-   int arm = column / NUM_COLUMNS_PER_ARM;
-   int module = column % NUM_COLUMNS_PER_ARM;
+   int module = GetIdent("module", touch);
+   int arm = module / NUM_MODULES_PER_ARM;
+   module %= NUM_MODULES_PER_ARM;
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
       GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
