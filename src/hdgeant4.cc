@@ -140,7 +140,7 @@ int main(int argc,char** argv)
 
    // Initialize G4 kernel
    runManager.Initialize();
-       
+
    // Initialize graphics (option -v)
    G4VisManager* visManager = 0;
    if (use_visualization) {

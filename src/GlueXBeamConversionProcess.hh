@@ -22,7 +22,7 @@
 #include <G4Event.hh>
 #include <G4Step.hh>
 
-class GlueXBeamConversionProcess : G4VDiscreteProcess
+class GlueXBeamConversionProcess: public G4VDiscreteProcess
 {
  public:
    GlueXBeamConversionProcess(const G4String &name, 
@@ -35,20 +35,9 @@ class GlueXBeamConversionProcess : G4VDiscreteProcess
                                                   G4ForceCondition *condition);
    virtual G4VParticleChange *PostStepDoIt(const G4Track &track, 
                                            const G4Step &step);
-   virtual G4double AlongStepGetPhysicalInteractionLength(const G4Track &track,
-                                                   G4double previousStepSize,
-                                                   G4double currentMinimumStep,
-                                                   G4double &currentSafety,
-                                                   G4GPILSelection *selection);
-   virtual G4VParticleChange *AlongStepDoIt(const G4Track &track,
-                                            const G4Step &step);
-   virtual G4double AtRestGetPhysicalInteractionLength(const G4Track &track,
-                                                   G4ForceCondition *condition);
-   virtual G4VParticleChange *AtRestDoIt(const G4Track &track, 
-                                         const G4Step &step);
-   void GenerateBeamPairConversion(const G4Step &step);
 
  protected:
+   void GenerateBeamPairConversion(const G4Step &step);
    virtual G4double GetMeanFreePath(const G4Track &track, 
                                     G4double previousStepSize,
                                     G4ForceCondition *condition);

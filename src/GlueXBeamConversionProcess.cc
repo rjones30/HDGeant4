@@ -6,6 +6,8 @@
 //
 
 #include "GlueXBeamConversionProcess.hh"
+#include "GlueXPhotonBeamGenerator.hh"
+#include "GlueXUserEventInformation.hh"
 #include "GlueXPathFinder.hh"
 
 // Jack up this threshold to 20GeV to disable this feature
@@ -15,6 +17,7 @@
 #include <G4SystemOfUnits.hh>
 #include "G4Positron.hh"
 #include "G4Electron.hh"
+#include "G4RunManager.hh"
 
 #include <TLorentzBoost.h>
 #include <TPhoton.h>
@@ -31,6 +34,9 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                                                        G4ProcessType aType)
  : G4VDiscreteProcess(name, aType)
 {
+   if (fPairsGeneration == 0)
+      fPairsGeneration = new PairConversionGeneration();
+
    fPaircohPDF.Pcut = 10;
    fTripletPDF.Pcut = 2.5;
 }
@@ -41,15 +47,10 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(
 {
    fPaircohPDF.Pcut = src.fPaircohPDF.Pcut;
    fTripletPDF.Pcut = src.fTripletPDF.Pcut;
-   fPairsGeneration = new PairConversionGeneration();
-
 }
 
 GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
-{
-   if (fPairsGeneration)
-      delete fPairsGeneration;
-}
+{}
 
 GlueXBeamConversionProcess GlueXBeamConversionProcess::operator=(
                            GlueXBeamConversionProcess &src)
@@ -63,24 +64,7 @@ G4double GlueXBeamConversionProcess::GetMeanFreePath(
                                      G4double previousStepSize,
                                      G4ForceCondition *condition)
 {
-   return 0;
-}
-
-G4double GlueXBeamConversionProcess::AtRestGetPhysicalInteractionLength(
-                                     const G4Track &track,
-                                     G4ForceCondition *condition)
-{
-   return 0;
-}
-
-G4double GlueXBeamConversionProcess::AlongStepGetPhysicalInteractionLength(
-                                     const G4Track &track,
-                                     G4double previousStepSize,
-                                     G4double currentMinimumStep,
-                                     G4double &currentSafety,
-                                     G4GPILSelection *selection)
-{
-   return 0;
+   return 100*cm;
 }
 
 G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
@@ -88,37 +72,26 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
                                      G4double previousStepSize,
                                      G4ForceCondition *condition)
 {
-   return 0;
-}
-
-G4VParticleChange *GlueXBeamConversionProcess::AtRestDoIt(
-                                               const G4Track &track, 
-                                               const G4Step &step)
-{
-   return 0;
-}
-
-G4VParticleChange *GlueXBeamConversionProcess::AlongStepDoIt(
-                                               const G4Track &track,
-                                               const G4Step &step)
-{
-   return 0;
+   G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
+   if (pvol && pvol->GetName() == "PTAR" && track.GetTrackID() == 1 &&
+       track.GetKineticEnergy() > FORCED_PTAR_PAIR_CONVERSION_THRESHOLD)
+   {
+      *condition = Forced;
+      return 100*cm;
+   }
+   *condition = NotForced;
+   return 1e99;
 }
 
 G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
                                                const G4Track &track, 
                                                const G4Step &step)
 {
-   G4int id = track.GetTrackID();
-   G4int pdgtype = track.GetDynamicParticle()->GetPDGcode();
-   G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
-   if (pvol && pvol->GetName() == "PTAR" && id == 1 && pdgtype == 22 &&
-       track.GetKineticEnergy() > FORCED_PTAR_PAIR_CONVERSION_THRESHOLD)
-   {
-      GenerateBeamPairConversion(step);
-      //track.SetTrackStatus(fStopAndKill);
-   }
-   return 0;
+   pParticleChange->Initialize(track);
+   GenerateBeamPairConversion(step);
+   pParticleChange->ProposeTrackStatus(fStopAndKill);
+   G4cout << "bang!!!" << G4endl;
+   return pParticleChange;
 }
 
 
@@ -542,33 +515,41 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    }
 
    // Generate new primaries for the pair
-   G4PrimaryVertex* vertex = new G4PrimaryVertex(track->GetPosition(),
-                                                 track->GetGlobalTime());
-   vertex->SetPrimary(new G4PrimaryParticle(G4Positron::Positron(),
-                                            p1.Mom()[1]*GeV,
-                                            p1.Mom()[2]*GeV,
-                                            p1.Mom()[3]*GeV));
-   vertex->SetPrimary(new G4PrimaryParticle(G4Electron::Electron(),
-                                            e2.Mom()[1]*GeV,
-                                            e2.Mom()[2]*GeV,
-                                            e2.Mom()[3]*GeV));
+   double beamVelocity = GlueXPhotonBeamGenerator::getBeamVelocity();
+   double steplength = pParticleChange->GetTrueStepLength();
+   G4ThreeVector direction(track->GetMomentumDirection());
+   G4ThreeVector x0(track->GetPosition());
+   double t0 = track->GetGlobalTime();
+   double uvtx = G4UniformRand();
+   x0 -= uvtx * steplength * direction;
+   t0 -= uvtx * steplength / beamVelocity;
+   G4PrimaryVertex vertex(x0, t0);
+   G4ParticleDefinition *positron = G4Positron::Definition();
+   G4ParticleDefinition *electron = G4Electron::Definition();
+   G4ThreeVector psec1(p1.Mom()[1]*GeV, p1.Mom()[2]*GeV, p1.Mom()[3]*GeV);
+   G4ThreeVector psec2(e2.Mom()[1]*GeV, e2.Mom()[2]*GeV, e2.Mom()[3]*GeV);
+   G4ThreeVector psec3(e3.Mom()[1]*GeV, e3.Mom()[2]*GeV, e3.Mom()[3]*GeV);
+   G4DynamicParticle *sec1 = new G4DynamicParticle(positron, psec1);
+   G4DynamicParticle *sec2 = new G4DynamicParticle(electron, psec2);
+   G4DynamicParticle *sec3 = new G4DynamicParticle(electron, psec3);
+   std::vector<G4Track*> secondaries;
+   secondaries.push_back(new G4Track(sec1, t0, x0));
+   secondaries.push_back(new G4Track(sec2, t0, x0));
    if (e3.Mom().Length() > 0) {
-      vertex->SetPrimary(new G4PrimaryParticle(G4Electron::Electron(),
-                                               e3.Mom()[1]*GeV,
-                                               e3.Mom()[2]*GeV,
-                                               e3.Mom()[3]*GeV));
+      secondaries.push_back(new G4Track(sec3, t0, x0));
    }
-#if 0
-   const G4Event *anEvent = G4RunManager::GetRunManager()->GetCurrentEvent();
-   ((G4Event*)anEvent)->AddPrimaryVertex(vertex);
+   std::vector<G4Track*>::iterator iter;
+   for (iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
+      pParticleChange->AddSecondary(*iter);
+   }
 
-   // If bg beam particle, append to MC record
+   // append secondary vertex to MC record
    GlueXUserEventInformation *event_info;
-   event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
+   const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+   event_info = (GlueXUserEventInformation*)event->GetUserInformation();
    if (event_info) {
-      event_info->AddPrimaryVertex(*vertex);
+      event_info->AddSecondaryVertex(secondaries, 1);
    }
-#endif
 
 #if VERBOSE_PAIRS_SPLITTING
    if (fTripletPDF.Npassed / 100 * 100 == fTripletPDF.Npassed) {
