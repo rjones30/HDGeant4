@@ -11,6 +11,7 @@
 #define GlueXPhysicsList_h 1
 
 #include <GlueXDetectorConstruction.hh>
+#include <GlueXBeamConversionProcess.hh>
 
 #include <G4VUserPhysicsList.hh>
 #include <QGSP_FTFP_BERT.hh>
@@ -20,6 +21,14 @@ class GlueXPhysicsList: public QGSP_FTFP_BERT
 {
  public:
    GlueXPhysicsList(const GlueXDetectorConstruction *geometry=0);
+   virtual ~GlueXPhysicsList();
+
+   virtual void ConstructProcess();
+
+ protected:
+#if USING_DIRACXX
+   static G4ThreadLocal GlueXBeamConversionProcess *fBeamConversion;
+#endif
 };
 
 #endif
