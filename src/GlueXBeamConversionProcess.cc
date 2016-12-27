@@ -19,11 +19,11 @@
 #include "G4Electron.hh"
 #include "G4RunManager.hh"
 
+#ifdef USING_DIRACXX
 #include <TLorentzBoost.h>
 #include <TPhoton.h>
 #include <TLepton.h>
 
-#ifdef USING_DIRACXX
 PairConversionGeneration *GlueXBeamConversionProcess::fPairsGeneration = 0;
 #endif
 
@@ -34,8 +34,10 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                                                        G4ProcessType aType)
  : G4VDiscreteProcess(name, aType)
 {
+#if USING_DIRACXX
    if (fPairsGeneration == 0)
       fPairsGeneration = new PairConversionGeneration();
+#endif
 
    fPaircohPDF.Pcut = 10;
    fTripletPDF.Pcut = 2.5;
@@ -105,6 +107,8 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
    // to generate Mpair and u1 generates qR. The algorithm succeeds
    // because the mapping u0->Mpair and u1->qR used here is the
    // same as is used in GenerateBeamPairConversion.
+
+#if USING_DIRACXX
 
    double kin = 9.; // GeV
    TPhoton g0;
@@ -199,6 +203,8 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
          fPaircohPDF.integral[index] /= fPaircohPDF.Psum;
       }
    }
+#endif
+
    fTripletPDF.Pmax = 0;
    fTripletPDF.Psum = 0;
    fPaircohPDF.Pmax = 0;

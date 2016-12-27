@@ -5,7 +5,10 @@
 // version: may 12, 2012
 //
 // In the context of the Geant4 event-level multithreading model,
-// this class is "shared", ie. has no thread-local state.
+// this class is "thread-local", ie. has thread-local state. The
+// Geant4 runtime makes sure that its constructor runs in the master
+// thread, and then its Construct methods are run again each time
+// a new worker thread is initialized.
 
 #ifndef GlueXPhysicsList_h
 #define GlueXPhysicsList_h 1

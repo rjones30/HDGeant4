@@ -42,7 +42,9 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
                                     G4double previousStepSize,
                                     G4ForceCondition *condition);
 
+#if USING_DIRACXX
    static PairConversionGeneration *fPairsGeneration;
+#endif
 
    void prepareImportanceSamplingPDFs();
 
