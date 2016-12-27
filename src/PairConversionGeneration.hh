@@ -55,45 +55,16 @@ class PairConversionGeneration {
                          const TLepton &eOut2, const TLepton &eOut3);
 
    const TThreeVectorReal &GetPolarization();
-   void SetPolarization(double polx, double poly, double polz);
-   void SetPolarization(const TThreeVectorReal &pol);
-   void SetPolarization(double pol[3]);
    unsigned int GetConverterZ();
    void SetConverterZ(unsigned int Z);
 
  protected:
-   TThreeVectorReal fPolar;   // incident photon polarization (Stokes parameterization)
    unsigned int fConverterZ;  // atomic number of converter material
 
  private:
    PairConversionGeneration(const PairConversionGeneration &src);
    PairConversionGeneration &operator=(const PairConversionGeneration &src);
 };
-
-inline const TThreeVectorReal &PairConversionGeneration::GetPolarization() {
-   return fPolar;
-}
-
-inline void PairConversionGeneration::SetPolarization(double polx,
-                                                      double poly,
-                                                      double polz)
-{
-   fPolar[0] = polx;
-   fPolar[1] = poly;
-   fPolar[2] = polz;
-}
-
-inline void PairConversionGeneration::SetPolarization(const TThreeVectorReal &pol)
-{
-   fPolar = pol;
-}
-
-inline void PairConversionGeneration::SetPolarization(double pol[3])
-{
-   fPolar[0] = pol[0];
-   fPolar[1] = pol[1];
-   fPolar[2] = pol[2];
-}
 
 inline unsigned int PairConversionGeneration::GetConverterZ()
 {

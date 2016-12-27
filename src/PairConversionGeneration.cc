@@ -54,9 +54,7 @@ const TThreeVectorReal negZhat(0,0,-1);
 
 PairConversionGeneration::PairConversionGeneration()
  : fConverterZ(4)
-{
-   SetPolarization(posXhat);
-}
+{}
 
 PairConversionGeneration::~PairConversionGeneration()
 {}
@@ -115,7 +113,6 @@ double PairConversionGeneration::DiffXS_pair(const TPhoton &gIn,
    TLepton e2(eOut);
 
    // Set the initial,final polarizations
-   g0.SetPol(fPolar);
    p1.AllPol();
    e2.AllPol();
 
@@ -179,7 +176,6 @@ double PairConversionGeneration::DiffXS_triplet(const TPhoton &gIn,
       return 0;
 
    // Set the initial,final polarizations
-   g0.SetPol(fPolar);
    e0.SetPol(zeroVector);
    p1.AllPol();
    e2.AllPol();
