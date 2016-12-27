@@ -19,6 +19,7 @@
 #include "G4VUserEventInformation.hh"
 #include "G4PrimaryVertex.hh"
 #include "G4ThreeVector.hh"
+#include <G4Track.hh>
 #include "Randomize.hh"
 
 #include <HDDM/hddm_s.hpp>
@@ -40,6 +41,8 @@ class GlueXUserEventInformation: public G4VUserEventInformation
                                                     const G4ThreeVector &mom,
                                                     const G4ThreeVector &pol);
    void AddPrimaryVertex(const G4PrimaryVertex &vertex);
+   void AddSecondaryVertex(const std::vector<G4Track*> &secondaries, 
+                           int parentID);
 
    void SetRandomSeeds();
    void Print() const;

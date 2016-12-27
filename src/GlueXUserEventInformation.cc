@@ -143,13 +143,64 @@ void GlueXUserEventInformation::AddPrimaryVertex(const G4PrimaryVertex &vertex)
        double pz = part->GetPz()/GeV;
        double mass = part->GetMass()/GeV;
        double E = sqrt(mass*mass + px*px + py*py + pz*pz);
-       pmo(ip).setPx(px);
-       pmo(ip).setPy(py);
-       pmo(ip).setPz(pz);
-       pmo(ip).setE(E);
+       pmo(0).setPx(px);
+       pmo(0).setPy(py);
+       pmo(0).setPz(pz);
+       pmo(0).setE(E);
        double polx = part->GetPolX();
        double poly = part->GetPolY();
        double polz = part->GetPolZ();
+       if (polx != 0 || poly != 0 || polz != 0) {
+          hddm_s::PolarizationList polar = pro(ip).addPolarizations();
+          polar(0).setPx(px);
+          polar(0).setPy(py);
+          polar(0).setPz(pz);
+       }
+   }
+}
+
+void GlueXUserEventInformation::AddSecondaryVertex(const 
+                                std::vector<G4Track*> &secondaries,
+                                int parentID)
+{
+   if (secondaries.size() == 0)
+      return;
+
+   hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+   hddm_s::ReactionList rea = pev(0).getReactions();
+   if (rea.size() == 0) {
+      rea = pev(0).addReactions();
+   }
+   hddm_s::VertexList ver = rea(0).addVertices();
+   hddm_s::OriginList ori = ver(0).addOrigins();
+   G4ThreeVector vertex(secondaries[0]->GetPosition());
+   ori(0).setVx(secondaries[0]->GetPosition()[0]/cm);
+   ori(0).setVy(secondaries[0]->GetPosition()[1]/cm);
+   ori(0).setVz(secondaries[0]->GetPosition()[2]/cm);
+   ori(0).setT(secondaries[0]->GetGlobalTime()/ns);
+   int np = secondaries.size();
+   hddm_s::ProductList pro = ver(0).addProducts(np);
+   for (int ip=0; ip < np; ++ip) {
+       int pdgtype = secondaries[ip]->GetDefinition()->GetPDGEncoding();
+       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+       pro(ip).setType((Particle_t)g3type);
+       pro(ip).setPdgtype(pdgtype);
+       pro(ip).setId(ip);
+       pro(ip).setParentid(parentID);
+       pro(ip).setMech(0);
+       hddm_s::MomentumList pmo = pro(ip).addMomenta();
+       double px = secondaries[ip]->GetMomentum()[0]/GeV;
+       double py = secondaries[ip]->GetMomentum()[1]/GeV;
+       double pz = secondaries[ip]->GetMomentum()[2]/GeV;
+       double mass = secondaries[ip]->GetDefinition()->GetPDGMass()/GeV;
+       double E = sqrt(mass*mass + px*px + py*py + pz*pz);
+       pmo(0).setPx(px);
+       pmo(0).setPy(py);
+       pmo(0).setPz(pz);
+       pmo(0).setE(E);
+       double polx = secondaries[ip]->GetPolarization()[0];
+       double poly = secondaries[ip]->GetPolarization()[1];
+       double polz = secondaries[ip]->GetPolarization()[2];
        if (polx != 0 || poly != 0 || polz != 0) {
           hddm_s::PolarizationList polar = pro(ip).addPolarizations();
           polar(0).setPx(px);
