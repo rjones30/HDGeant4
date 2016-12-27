@@ -155,8 +155,8 @@ G4bool GlueXSensitiveDetectorTPOL::ProcessHits(G4Step* step,
       GlueXHitTPOLpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
           fabs(lastPoint->t_ns - t/ns) > 0.1 ||
-          (fabs(lastPoint->x_cm - x[0]/cm) > 0.1 &&
-           fabs(lastPoint->y_cm - x[1]/cm) > 0.1) )
+          (fabs(lastPoint->r_cm - x.perp()/cm) > 0.1 &&
+           fabs(lastPoint->phi_rad - x.phi()) > 0.1) )
       {
          GlueXHitTPOLpoint* newPoint = new GlueXHitTPOLpoint();
          fPointsMap->add(key, newPoint);
@@ -166,10 +166,9 @@ G4bool GlueXSensitiveDetectorTPOL::ProcessHits(G4Step* step,
          newPoint->track_ = trackID;
          newPoint->trackID_ = trackinfo->GetGlueXTrackID();
          newPoint->primary_ = (track->GetParentID() == 0);
+         newPoint->phi_rad = x.phi();
+         newPoint->r_cm = x.perp()/cm;
          newPoint->t_ns = t/ns;
-         newPoint->x_cm = x[0]/cm;
-         newPoint->y_cm = x[1]/cm;
-         newPoint->z_cm = x[2]/cm;
          newPoint->px_GeV = pin[0]/GeV;
          newPoint->py_GeV = pin[1]/GeV;
          newPoint->pz_GeV = pin[2]/GeV;
@@ -318,9 +317,8 @@ void GlueXSensitiveDetectorTPOL::EndOfEvent(G4HCofThisEvent*)
       point(0).setPx(piter->second->px_GeV);
       point(0).setPy(piter->second->py_GeV);
       point(0).setPz(piter->second->pz_GeV);
-      point(0).setX(piter->second->x_cm);
-      point(0).setY(piter->second->y_cm);
-      point(0).setZ(piter->second->z_cm);
+      point(0).setPhi(piter->second->phi_rad);
+      point(0).setR(piter->second->r_cm);
       point(0).setT(piter->second->t_ns);
       point(0).setTrack(piter->second->track_);
       hddm_s::TrackIDList tid = point(0).addTrackIDs();

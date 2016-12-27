@@ -175,7 +175,6 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
          newPoint->x_cm = x[0]/cm;
          newPoint->y_cm = x[1]/cm;
          newPoint->z_cm = x[2]/cm;
-         newPoint->phi_rad = x.phi();
          newPoint->px_GeV = pin[0]/GeV;
          newPoint->py_GeV = pin[1]/GeV;
          newPoint->pz_GeV = pin[2]/GeV;
@@ -284,9 +283,9 @@ void GlueXSensitiveDetectorPSC::EndOfEvent(G4HCofThisEvent*)
    hddm_s::HitView &hitview = record->getPhysicsEvent().getHitView();
    if (hitview.getPairSpectrometerCoarses().size() == 0)
       hitview.addPairSpectrometerCoarses();
-   hddm_s::PairSpectrometerCoarse &psCntr = hitview.getPairSpectrometerCoarse();
+   hddm_s::PairSpectrometerCoarse &psc = hitview.getPairSpectrometerCoarse();
 
-   // Collect and output the stcTruthHits
+   // Collect and output the PscTruthHits
    for (siter = paddles->begin(); siter != paddles->end(); ++siter) {
       std::vector<GlueXHitPSCpaddle::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
@@ -297,7 +296,7 @@ void GlueXSensitiveDetectorPSC::EndOfEvent(G4HCofThisEvent*)
          }
       }
       if (hits.size() > 0) {
-         hddm_s::PscPaddleList paddle = psCntr.addPscPaddles(1);
+         hddm_s::PscPaddleList paddle = psc.addPscPaddles(1);
          paddle(0).setArm(siter->second->arm_);
          paddle(0).setModule(siter->second->module_);
          for (int ih=0; ih < (int)hits.size(); ++ih) {
@@ -310,9 +309,9 @@ void GlueXSensitiveDetectorPSC::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the paddleTruthPoints
+   // Collect and output the pscTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
-      hddm_s::PscTruthPointList point = psCntr.addPscTruthPoints(1);
+      hddm_s::PscTruthPointList point = psc.addPscTruthPoints(1);
       point(0).setE(piter->second->E_GeV);
       point(0).setDEdx(piter->second->dEdx_GeV_cm);
       point(0).setPrimary(piter->second->primary_);
@@ -323,7 +322,6 @@ void GlueXSensitiveDetectorPSC::EndOfEvent(G4HCofThisEvent*)
       point(0).setX(piter->second->x_cm);
       point(0).setY(piter->second->y_cm);
       point(0).setZ(piter->second->z_cm);
-      point(0).setPhi(piter->second->phi_rad);
       point(0).setT(piter->second->t_ns);
       point(0).setArm(piter->second->arm_);
       point(0).setModule(piter->second->module_);

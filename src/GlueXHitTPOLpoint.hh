@@ -34,15 +34,13 @@ class GlueXHitTPOLpoint : public G4VHit
  
    G4double E_GeV;       // total energy (GeV) of this track at this point
    G4double dEdx_GeV_cm; // dE/dx (GeV/cm) of this track inside the silicon
-   G4double phi_rad;     // phi angle (rad) of track at this point
    G4bool primary_;      // true if track belongs to from a primary particle
    G4int ptype_G3;       // G3 type of particle making this track
    G4double px_GeV;      // momentum (GeV/c) of track at point, x component
    G4double py_GeV;      // momentum (GeV/c) of track at point, y component
    G4double pz_GeV;      // momentum (GeV/c) of track at point, z component
-   G4double x_cm;        // global x coordinate of track at point (cm)
-   G4double y_cm;        // global y coordinate of track at point (cm)
-   G4double z_cm;        // global z coordinate of track at point (cm)
+   G4double phi_rad;     // global phi coordinate of track at point (rad)
+   G4double r_cm;        // global rho coordinate of track at point (cm)
    G4double t_ns;        // time of track crossing at point (ns)
    G4int track_;         // Geant4 track ID of particle making this track
    G4int trackID_;       // GlueX-assigned track ID of particle making this track

@@ -17,9 +17,8 @@ int GlueXHitTPOLpoint::operator==(const GlueXHitTPOLpoint &right) const
        px_GeV         == right.px_GeV      &&
        py_GeV         == right.py_GeV      &&
        pz_GeV         == right.pz_GeV      &&
-       x_cm           == right.x_cm        &&
-       y_cm           == right.y_cm        &&
-       z_cm           == right.z_cm        &&
+       phi_rad        == right.phi_rad     &&
+       r_cm           == right.r_cm        &&
        t_ns           == right.t_ns        &&
        track_         == right.track_      &&
        trackID_       == right.trackID_    )
@@ -54,9 +53,8 @@ void GlueXHitTPOLpoint::Print() const
           << "   px = " << px_GeV << " GeV/c" << G4endl
           << "   py = " << py_GeV << " GeV/c" << G4endl
           << "   pz = " << pz_GeV << " GeV/c" << G4endl
-          << "   x = " << x_cm << " cm" << G4endl
-          << "   y = " << y_cm << " cm" << G4endl
-          << "   z = " << z_cm << " cm" << G4endl
+          << "   phi = " << phi_rad << " rad" << G4endl
+          << "   r = " << r_cm << " cm" << G4endl
           << "   t = " << t_ns << " ns" << G4endl
           << G4endl;
 }

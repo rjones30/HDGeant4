@@ -175,7 +175,6 @@ G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step,
          newPoint->x_cm = x[0]/cm;
          newPoint->y_cm = x[1]/cm;
          newPoint->z_cm = x[2]/cm;
-         newPoint->phi_rad = x.phi();
          newPoint->px_GeV = pin[0]/GeV;
          newPoint->py_GeV = pin[1]/GeV;
          newPoint->pz_GeV = pin[2]/GeV;
@@ -284,9 +283,9 @@ void GlueXSensitiveDetectorPS::EndOfEvent(G4HCofThisEvent*)
    hddm_s::HitView &hitview = record->getPhysicsEvent().getHitView();
    if (hitview.getPairSpectrometerFines().size() == 0)
       hitview.addPairSpectrometerFines();
-   hddm_s::PairSpectrometerFine &psTile = hitview.getPairSpectrometerFine();
+   hddm_s::PairSpectrometerFine &ps = hitview.getPairSpectrometerFine();
 
-   // Collect and output the stcTruthHits
+   // Collect and output the PsTruthHits
    for (siter = tiles->begin(); siter != tiles->end(); ++siter) {
       std::vector<GlueXHitPStile::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
@@ -297,7 +296,7 @@ void GlueXSensitiveDetectorPS::EndOfEvent(G4HCofThisEvent*)
          }
       }
       if (hits.size() > 0) {
-         hddm_s::PsTileList tile = psTile.addPsTiles(1);
+         hddm_s::PsTileList tile = ps.addPsTiles(1);
          tile(0).setArm(siter->second->arm_);
          tile(0).setColumn(siter->second->column_);
          for (int ih=0; ih < (int)hits.size(); ++ih) {
@@ -310,9 +309,9 @@ void GlueXSensitiveDetectorPS::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the tileTruthPoints
+   // Collect and output the psTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
-      hddm_s::PsTruthPointList point = psTile.addPsTruthPoints(1);
+      hddm_s::PsTruthPointList point = ps.addPsTruthPoints(1);
       point(0).setE(piter->second->E_GeV);
       point(0).setDEdx(piter->second->dEdx_GeV_cm);
       point(0).setPrimary(piter->second->primary_);
@@ -323,7 +322,6 @@ void GlueXSensitiveDetectorPS::EndOfEvent(G4HCofThisEvent*)
       point(0).setX(piter->second->x_cm);
       point(0).setY(piter->second->y_cm);
       point(0).setZ(piter->second->z_cm);
-      point(0).setPhi(piter->second->phi_rad);
       point(0).setT(piter->second->t_ns);
       point(0).setArm(piter->second->arm_);
       point(0).setColumn(piter->second->column_);

@@ -14,7 +14,6 @@ int GlueXHitPSCpoint::operator==(const GlueXHitPSCpoint &right) const
        module_     == right.module_     &&
        E_GeV       == right.E_GeV       &&
        dEdx_GeV_cm == right.dEdx_GeV_cm &&
-       phi_rad     == right.phi_rad     &&
        primary_    == right.primary_    &&
        ptype_G3    == right.ptype_G3    &&
        px_GeV      == right.px_GeV      &&
@@ -54,7 +53,6 @@ void GlueXHitPSCpoint::Print() const
           << "   trackID = " << trackID_ << G4endl
           << "   E = " << E_GeV << " GeV" << G4endl
           << "   dEdx = " << dEdx_GeV_cm << " GeV/cm" << G4endl
-          << "   phi = " << phi_rad << " rad" << G4endl
           << "   primary = " << primary_ << G4endl
           << "   ptype = " << ptype_G3 << G4endl
           << "   px = " << px_GeV << " GeV/c" << G4endl
