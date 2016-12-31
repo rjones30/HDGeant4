@@ -547,10 +547,12 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
       case 1000020030 : return 49;    // He3 ion
 
       default  :
-         G4cout << "Warning in GlueXPrimaryGeneratorAction::"
-                   "ConvertPdgToGeant3 - lookup performed on unknown"
-                   " PDG particle type " << PDGtype << ","
-                   " returning 0 for the Geant3 particle code." << G4endl;
+         if (PDGcode < 1000000000) {
+            G4cout << "Warning in GlueXPrimaryGeneratorAction::"
+                      "ConvertPdgToGeant3 - lookup performed on unknown"
+                      " PDG particle type " << PDGtype << ","
+                      " returning 0 for the Geant3 particle code." << G4endl;
+         }
    }
    return 0;
 }
