@@ -14,10 +14,7 @@
 
 #include "G4UserRunAction.hh"
 #include "G4RotationMatrix.hh"
-#include "G4Threading.hh"
 #include "G4AutoLock.hh"
-
-#include "globals.hh"
 
 #include <list>
 

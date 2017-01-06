@@ -12,7 +12,6 @@
 #include <G4SystemOfUnits.hh>
 #include <Randomize.hh>
 
-#include <JANA/jerror.h>
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>
 

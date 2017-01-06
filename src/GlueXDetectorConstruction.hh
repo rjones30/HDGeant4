@@ -15,7 +15,6 @@
 #include "G4Threading.hh"
 #include "G4AutoLock.hh"
 
-#include "globals.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4VUserDetectorConstruction.hh"
 #include <G4VUserParallelWorld.hh>

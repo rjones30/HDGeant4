@@ -12,7 +12,6 @@
 #ifndef _HDDMOUTPUT_
 #define _HDDMOUTPUT_
 
-#include "G4Threading.hh"
 #include "G4AutoLock.hh"
 #include "G4ios.hh"
 

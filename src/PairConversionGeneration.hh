@@ -30,14 +30,8 @@
 #ifndef PairConversionGeneration_h
 #define PairConversionGeneration_h 1
 
-#include <string>
-#include <vector>
-
-#include "Complex.h"
 #include "TPhoton.h"
 #include "TLepton.h"
-#include "TCrossSection.h"
-#include "TLorentzBoost.h"
 
 #if BOOST_PYTHON_WRAPPING
 #include <boost/python.hpp>

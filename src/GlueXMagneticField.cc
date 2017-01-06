@@ -13,9 +13,6 @@
 #include "GlueXMagneticField.hh"
 #include "GlueXUserOptions.hh"
 #include "GlueXDetectorConstruction.hh"
-#include "G4FieldManager.hh"
-#include "G4TransportationManager.hh"
-#include "G4SystemOfUnits.hh"
 
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>

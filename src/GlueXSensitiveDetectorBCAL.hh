@@ -12,14 +12,10 @@
 #define GlueXSensitiveDetectorBCAL_h 1
 
 #include "G4VSensitiveDetector.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4Threading.hh"
 #include "G4AutoLock.hh"
 
 #include "GlueXHitBCALcell.hh"
 #include "GlueXHitBCALpoint.hh"
-
-#include <vector>
 
 class G4Step;
 class G4HCofThisEvent;

@@ -17,7 +17,6 @@
 #include <ImportanceSampler.hh>
 #include <GlueXPseudoDetectorTAG.hh>
 #include <G4Event.hh>
-#include <HDDM/hddm_s.hpp>
 
 class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
 {

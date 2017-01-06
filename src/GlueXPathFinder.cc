@@ -11,6 +11,7 @@
 //
 
 #include "GlueXPathFinder.hh"
+#include "G4PathFinder.hh"
 #include "G4TransportationManager.hh"
 
 G4VPhysicalVolume* GlueXPathFinder::GetLocatedVolume()

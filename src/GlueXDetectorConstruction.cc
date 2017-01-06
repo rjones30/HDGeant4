@@ -24,15 +24,10 @@
 #include "GlueXSensitiveDetectorPS.hh"
 #include "GlueXSensitiveDetectorTPOL.hh"
 
-#include "G4Box.hh"
-#include "G4Material.hh"
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
-#include "G4PVParameterised.hh"
 #include "G4SDManager.hh"
-#include "G4GeometryTolerance.hh"
-#include "G4GeometryManager.hh"
-#include "G4MTRunManager.hh"
+#include "G4RunManager.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4TransportationManager.hh"
 #include "G4MagIntegratorDriver.hh"
@@ -42,11 +37,9 @@
 #include "G4HelixMixedStepper.hh"
 #include "G4ClassicalRK4.hh"
 
-#include "G4UserLimits.hh"
 #include "G4SystemOfUnits.hh"
 
 #include "G4VisAttributes.hh"
-#include "G4Colour.hh"
 
 #include "G4ios.hh"
 

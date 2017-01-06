@@ -32,7 +32,10 @@
 #define BOOST_PYTHON_WRAPPING 1
 
 #include <PairConversionGeneration.hh>
-#include <TRandom2.h>
+
+#include "Complex.h"
+#include "TCrossSection.h"
+#include "TLorentzBoost.h"
 
 #include "G4ios.hh"
 

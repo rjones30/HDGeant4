@@ -5,11 +5,11 @@
 // version: october 20, 2016
 
 #include "GlueXPseudoDetectorTAG.hh"
-#include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
-#include "GlueXUserOptions.hh"
+#include "GlueXPhotonBeamGenerator.hh"
 
 #include "G4EventManager.hh"
+#include "G4SystemOfUnits.hh"
 
 #include <JANA/JApplication.h>
 

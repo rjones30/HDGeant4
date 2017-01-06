@@ -12,12 +12,9 @@
 #ifndef _GLUEXPSEUDODETECTORTAG_
 #define _GLUEXPSEUDODETECTORTAG_
 
-#include "G4SystemOfUnits.hh"
 #include "G4ThreeVector.hh"
 #include "G4AutoLock.hh"
 #include "G4Event.hh"
-
-#include <HDDM/hddm_s.hpp>
 
 class GlueXPseudoDetectorTAG
 {

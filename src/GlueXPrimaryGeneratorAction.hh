@@ -15,21 +15,15 @@
 #ifndef _GLUEXPRIMARYGENERATORACTION_H_
 #define _GLUEXPRIMARYGENERATORACTION_H_
 
-#include "G4Threading.hh"
-#include "G4AutoLock.hh"
-
 #include "CobremsGeneration.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "GlueXPhotonBeamGenerator.hh"
 #include "GlueXPrimaryGenerator.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4ParticleTable.hh"
+#include "G4AutoLock.hh"
 #include "GlueXParticleGun.hh"
-#include "G4SystemOfUnits.hh"
 #include "G4Event.hh"
-#include "G4Step.hh"
-
-#include "globals.hh"
 
 #include <HDDM/hddm_s.hpp>
 

@@ -8,7 +8,7 @@
 
 #include "G4Run.hh"
 
-#include "G4MTRunManager.hh"
+#include "G4RunManager.hh"
 #include "G4PhysicalVolumeStore.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4PVDivision.hh"

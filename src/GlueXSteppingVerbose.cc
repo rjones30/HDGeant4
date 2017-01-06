@@ -9,7 +9,6 @@
 
 #include "G4TransportationManager.hh"
 #include "G4Navigator.hh"
-#include "G4SteppingManager.hh"
 #include "G4UnitsTable.hh"
 
 #define G4setw std::setw
