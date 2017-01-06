@@ -83,6 +83,7 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          if (it_product->getType() <= 0)
            continue;
 
+         int trackId = it_product->getId();
          int g3type = it_product->getType();
          int pdgtype = it_product->getPdgtype();
          G4ParticleDefinition *part;
@@ -110,7 +111,7 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          double pz = momentum.getPz() * GeV;
          double Etot = momentum.getE() * GeV;
          vertex->SetPrimary(new G4PrimaryParticle(part, px, py, pz, Etot));
-         ++Nprimaries;
+         event_info->SetGlueXTrackID(++Nprimaries, trackId);
       }
       event->AddPrimaryVertex(vertex);
    }
