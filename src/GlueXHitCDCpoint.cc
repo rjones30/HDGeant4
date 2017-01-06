@@ -22,7 +22,9 @@ int GlueXHitCDCpoint::operator==(const GlueXHitCDCpoint &right) const
        z_cm           == right.z_cm        &&
        t_ns           == right.t_ns        &&
        track_         == right.track_      &&
-       trackID_       == right.trackID_    )
+       trackID_       == right.trackID_    &&
+       sector_        == right.sector_     &&
+       ring_          == right.ring_       )
    {
       return 1;
    }
@@ -58,6 +60,8 @@ void GlueXHitCDCpoint::Print() const
           << "   r = " << r_cm << " cm" << G4endl
           << "   z = " << z_cm << " cm" << G4endl
           << "   t = " << t_ns << " ns" << G4endl
+          << "   sector = " << sector_ << G4endl
+          << "   ring = " << ring_ << G4endl
           << G4endl;
 }
 

@@ -15,7 +15,7 @@
 #include "G4VHit.hh"
 #include "G4THitsMap.hh"
 #include "G4Allocator.hh"
-#include "G4SystemOfUnits.hh"
+#include "G4ThreeVector.hh"
 
 class GlueXHitCDCstraw : public G4VHit
 {
@@ -36,13 +36,16 @@ class GlueXHitCDCstraw : public G4VHit
    G4int sector_;          // straw number within ring, from 1 at/past phi=0
 
    struct hitinfo_t {
+      G4double track_;     // G4 track number making this hit
       G4double q_fC;       // pulse integral (fC)
       G4double t_ns;       // pulse leading-edge time (ns)
       G4double d_cm;       // distance (cm) of closest cluster to the wire
       G4double itrack_;    // track index of first particle making this hit
       G4double ptype_G3;   // G3 type of first particle making this hit
-      G4double t0_ns;      // time of passage of the track making this hit
-      G4double z_cm;       // z coordinate of the hit in global refsys
+      G4double t0_ns;      // time at start of track segment
+      G4double t1_ns;      // time at end of track segment
+      G4ThreeVector x0_g;  // global coordinates of start of track segment
+      G4ThreeVector x1_g;  // global coordinates of end of track segment
    };
    std::vector<hitinfo_t> hits;
 

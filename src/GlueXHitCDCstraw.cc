@@ -5,6 +5,7 @@
 // version: may 28, 2015
 
 #include "GlueXHitCDCstraw.hh"
+#include "G4SystemOfUnits.hh"
 
 G4ThreadLocal G4Allocator<GlueXHitCDCstraw>* GlueXHitCDCstrawAllocator = 0;
 
@@ -22,12 +23,15 @@ int GlueXHitCDCstraw::operator==(const GlueXHitCDCstraw &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].q_fC     == right.hits[ih].q_fC    &&
+      if (hits[ih].track_   == right.hits[ih].track_  &&
+          hits[ih].q_fC     == right.hits[ih].q_fC    &&
           hits[ih].t_ns     == right.hits[ih].t_ns    &&
           hits[ih].d_cm     == right.hits[ih].d_cm    &&
           hits[ih].itrack_  == right.hits[ih].itrack_ &&
           hits[ih].t0_ns    == right.hits[ih].t0_ns   &&
-          hits[ih].z_cm     == right.hits[ih].z_cm    &&
+          hits[ih].t1_ns    == right.hits[ih].t1_ns   &&
+          hits[ih].x0_g     == right.hits[ih].x0_g    &&
+          hits[ih].x1_g     == right.hits[ih].x1_g    &&
           hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
       {
          return 0;
@@ -52,13 +56,16 @@ GlueXHitCDCstraw &GlueXHitCDCstraw::operator+=(const GlueXHitCDCstraw &right)
             break;
       }
       hiter = hits.insert(hiter, GlueXHitCDCstraw::hitinfo_t());
+      hiter->track_ = hitsrc->track_;
       hiter->q_fC = hitsrc->q_fC;
       hiter->t_ns = hitsrc->t_ns;
       hiter->d_cm = hitsrc->d_cm;
       hiter->itrack_ = hitsrc->itrack_;
       hiter->ptype_G3 = hitsrc->ptype_G3;
       hiter->t0_ns = hitsrc->t0_ns;
-      hiter->z_cm = hitsrc->z_cm;
+      hiter->t1_ns = hitsrc->t1_ns;
+      hiter->x0_g = hitsrc->x0_g;
+      hiter->x1_g = hitsrc->x1_g;
    }
    return *this;
 }
@@ -78,10 +85,19 @@ void GlueXHitCDCstraw::Print() const
       G4cout << "   q = " << hiter->q_fC << " fC" << G4endl
              << "   t = " << hiter->t_ns << " ns" << G4endl
              << "   d = " << hiter->d_cm << " cm" << G4endl
+             << "   track = " << hiter->track_ << G4endl
              << "   itrack = " << hiter->itrack_ << G4endl
              << "   ptype = " << hiter->ptype_G3 << G4endl
              << "   t0 = " << hiter->t0_ns << " ns" << G4endl
-             << "   z = " << hiter->z_cm << " cm" << G4endl
+             << "   t1 = " << hiter->t1_ns << " ns" << G4endl
+             << "   x0 = (" << hiter->x0_g[0]/cm << ","
+                            << hiter->x0_g[1]/cm << ","
+                            << hiter->x0_g[2]/cm << ")cm"
+                            << " in global coordinates" << G4endl
+             << "   x1 = (" << hiter->x1_g[0]/cm << ","
+                            << hiter->x1_g[1]/cm << ","
+                            << hiter->x1_g[2]/cm << ")cm"
+                            << " in global coordinates" << G4endl
              << G4endl;
    }
 }
