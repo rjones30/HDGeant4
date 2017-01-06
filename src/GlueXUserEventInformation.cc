@@ -5,23 +5,26 @@
 // version: september 24, 2016
 
 #include "GlueXUserEventInformation.hh"
+#include "GlueXUserTrackInformation.hh"
 #include "GlueXPrimaryGeneratorAction.hh"
-#include "GlueXUserOptions.hh"
+#include "G4SystemOfUnits.hh"
 #include "HddmOutput.hh"
 #include "HddsG4Builder.hh"
+#include "Randomize.hh"
 
 GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
- : fKeepEvent(true)
+ : fKeepEvent(true),
+   fNprimaries(0),
+   fNvertices(0)
 {
    if (hddmevent == 0) {
       fOutputRecord = new hddm_s::HDDM();
       fOutputRecord->addPhysicsEvents();
-      fNprimaries = 0;
    }
    else {
       fOutputRecord = hddmevent;
-      hddm_s::ProductList products = fOutputRecord->getProducts();
-      fNprimaries = products.size();
+      fNprimaries = fOutputRecord->getProducts().size();
+      fNvertices = fOutputRecord->getVertices().size();
    }
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
    pev(0).setRunNo(HddmOutput::getRunNo());
@@ -129,39 +132,42 @@ void GlueXUserEventInformation::AddPrimaryVertex(const G4PrimaryVertex &vertex)
    int np = vertex.GetNumberOfParticle();
    hddm_s::ProductList pro = ver(0).addProducts(np);
    for (int ip=0; ip < np; ++ip) {
-       G4PrimaryParticle *part = vertex.GetPrimary(ip);
-       int pdgtype = part->GetPDGcode();
-       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-       pro(ip).setType((Particle_t)g3type);
-       pro(ip).setPdgtype(pdgtype);
-       pro(ip).setId(ip);
-       pro(ip).setParentid(0);
-       pro(ip).setMech(0);
-       hddm_s::MomentumList pmo = pro(ip).addMomenta();
-       double px = part->GetPx()/GeV;
-       double py = part->GetPy()/GeV;
-       double pz = part->GetPz()/GeV;
-       double mass = part->GetMass()/GeV;
-       double E = sqrt(mass*mass + px*px + py*py + pz*pz);
-       pmo(0).setPx(px);
-       pmo(0).setPy(py);
-       pmo(0).setPz(pz);
-       pmo(0).setE(E);
-       double polx = part->GetPolX();
-       double poly = part->GetPolY();
-       double polz = part->GetPolZ();
-       if (polx != 0 || poly != 0 || polz != 0) {
-          hddm_s::PolarizationList polar = pro(ip).addPolarizations();
-          polar(0).setPx(px);
-          polar(0).setPy(py);
-          polar(0).setPz(pz);
-       }
+      G4PrimaryParticle *part = vertex.GetPrimary(ip);
+      int gluexID = AssignNextGlueXTrackID();
+      int pdgtype = part->GetPDGcode();
+      int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+      pro(ip).setType((Particle_t)g3type);
+      pro(ip).setPdgtype(pdgtype);
+      pro(ip).setId(gluexID);
+      pro(ip).setParentid(0);
+      pro(ip).setMech(0);
+      hddm_s::MomentumList pmo = pro(ip).addMomenta();
+      double px = part->GetPx()/GeV;
+      double py = part->GetPy()/GeV;
+      double pz = part->GetPz()/GeV;
+      double mass = part->GetMass()/GeV;
+      double E = sqrt(mass*mass + px*px + py*py + pz*pz);
+      pmo(0).setPx(px);
+      pmo(0).setPy(py);
+      pmo(0).setPz(pz);
+      pmo(0).setE(E);
+      double polx = part->GetPolX();
+      double poly = part->GetPolY();
+      double polz = part->GetPolZ();
+      if (polx != 0 || poly != 0 || polz != 0) {
+         hddm_s::PolarizationList polar = pro(ip).addPolarizations();
+         polar(0).setPx(px);
+         polar(0).setPy(py);
+         polar(0).setPz(pz);
+      }
+      ++fNprimaries;
    }
+   ++fNvertices;
 }
 
-void GlueXUserEventInformation::AddSecondaryVertex(const 
-                                std::vector<G4Track*> &secondaries,
-                                int parentID)
+void GlueXUserEventInformation::AddSecondaryVertex(
+                                const G4TrackVector &secondaries,
+                                int parentID, int mech)
 {
    if (secondaries.size() == 0)
       return;
@@ -181,13 +187,23 @@ void GlueXUserEventInformation::AddSecondaryVertex(const
    int np = secondaries.size();
    hddm_s::ProductList pro = ver(0).addProducts(np);
    for (int ip=0; ip < np; ++ip) {
+       GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
+                                  secondaries[ip]->GetUserInformation();
+       if (trackinfo == 0) {
+          G4cerr << "GlueXUserEventInformation::AddSecondaryVertex error - "
+                 << "track found without any UserTrackInformation attached "
+                 << "in secondaries list, cannot continue, aborting!"
+                 << G4endl;
+       }
+       int gluexID = trackinfo->GetGlueXTrackID();
        int pdgtype = secondaries[ip]->GetDefinition()->GetPDGEncoding();
        int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
        pro(ip).setType((Particle_t)g3type);
        pro(ip).setPdgtype(pdgtype);
-       pro(ip).setId(ip);
+       pro(ip).setId(gluexID);
        pro(ip).setParentid(parentID);
-       pro(ip).setMech(0);
+       pro(ip).setDecayVertex(fNvertices);
+       pro(ip).setMech(mech);
        hddm_s::MomentumList pmo = pro(ip).addMomenta();
        double px = secondaries[ip]->GetMomentum()[0]/GeV;
        double py = secondaries[ip]->GetMomentum()[1]/GeV;
@@ -207,7 +223,9 @@ void GlueXUserEventInformation::AddSecondaryVertex(const
           polar(0).setPy(py);
           polar(0).setPz(pz);
        }
+      ++fNprimaries;
    }
+   ++fNvertices;
 }
 
 void GlueXUserEventInformation::SetRandomSeeds()
@@ -236,6 +254,49 @@ void GlueXUserEventInformation::SetRandomSeeds()
              << seed[0] << ", " << seed[1] << G4endl;
 #endif
    }
+}
+
+int GlueXUserEventInformation::AssignNextGlueXTrackID(const G4Track* track)
+{
+   int lastG4 = 0;
+   int lastGX = 0;
+   std::map<int,int>::iterator iter;
+   for (iter = fGlueXTrackID.begin(); iter != fGlueXTrackID.end(); ++iter) {
+      lastG4 = (iter->first > lastG4)? iter->first : lastG4;
+      lastGX = (iter->second > lastGX)? iter->second : lastGX;
+   }
+   if (track == 0) {
+      fGlueXTrackID[++lastG4] = ++lastGX;
+      G4cout << "assigned next gluex id " << lastGX << " to track " << lastG4 << G4endl;
+   }
+   else {
+      fGlueXTrackID[track->GetTrackID()] = ++lastGX;
+      G4cout << "assigned next gluex id " << lastGX << " to track " << track->GetTrackID() << G4endl;
+   }
+   return lastGX;
+}
+
+int GlueXUserEventInformation::GetGlueXTrackID(int g4ID)
+{
+   if (fGlueXTrackID.find(g4ID) != fGlueXTrackID.end())
+      return fGlueXTrackID[g4ID];
+   return 0;
+}
+
+int GlueXUserEventInformation::GetGlueXTrackID(const G4Track *track)
+{
+   int g4Id = track->GetTrackID();
+   if (fGlueXTrackID.find(g4Id) != fGlueXTrackID.end())
+      return fGlueXTrackID[g4Id];
+   int parId = track->GetParentID();
+   if (fGlueXTrackID.find(parId) != fGlueXTrackID.end())
+      return fGlueXTrackID[parId] * 1000000 + g4Id;
+   return 1000000 + g4Id;
+}
+
+void GlueXUserEventInformation::SetGlueXTrackID(int g4ID, int gluexID)
+{
+   fGlueXTrackID[g4ID] = gluexID;
 }
 
 void GlueXUserEventInformation::Print() const

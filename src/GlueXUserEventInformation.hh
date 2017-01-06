@@ -11,18 +11,14 @@
 #ifndef _GLUEXUSEREVENTINFORMATION_
 #define _GLUEXUSEREVENTINFORMATION_
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-
-#include "G4UImanager.hh"
 #include "G4VUserEventInformation.hh"
 #include "G4PrimaryVertex.hh"
 #include "G4ThreeVector.hh"
-#include <G4Track.hh>
-#include "Randomize.hh"
+#include <G4TrackVector.hh>
 
 #include <HDDM/hddm_s.hpp>
+
+#include <map>
 
 class GlueXUserEventInformation: public G4VUserEventInformation
 {
@@ -41,8 +37,13 @@ class GlueXUserEventInformation: public G4VUserEventInformation
                                                     const G4ThreeVector &mom,
                                                     const G4ThreeVector &pol);
    void AddPrimaryVertex(const G4PrimaryVertex &vertex);
-   void AddSecondaryVertex(const std::vector<G4Track*> &secondaries, 
-                           int parentID);
+   void AddSecondaryVertex(const G4TrackVector &secondaries,
+                                               int parentID, int mech);
+
+   int GetGlueXTrackID(int g4ID);
+   int GetGlueXTrackID(const G4Track *track);
+   void SetGlueXTrackID(int g4ID, int gluexID);
+   int AssignNextGlueXTrackID(const G4Track *track = 0);
 
    void SetRandomSeeds();
    void Print() const;
@@ -55,6 +56,8 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    hddm_s::HDDM *fOutputRecord;
    bool fKeepEvent;
    int fNprimaries;
+   int fNvertices;
+   std::map<int,int> fGlueXTrackID;
 
  private:
    GlueXUserEventInformation(const GlueXUserEventInformation &src);
