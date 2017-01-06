@@ -16,9 +16,7 @@
 #include <GlueXDetectorConstruction.hh>
 #include <GlueXBeamConversionProcess.hh>
 
-#include <G4VUserPhysicsList.hh>
 #include <QGSP_FTFP_BERT.hh>
-#include "globals.hh"
 
 class GlueXPhysicsList: public QGSP_FTFP_BERT
 {

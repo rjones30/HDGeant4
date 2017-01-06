@@ -4,10 +4,8 @@
 // author: richard.t.jones at uconn.edu
 // version: may 12, 2012
 
-#include "globals.hh"
 #include "GlueXPhysicsList.hh"
 
-#include <G4TransportationManager.hh>
 #include <G4ParallelWorldPhysics.hh>
 
 #if USING_DIRACXX
