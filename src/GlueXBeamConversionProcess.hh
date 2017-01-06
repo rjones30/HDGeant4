@@ -19,7 +19,6 @@
 #include <G4VParticleChange.hh>
 #include <ImportanceSampler.hh>
 #include <PairConversionGeneration.hh>
-#include <G4Event.hh>
 #include <G4Step.hh>
 
 class GlueXBeamConversionProcess: public G4VDiscreteProcess

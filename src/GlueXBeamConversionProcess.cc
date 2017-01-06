@@ -8,6 +8,7 @@
 #include "GlueXBeamConversionProcess.hh"
 #include "GlueXPhotonBeamGenerator.hh"
 #include "GlueXUserEventInformation.hh"
+#include "GlueXUserTrackInformation.hh"
 #include "GlueXPathFinder.hh"
 
 // Jack up this threshold to 20GeV to disable this feature
@@ -18,6 +19,9 @@
 #include "G4Positron.hh"
 #include "G4Electron.hh"
 #include "G4RunManager.hh"
+#include "G4TrackVector.hh"
+
+#include <stdio.h>
 
 #ifdef USING_DIRACXX
 #include <TLorentzBoost.h>
@@ -538,23 +542,31 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    G4DynamicParticle *sec1 = new G4DynamicParticle(positron, psec1);
    G4DynamicParticle *sec2 = new G4DynamicParticle(electron, psec2);
    G4DynamicParticle *sec3 = new G4DynamicParticle(electron, psec3);
-   std::vector<G4Track*> secondaries;
+   G4TrackVector secondaries;
    secondaries.push_back(new G4Track(sec1, t0, x0));
    secondaries.push_back(new G4Track(sec2, t0, x0));
    if (e3.Mom().Length() > 0) {
       secondaries.push_back(new G4Track(sec3, t0, x0));
    }
-   std::vector<G4Track*>::iterator iter;
+
+   GlueXUserEventInformation *event_info;
+   const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+   event_info = (GlueXUserEventInformation*)event->GetUserInformation();
+   G4TrackVector::iterator iter;
    for (iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
+      GlueXUserTrackInformation *trackinfo = new GlueXUserTrackInformation();
+      if (event_info) {
+         trackinfo->SetGlueXTrackID(event_info->AssignNextGlueXTrackID());
+      }
+      (*iter)->SetUserInformation(trackinfo);
       pParticleChange->AddSecondary(*iter);
    }
 
    // append secondary vertex to MC record
-   GlueXUserEventInformation *event_info;
-   const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
-   event_info = (GlueXUserEventInformation*)event->GetUserInformation();
    if (event_info) {
-      event_info->AddSecondaryVertex(secondaries, 1);
+      char mech[5];
+      sprintf(mech, "%c%c%c%c", 'C', 'O', 'N', 'V');
+      event_info->AddSecondaryVertex(secondaries, 1, *(int*)mech);
    }
 
 #if VERBOSE_PAIRS_SPLITTING
