@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorBCAL::MAX_HITS = 100;
@@ -163,8 +156,11 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
 
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (touch->GetVolume()->GetName() == "BCL0") {
       if (trackinfo->GetGlueXHistory() == 0 &&
           xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
@@ -172,11 +168,9 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
          GlueXHitBCALpoint* newPoint = new GlueXHitBCALpoint();
          G4int key = fPointsMap->entries();
          fPointsMap->add(key, newPoint);
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->t_ns = t/ns;
          newPoint->z_cm = xin[2]/cm;
@@ -187,7 +181,6 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
          newPoint->pz_GeV = pin[2]/GeV;
          newPoint->E_GeV = Ein/GeV;
          trackinfo->SetGlueXHistory(1);
-         trackinfo->SetGlueXTrackID(trackID);
       }
       return false;
    }
@@ -207,36 +200,33 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitBCALcell::hitinfo_t>::iterator hiter;
       for (hiter = cell->hits.begin(); hiter != cell->hits.end(); ++hiter) {
          if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+            merge_hit = 1;
             break;
          }
          else if (hiter->t_ns*ns > t) {
-            hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
       }
-
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-      if (hiter != cell->hits.end()) {             // merge with former hit
+      if (merge_hit) {
          // Use the time from the earlier hit but add the energy deposition
          hiter->E_GeV += dEsum/GeV;
          if (hiter->t_ns*ns > t) {
             hiter->t_ns = t/ns;
             hiter->zlocal_cm = x[2]/cm;
-            hiter->itrack_ = trackinfo->GetGlueXTrackID();
+            hiter->itrack_ = itrack;
          }
       }
-      else if ((int)cell->hits.size() < MAX_HITS)	{   // create new hit 
-         GlueXHitBCALcell::hitinfo_t newhit;
-         newhit.E_GeV = dEsum/GeV;
-         newhit.t_ns = t/ns;
-         newhit.zlocal_cm = x[2]/cm;
-         newhit.itrack_ = trackinfo->GetGlueXTrackID();
-         cell->hits.push_back(newhit);
+      else if ((int)cell->hits.size() < MAX_HITS) {
+         // create new hit 
+         hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
+         hiter->E_GeV = dEsum/GeV;
+         hiter->t_ns = t/ns;
+         hiter->zlocal_cm = x[2]/cm;
+         hiter->itrack_ = itrack;
       }
       else {
          G4cerr << "GlueXSensitiveDetectorBCAL::ProcessHits error: "

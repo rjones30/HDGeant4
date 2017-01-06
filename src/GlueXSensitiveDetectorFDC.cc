@@ -14,7 +14,8 @@
 #include <CLHEP/Random/RandPoisson.h>
 #include <Randomize.hh>
 
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -23,7 +24,6 @@
 
 #include <JANA/JApplication.h>
 
-#include <stdio.h>
 #include <malloc.h>
 #include <math.h>
 
@@ -292,6 +292,7 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
  
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (trackinfo->GetGlueXHistory() == 0) {
       G4int key = (chamber << 20) + fPointsMap->entries();
       GlueXHitFDCpoint* lastPoint = (*fPointsMap)[key - 1];
@@ -314,7 +315,7 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
          newPoint->dradius_cm = dradius/cm;
          newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
          newPoint->ptype_G3 = g3type;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
       }
    }
 
@@ -392,11 +393,11 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
                // of the detector, skip this cluster 
                if (xlocal.perp() >= wire_dead_zone_radius[packNo]) {
                   double tdrift;
-                  int wire_fired = add_anode_hit(anode, layerNo, g3type, trackID, 
+                  int wire_fired = add_anode_hit(anode, layerNo, g3type, itrack, 
                                                  xwire, xlocal, dE, t, tdrift);
                   if (wire_fired) {
                      add_cathode_hit(packNo, xwire, xlocal[1], tdrift, n_p,
-                                     trackID, g3type, chamber, module,
+                                     itrack, g3type, chamber, module,
                                      layerNo, global_wire_number);
                   }
                }
@@ -411,11 +412,11 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
                   // detector, skip this cluster 
                   if (xlocal.perp() >= wire_dead_zone_radius[packNo]) {
                      double tdrift;
-                     int wire_fired = add_anode_hit(anode, layerNo, g3type, trackID,
+                     int wire_fired = add_anode_hit(anode, layerNo, g3type, itrack,
                                                     xwire, xlocal, dE, t, tdrift);
                      if (wire_fired) {
                         add_cathode_hit(packNo, xwire, xlocal[1], tdrift, n_p,
-                                        trackID, g3type, chamber, module,
+                                        itrack, g3type, chamber, module,
                                         layerNo, global_wire_number);
                      }
                   }
@@ -802,7 +803,7 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(int packNo,
                                                 double yavalanche, 
                                                 double tdrift,
                                                 int n_p,
-                                                int trackID, 
+                                                int itrack, 
                                                 int g3type, 
                                                 int chamber, 
                                                 int module,
@@ -873,7 +874,7 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(int packNo,
                // by an interaction mid-way through the active gas layer
                if (fabs(hiter->v_cm*cm - yavalanche) < 1.0*cm &&
                    fabs(hiter->u_cm*cm - xwire) < 1.0*cm &&
-                   hiter->itrack_ == trackID)
+                   hiter->itrack_ == itrack)
                {
                   break;
                }
@@ -883,7 +884,7 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(int packNo,
                hiter->q_fC += q/fC;
                if (hiter->t_ns > tdrift/ns) {
                   hiter->t_ns = tdrift/ns;
-                  hiter->itrack_ = trackID;
+                  hiter->itrack_ = itrack;
                   hiter->ptype_G3 = g3type;
                }
             }
@@ -891,7 +892,7 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(int packNo,
                hiter = cathode->hits.insert(hiter, GlueXHitFDCcathode::hitinfo_t());
                hiter->t_ns = tdrift/ns;
                hiter->q_fC = q/fC;
-               hiter->itrack_ = trackID;
+               hiter->itrack_ = itrack;
                hiter->ptype_G3 = g3type;
                hiter->u_cm = xwire/cm;
                hiter->v_cm = yavalanche/cm;
@@ -904,7 +905,7 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(int packNo,
 int GlueXSensitiveDetectorFDC::add_anode_hit(GlueXHitFDCwire *wire,
                                              int layer, 
                                              int g3type,
-                                             int trackID,
+                                             int itrack,
                                              double xwire,
                                              G4ThreeVector xyz,
                                              double dE, 
@@ -988,7 +989,7 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(GlueXHitFDCwire *wire,
       // by an interaction mid-way through the active gas layer
       if (fabs(hiter->t0_ns*ns - t) < 1.0*ns &&
           fabs(hiter->v_cm*cm - xyz[1]) < 1.0*cm &&
-          hiter->itrack_ == trackID)
+          hiter->itrack_ == itrack)
       {
          break;
       }
@@ -1000,7 +1001,7 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(GlueXHitFDCwire *wire,
          hiter->t_ns = tdrift/ns;
          hiter->t_unsmeared_ns = tdrift_unsmeared/ns;
          hiter->d_cm = sqrt(dx2 + dz2)/cm;
-         hiter->itrack_ = trackID;
+         hiter->itrack_ = itrack;
          hiter->ptype_G3 = g3type;
       }
    }
@@ -1010,7 +1011,7 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(GlueXHitFDCwire *wire,
       hiter->t_unsmeared_ns = tdrift_unsmeared/ns;
       hiter->dE_keV = dE/keV;
       hiter->d_cm = sqrt(dx2 + dz2)/cm;
-      hiter->itrack_ = trackID;
+      hiter->itrack_ = itrack;
       hiter->ptype_G3 = g3type;
       hiter->t0_ns = t/ns;
       hiter->v_cm = xyz[1]/cm;

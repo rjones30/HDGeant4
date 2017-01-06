@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorPS::MAX_HITS = 100;
@@ -150,8 +143,11 @@ G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step,
    column = column % NUM_COLUMNS_PER_ARM;
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+   GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
+                                          track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (trackinfo->GetGlueXHistory() == 0) {
       G4int key = fPointsMap->entries();
       GlueXHitPSpoint* lastPoint = (*fPointsMap)[key - 1];
@@ -163,13 +159,11 @@ G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step,
       {
          GlueXHitPSpoint* newPoint = new GlueXHitPSpoint();
          fPointsMap->add(key, newPoint);
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->arm_ = arm;
          newPoint->column_ = column;
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->t_ns = t/ns;
          newPoint->x_cm = x[0]/cm;
@@ -195,40 +189,33 @@ G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitPStile::hitinfo_t>::iterator hiter;
       for (hiter = tile->hits.begin(); hiter != tile->hits.end(); ++hiter) {
          if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+            merge_hit = 1;
             break;
          }
          else if (hiter->t_ns*ns > t) {
-            hiter = tile->hits.insert(hiter, GlueXHitPStile::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
       }
-
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-      if (hiter != tile->hits.end()) {             // merge with former hit
+      if (merge_hit) {
          // Use the time from the earlier hit but add the charge
          hiter->dE_GeV += dEsum/GeV;
          if (hiter->t_ns*ns > t) {
             hiter->t_ns = t/ns;
-            int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-            int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-            hiter->itrack_ = trackinfo->GetGlueXTrackID();
+            hiter->itrack_ = itrack;
             hiter->ptype_G3 = g3type;
          }
       }
-      else if ((int)tile->hits.size() < MAX_HITS)	{   // create new hit 
-         GlueXHitPStile::hitinfo_t newhit;
-         newhit.dE_GeV = dEsum/GeV;
-         newhit.t_ns = t/ns;
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-         newhit.itrack_ = trackinfo->GetGlueXTrackID();
-         newhit.ptype_G3 = g3type;
-         tile->hits.push_back(newhit);
+      else if ((int)tile->hits.size() < MAX_HITS) {
+         // create new hit 
+         hiter = tile->hits.insert(hiter, GlueXHitPStile::hitinfo_t());
+         hiter->dE_GeV = dEsum/GeV;
+         hiter->t_ns = t/ns;
+         hiter->itrack_ = itrack;
+         hiter->ptype_G3 = g3type;
       }
       else {
          G4cerr << "GlueXSensitiveDetectorPS::ProcessHits error: "

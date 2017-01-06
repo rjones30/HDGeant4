@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorFTOF::MAX_HITS = 25;
@@ -160,8 +153,11 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
    barNo = (barNo > 44)? barNo - 23 : barNo;
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (trackinfo->GetGlueXHistory() == 0 && plane == 0) {
       G4int key = fPointsMap->entries();
       GlueXHitFTOFpoint* lastPoint = (*fPointsMap)[key - 1];
@@ -173,11 +169,9 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
       {
          GlueXHitFTOFpoint* newPoint = new GlueXHitFTOFpoint();
          fPointsMap->add(key, newPoint);
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->t_ns = t/ns;
          newPoint->x_cm = x[0]/cm;
@@ -239,33 +233,28 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
       if (dEnorth/MeV > 0) {
          // add the hit on end=0 (north/top end of the bar)
+         int merge_hit = 0;
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
          for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
             if (hiter->end_ == 0) {
                if (fabs(hiter->t_ns*ns - tnorth) < TWO_HIT_TIME_RESOL) {
+                  merge_hit = 1;
                   break;
                }
                else if (hiter->t_ns*ns > tnorth) {
-                  hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
-                  hiter->end_ = 0;
-                  hiter->t_ns = 1e99;
                   break;
                }
             }
          }
 
-         if (hiter != counter->hits.end()) {             // merge with former hit
+         if (merge_hit) {
             // Use the time from the earlier hit but add the charge
             hiter->dE_GeV += dEnorth/GeV;
             if (hiter->t_ns*ns > tnorth) {
                hiter->t_ns = tnorth/ns;
-               int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-               int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-               hiter->itrack_ = trackinfo->GetGlueXTrackID();
+               hiter->itrack_ = itrack;
                hiter->ptype_G3 = g3type;
                hiter->px_GeV = pin[0]/GeV;
                hiter->py_GeV = pin[1]/GeV;
@@ -277,24 +266,22 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
                hiter->dist_cm = dist/cm;
             }
          }
-         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{ // create new hit 
-            GlueXHitFTOFbar::hitinfo_t newhit;
-            newhit.end_ = 0;
-            newhit.dE_GeV = dEnorth/GeV;
-            newhit.t_ns = tnorth/ns;
-            int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-            int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-            newhit.itrack_ = trackinfo->GetGlueXTrackID();
-            newhit.ptype_G3 = g3type;
-            newhit.px_GeV = pin[0]/GeV;
-            newhit.py_GeV = pin[1]/GeV;
-            newhit.pz_GeV = pin[2]/GeV;
-            newhit.E_GeV = Ein/GeV;
-            newhit.x_cm = x[0]/cm;
-            newhit.y_cm = x[1]/cm;
-            newhit.z_cm = x[2]/cm;
-            newhit.dist_cm = dist/cm;
-            counter->hits.push_back(newhit);
+         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{
+            // create new hit 
+            hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
+            hiter->end_ = 0;
+            hiter->dE_GeV = dEnorth/GeV;
+            hiter->t_ns = tnorth/ns;
+            hiter->itrack_ = itrack;
+            hiter->ptype_G3 = g3type;
+            hiter->px_GeV = pin[0]/GeV;
+            hiter->py_GeV = pin[1]/GeV;
+            hiter->pz_GeV = pin[2]/GeV;
+            hiter->E_GeV = Ein/GeV;
+            hiter->x_cm = x[0]/cm;
+            hiter->y_cm = x[1]/cm;
+            hiter->z_cm = x[2]/cm;
+            hiter->dist_cm = dist/cm;
          }
          else {
             G4cerr << "GlueXSensitiveDetectorFTOF::ProcessHits error: "
@@ -306,29 +293,25 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
 
       if (dEsouth/MeV > 0) {
          // add the hit on end=1 (south/bottom end of the bar)
+         int merge_hit = 0;
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
          for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
             if (hiter->end_ == 1) {
                if (fabs(hiter->t_ns*ns - tsouth) < TWO_HIT_TIME_RESOL) {
+                  merge_hit = 1;
                   break;
                }
                else if (hiter->t_ns*ns > tsouth) {
-                  hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
-                  hiter->end_ = 1;
-                  hiter->t_ns = 1e99;
                   break;
                }
             }
          }
-
-         if (hiter != counter->hits.end()) {             // merge with former hit
+         if (merge_hit) {
             // Use the time from the earlier hit but add the charge
             hiter->dE_GeV += dEsouth/GeV;
             if (hiter->t_ns*ns > tsouth) {
                hiter->t_ns = tsouth/ns;
-               int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-               int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-               hiter->itrack_ = trackinfo->GetGlueXTrackID();
+               hiter->itrack_ = itrack;
                hiter->ptype_G3 = g3type;
                hiter->px_GeV = pin[0]/GeV;
                hiter->py_GeV = pin[1]/GeV;
@@ -340,24 +323,23 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
                hiter->dist_cm = dist/cm;
             }
          }
-         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{ // create new hit 
-            GlueXHitFTOFbar::hitinfo_t newhit;
-            newhit.end_ = 1;
-            newhit.dE_GeV = dEsouth/GeV;
-            newhit.t_ns = tsouth/ns;
-            int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-            int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-            newhit.itrack_ = trackinfo->GetGlueXTrackID();
-            newhit.ptype_G3 = g3type;
-            newhit.px_GeV = pin[0]/GeV;
-            newhit.py_GeV = pin[1]/GeV;
-            newhit.pz_GeV = pin[2]/GeV;
-            newhit.E_GeV = Ein/GeV;
-            newhit.x_cm = x[0]/cm;
-            newhit.y_cm = x[1]/cm;
-            newhit.z_cm = x[2]/cm;
-            newhit.dist_cm = dist/cm;
-            counter->hits.push_back(newhit);
+         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{
+            // create new hit 
+            hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
+            hiter->end_ = 1;
+            hiter->end_ = 1;
+            hiter->dE_GeV = dEsouth/GeV;
+            hiter->t_ns = tsouth/ns;
+            hiter->itrack_ = itrack;
+            hiter->ptype_G3 = g3type;
+            hiter->px_GeV = pin[0]/GeV;
+            hiter->py_GeV = pin[1]/GeV;
+            hiter->pz_GeV = pin[2]/GeV;
+            hiter->E_GeV = Ein/GeV;
+            hiter->x_cm = x[0]/cm;
+            hiter->y_cm = x[1]/cm;
+            hiter->z_cm = x[2]/cm;
+            hiter->dist_cm = dist/cm;
          }
          else {
             G4cerr << "GlueXSensitiveDetectorFTOF::ProcessHits error: "

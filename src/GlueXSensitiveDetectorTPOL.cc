@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 #define sqr(x) ((x)*(x))
 
@@ -148,8 +141,11 @@ G4bool GlueXSensitiveDetectorTPOL::ProcessHits(G4Step* step,
    int sector = GetIdent("sector", touch);
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
       GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                              track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (trackinfo->GetGlueXHistory() == 0) {
       G4int key = fPointsMap->entries();
       GlueXHitTPOLpoint* lastPoint = (*fPointsMap)[key - 1];
@@ -160,11 +156,9 @@ G4bool GlueXSensitiveDetectorTPOL::ProcessHits(G4Step* step,
       {
          GlueXHitTPOLpoint* newPoint = new GlueXHitTPOLpoint();
          fPointsMap->add(key, newPoint);
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->phi_rad = x.phi();
          newPoint->r_cm = x.perp()/cm;
@@ -189,44 +183,37 @@ G4bool GlueXSensitiveDetectorTPOL::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitTPOLwedge::hitinfo_t>::iterator hiter;
       for (hiter = wedge->hits.begin(); hiter != wedge->hits.end(); ++hiter) {
          if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+            merge_hit = 1;
             break;
          }
          else if (hiter->t_ns*ns > t) {
-            hiter = wedge->hits.insert(hiter, GlueXHitTPOLwedge::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
       }
-
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-      if (hiter != wedge->hits.end()) {             // merge with former hit
+      if (merge_hit) {
          // Use the time from the earlier hit but add the charge
          hiter->dE_MeV += dEsum/MeV;
          if (hiter->t_ns*ns > t) {
             hiter->t_ns = t/ns;
-            int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-            int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-            hiter->itrack_ = trackinfo->GetGlueXTrackID();
+            hiter->itrack_ = itrack;
             hiter->ptype_G3 = g3type;
             hiter->t0_ns = t/ns;
             hiter->r_cm = x.perp()/cm;
          }
       }
-      else if ((int)wedge->hits.size() < MAX_HITS)	{   // create new hit 
-         GlueXHitTPOLwedge::hitinfo_t newhit;
-         newhit.dE_MeV = dEsum/MeV;
-         newhit.t_ns = t/ns;
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-         newhit.itrack_ = trackinfo->GetGlueXTrackID();
-         newhit.ptype_G3 = g3type;
-         newhit.t0_ns = t/ns;
-         newhit.r_cm = x.perp()/cm;
-         wedge->hits.push_back(newhit);
+      else if ((int)wedge->hits.size() < MAX_HITS) {
+         // create new hit 
+         hiter = wedge->hits.insert(hiter, GlueXHitTPOLwedge::hitinfo_t());
+         hiter->dE_MeV = dEsum/MeV;
+         hiter->t_ns = t/ns;
+         hiter->itrack_ = itrack;
+         hiter->ptype_G3 = g3type;
+         hiter->t0_ns = t/ns;
+         hiter->r_cm = x.perp()/cm;
       }
       else {
          G4cerr << "GlueXSensitiveDetectorTPOL::ProcessHits error: "
