@@ -7,21 +7,12 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXPrimaryGenerator.hh"
 #include "GlueXUserEventInformation.hh"
-#include "GlueXUserTrackInformation.hh"
 #include "GlueXUserOptions.hh"
-#include "HddmOutput.hh"
 
 #include "G4Event.hh"
-#include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
-#include "G4ParticleDefinition.hh"
 #include "G4SystemOfUnits.hh"
-#include "G4PhysicalConstants.hh"
 #include "Randomize.hh"
-
-#include <JANA/jerror.h>
-#include <JANA/JApplication.h>
-#include <JANA/JCalibration.h>
 
 typedef GlueXPrimaryGeneratorAction::source_type_t source_type_t;
 typedef GlueXPrimaryGeneratorAction::single_particle_gun_t particle_gun_t;
@@ -294,7 +285,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
    G4AutoLock barrier(&fMutex);
 
-   switch(fSourceType){
+   switch (fSourceType) {
       case SOURCE_TYPE_HDDM:
          GeneratePrimariesHDDM(anEvent);
          break;
@@ -500,9 +491,14 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
       case         22 : return 1;     // photon
       case        -11 : return 2;     // e+
       case         11 : return 3;     // e-
-      case         12 : return 4;     // e-neutrino (NB: flavour undefined by Geant)
+      case        -12 : return 4;     // anti-e-neutrino
+      case         12 : return 4;     // e-neutrino
       case        -13 : return 5;     // mu+
       case         13 : return 6;     // mu-
+      case        -14 : return 4;     // anti-mu-neutrino
+      case         14 : return 4;     // mu-neutrino
+      case        -16 : return 4;     // anti-tau-neutrino
+      case         16 : return 4;     // tau-neutrino
       case        111 : return 7;     // pi0
       case        211 : return 8;     // pi+
       case       -211 : return 9;     // pi-
@@ -547,7 +543,7 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
       case 1000020030 : return 49;    // He3 ion
 
       default  :
-         if (PDGcode < 1000000000) {
+         if (PDGtype < 1000000000) {
             G4cout << "Warning in GlueXPrimaryGeneratorAction::"
                       "ConvertPdgToGeant3 - lookup performed on unknown"
                       " PDG particle type " << PDGtype << ","
