@@ -471,33 +471,25 @@ double GlueXPhotonBeamGenerator::getBeamBucketPeriod(int runno)
 
    if (runno > 0) {
       jana::JCalibration *jcalib = japp->GetJCalibration(runno);
+      G4cout << "JCalibration context: " << jcalib->GetContext()
+             << G4endl;
       std::map<std::string, double> result;
-      std::string map_key("/PHOTON_BEAM/RF/rf_period");
+      std::string map_key("/PHOTON_BEAM/RF/beam_period");
       if (jcalib->Get(map_key, result)) {
-         G4cerr << "Error in GlueXPrimaryGeneratorAction::getBeamBucketPeriod"
+         G4cerr << "Error in GlueXPhotonBeamGenerator::getBeamBucketPeriod"
                 << " - error fetching " << map_key << " from ccdb, "
                 << "cannot continue." << G4endl;
          exit(-1);
       }
-      else if (result.find("rf_period") != result.end()) {
-         fBeamBucketPeriod = result["rf_period"] * ns;
+      else if (result.find("beam_period") != result.end()) {
+         fBeamBucketPeriod = result["beam_period"] * ns;
       }
       else {
-         G4cerr << "Error in GlueXPrimaryGeneratorAction::getBeamBucketPeriod"
+         G4cerr << "Error in GlueXPhotonBeamGenerator::getBeamBucketPeriod"
                 << " - error finding value for " << map_key
                 << " in ccdb, cannot continue." << G4endl;
          exit(-1);
       }
    }
    return fBeamBucketPeriod;
-}
-
-double GlueXPrimaryGeneratorAction::GetMassPDG(int PDGtype)
-{
-   return fParticleTable->FindParticle(PDGtype)->GetPDGMass();
-}
-
-double GlueXPrimaryGeneratorAction::GetMass(int Geant3Type)
-{
-   return GetMassPDG(ConvertGeant3ToPdg(Geant3Type));
 }

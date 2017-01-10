@@ -552,3 +552,13 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
    }
    return 0;
 }
+
+double GlueXPrimaryGeneratorAction::GetMassPDG(int PDGtype)
+{
+   return fParticleTable->FindParticle(PDGtype)->GetPDGMass();
+}
+
+double GlueXPrimaryGeneratorAction::GetMass(int Geant3Type)
+{
+   return GetMassPDG(ConvertGeant3ToPdg(Geant3Type));
+}
