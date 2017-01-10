@@ -26,7 +26,7 @@ int GlueXSensitiveDetectorSTC::MAX_HITS = 100;
 // Light propagation parameters in start counter
 double GlueXSensitiveDetectorSTC::ATTENUATION_LENGTH = 150.*cm;
 double GlueXSensitiveDetectorSTC::C_EFFECTIVE = 15*cm/ns;
-double GlueXSensitiveDetectorSTC::LIGHT_GUIDE = 0.; // ??
+double GlueXSensitiveDetectorSTC::LIGHT_GUIDE = 0.*cm;
 double GlueXSensitiveDetectorSTC::ANGLE_COR = 1.054;
 
 // Geometric parameters of STC scintillators
@@ -91,9 +91,9 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
       TWO_HIT_TIME_RESOL = stc_parms.at("START_TWO_HIT_RESOL")*ns;
       MAX_HITS = stc_parms.at("START_MAX_HITS");
       THRESH_MEV = stc_parms.at("START_THRESH_MEV");
-      LIGHT_GUIDE = stc_parms.at("START_LIGHT_GUIDE");
+      LIGHT_GUIDE = stc_parms.at("START_LIGHT_GUIDE")*cm;
       ANGLE_COR = stc_parms.at("START_ANGLE_COR");
-      BENT_REGION = stc_parms.at("START_BENT_REGION");
+      BENT_REGION = stc_parms.at("START_BENT_REGION")*cm;
 
       std::vector< std::map<std::string, float> > values;
       jcalib->Get("START_COUNTER/attenuation_factor", values);
@@ -119,7 +119,7 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
          // A factors are in units of ns, B factors are ns/cm
          STRAIGHT_PROPAGATION_A[k] *= ns;
          STRAIGHT_PROPAGATION_B[k] *= ns/cm;
-         BEND_PROPAGATION_A[k] *= ns/cm;
+         BEND_PROPAGATION_A[k] *= ns;
          BEND_PROPAGATION_B[k] *= ns/cm;
       }
 
