@@ -72,8 +72,6 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
                                                    event->GetUserInformation();
             G4TrackVector &secondary = *(G4TrackVector*)
                                         step->GetSecondaryInCurrentStep();
-            G4cout << "got a decay of track " << track->GetTrackID()
-                   << "(gluex ID " << primeID << ")" << G4endl;
             G4TrackVector::iterator iter;
             for (iter = secondary.begin(); iter != secondary.end(); ++iter) {
                int newID = eventinfo->AssignNextGlueXTrackID();
@@ -88,7 +86,6 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
                sprintf(mech, "%c%c%c%c", 'D', 'C', 'A', 'Y');
                eventinfo->AddSecondaryVertex(secondary, primeID, *(int*)mech);
             }
-            G4cout << "(total of " << secondary.size() << " daughters)" << G4endl;
          }
       }
    }
@@ -102,7 +99,6 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
       case -14:
       case 16:
       case -16:
-         G4cout << "Die, neutrino, die!" << G4endl;
          track->SetTrackStatus(fStopAndKill);
    }
 }

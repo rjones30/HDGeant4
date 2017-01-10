@@ -26,10 +26,12 @@ void GlueXTrackingAction::PreUserTrackingAction(const G4Track* aTrack)
       GlueXUserEventInformation *eventinfo = (GlueXUserEventInformation*)
                                              event->GetUserInformation();
       anInfo->SetGlueXTrackID(eventinfo->GetGlueXTrackID(aTrack));
+#if VERBOSE
       G4cout << "starting tracking of primary " << aTrack->GetTrackID()
              << " with gluexID " << eventinfo->GetGlueXTrackID(aTrack)
              << " and type " << aTrack->GetDefinition()->GetParticleName()
              << G4endl;
+#endif
    }
    else if (aTrack->GetUserInformation() == 0) {
       G4cerr << "GlueXTrackingAction::PreUserTrackingAction error - "
@@ -37,6 +39,7 @@ void GlueXTrackingAction::PreUserTrackingAction(const G4Track* aTrack)
                 "fatal error, aborting." << G4endl;
       exit(91);
    }
+#if VERBOSE
    else {
       GlueXUserTrackInformation* info = (GlueXUserTrackInformation*)
                                         aTrack->GetUserInformation();
@@ -48,6 +51,7 @@ void GlueXTrackingAction::PreUserTrackingAction(const G4Track* aTrack)
                 << G4endl;
       }
    }
+#endif
 }
 
 void GlueXTrackingAction::PostUserTrackingAction(const G4Track* aTrack)
