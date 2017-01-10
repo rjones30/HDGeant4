@@ -513,7 +513,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
             if (fDrift_clusters == 0) {
                G4ThreeVector dx(x1 - x0);
                double alpha = -((x0[0] - xwire) * dx[0] + x0[2] * dx[2]) /
-                               (dx[0] * dx[0] + dx[2] * dx[2]);
+                               (dx[0] * dx[0] + dx[2] * dx[2] + 1e-99);
                alpha = (alpha < 0)? 0 : (alpha > 1)? 1 : alpha;
                double t = (splits[0].t0_ns + splits[0].t1_ns)*ns / 2;
                G4ThreeVector x((splits[0].x0_g + splits[0].x1_g) / 2);
