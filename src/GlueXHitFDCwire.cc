@@ -27,7 +27,7 @@ int GlueXHitFDCwire::operator==(const GlueXHitFDCwire &right) const
           hits[ih].d_cm     == right.hits[ih].d_cm    &&
           hits[ih].itrack_  == right.hits[ih].itrack_ &&
           hits[ih].t0_ns    == right.hits[ih].t0_ns   &&
-          hits[ih].v_cm     == right.hits[ih].v_cm    &&
+          hits[ih].t1_ns    == right.hits[ih].t1_ns   &&
           hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
       {
          return 0;
@@ -58,7 +58,7 @@ GlueXHitFDCwire &GlueXHitFDCwire::operator+=(const GlueXHitFDCwire &right)
       hiter->itrack_ = hitsrc->itrack_;
       hiter->ptype_G3 = hitsrc->ptype_G3;
       hiter->t0_ns = hitsrc->t0_ns;
-      hiter->v_cm = hitsrc->v_cm;
+      hiter->t1_ns = hitsrc->t1_ns;
    }
    return *this;
 }
@@ -81,7 +81,7 @@ void GlueXHitFDCwire::Print() const
              << "   itrack = " << hiter->itrack_ << G4endl
              << "   ptype = " << hiter->ptype_G3 << G4endl
              << "   t0 = " << hiter->t0_ns << " ns" << G4endl
-             << "   v = " << hiter->v_cm << " cm" << G4endl
+             << "   t1 = " << hiter->t1_ns << " ns" << G4endl
              << G4endl;
    }
 }

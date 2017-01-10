@@ -39,8 +39,8 @@ class GlueXSensitiveDetectorCDC : public G4VSensitiveDetector
  private:
    double asic_response(double t_ns); 
    double cdc_wire_signal_mV(double t_ns, hit_vector_t &hits);
-   void add_cluster(GlueXHitCDCstraw::hitinfo_t &h, int n_p, double t,
-                    G4ThreeVector &x);
+   void add_cluster(hit_vector_t &hits, GlueXHitCDCstraw::hitinfo_t &h,
+                    int n_p, double t, G4ThreeVector &x);
    void polint(double *xa, double *ya, int n, double x, double *y, double *dy);
 
  private:

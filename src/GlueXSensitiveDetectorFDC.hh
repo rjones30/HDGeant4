@@ -38,15 +38,21 @@ class GlueXSensitiveDetectorFDC : public G4VSensitiveDetector
  private:
    double Ei(double x);
    double asic_response(double t_ns); 
-   double fdc_wire_signal_mV(double t_ns, GlueXHitFDCwire *wire);
-   double fdc_cathode_signal_mV(double t_ns, GlueXHitFDCcathode *strip);
-   void add_cathode_hit(int package_no, double xwire, double yavalanche, 
-                        double tdrift, int n_p, int trackID, int g3type,
-                        int chamber, int module, int layer,
-                        int global_wire_number);
-   int add_anode_hit(GlueXHitFDCwire *wire, int layer, int g3type,
-                     int trackID, double xwire, G4ThreeVector xyz,
+   double fdc_wire_signal_mV(
+          double t_ns, std::vector<GlueXHitFDCwire::hitinfo_t> &hits);
+   double fdc_cathode_signal_mV(
+          double t_ns, std::vector<GlueXHitFDCcathode::hitinfo_t> &hits);
+   int add_anode_hit(std::vector<GlueXHitFDCwire::hitinfo_t> &hits, 
+                     GlueXHitFDCwire::hitinfo_t &wirehit,
+                     int layer, 
+                     double xwire,
+                     G4ThreeVector &xglobal, 
+                     G4ThreeVector &xlocal,
                      double dE, double t, double &tdrift);
+   void add_cathode_hit(GlueXHitFDCwire::hitinfo_t &wirehit, int packageNo,
+                        double xwire, double yavalanche, double tdrift,
+                        int n_p, int chamber, int module, int layer,
+                        int global_wire_number);
    void polint(double *xa, double *ya, int n, double x, double *y, double *dy);
    void locate(float *xx, int n, float x, int *j);
 

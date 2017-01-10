@@ -240,8 +240,6 @@ G4bool GlueXSensitiveDetectorCDC::ProcessHits(G4Step* step,
       }
    } 
 
-std::cout << "track number " << step->GetTrack()->GetTrackID() << " in cdc ring " << GetIdent("ring", touch) << ", straw " << GetIdent("sector",touch) << ", dx=" << dx.mag() << "mm" << std::endl;
-
    // Handle the case when the particle actually passes through
    // the wire volume itself. For these cases, we should set the 
    // location of the hit to be the point on the wire itself. To
@@ -254,7 +252,6 @@ std::cout << "track number " << step->GetTrack()->GetTrackID() << " in cdc ring 
 
    if (drin < 0.0050*cm) {
       return false; /* entering straw within 50 microns of wire. ignore */
-std::cout << "  step starts within 50 microns of wire, ignore step" << std::endl;
    }
  
    if ((drin > (STRAW_RADIUS - 0.0200*cm) && drout < 0.0050*cm) ||
@@ -265,7 +262,6 @@ std::cout << "  step starts within 50 microns of wire, ignore step" << std::endl
       // donuts at either end of the straw (the inner radius of the feedthrough 
       // region is 0.254 cm) and passed near the wire. Assume the track passed 
       // through the wire volume.
-std::cout << "  step starts within 200 microns of straw tube and stops within 50 microns of wire, double this step" << std::endl;
 
       x = xout;
       t = tout;
@@ -348,7 +344,6 @@ std::cout << "  step starts within 200 microns of straw tube and stops within 50
          }
       }
       if (merge_hit) {
-std::cout << "  step merges with existing hit in this straw, t0=" << tin/ns << "ns, t1=" << tout/ns << "ns" << std::endl;
          double d_cm = x2local.perp()/cm;
          if (d_cm < hiter->d_cm)
             hiter->d_cm = d_cm;
@@ -357,7 +352,6 @@ std::cout << "  step merges with existing hit in this straw, t0=" << tin/ns << "
          hiter->x1_g = xout;
       }
       else if ((int)straw->hits.size() < MAX_HITS) {       // create new hit
-std::cout << "  step generates a new hit in this straw, t0=" << tin/ns << "ns, t1=" << tout/ns << "ns" << std::endl;
          hiter = straw->hits.insert(hiter, GlueXHitCDCstraw::hitinfo_t());
          hiter->track_ = trackID;
          hiter->q_fC = dEsum;
@@ -445,49 +439,32 @@ void GlueXSensitiveDetectorCDC::EndOfEvent(G4HCofThisEvent*)
                --ih;
             }
          }
+         if (splits[0].q_fC/keV > THRESH_KEV) {
 
-         // Simulate number of primary ion pairs.
-         // The total number of ion pairs depends on the energy deposition 
-         // and the effective average energy to produce a pair.
- 
-         // Average number of primary ion pairs
-         double n_p_mean = (splits[0].q_fC / W_EFF_PER_ION) / 
-                           (1 + N_SECOND_PER_PRIMARY);
-         // Number of generated primary ion pairs
-         int n_p = CLHEP::RandPoisson::shoot(n_p_mean);
-         if (fDrift_clusters == 0) {     
-            add_cluster(splits[0], n_p, splits[0].t0_ns*ns, splits[0].x0_g);
-         }
-         else {
-            // Loop over the number of primary ion pairs,
-            // generating a cluster at a random position
-            // along the track within the straw.
-            G4ThreeVector dx = splits[0].x1_g - splits[0].x0_g;
-            for (int n=0; n < n_p; n++) {
-               double u = G4RandFlat::shoot();
-               G4ThreeVector x = splits[0].x0_g + u * dx;
-               add_cluster(splits[0], 1, splits[0].t0_ns*ns, x);
+            // Simulate number of primary ion pairs.
+            // The total number of ion pairs depends on the energy deposition
+            // and the effective average energy to produce a pair.
+    
+            // Average number of primary ion pairs
+            double t = (splits[0].t0_ns + splits[0].t1_ns)*ns / 2;
+            double n_p_mean = (splits[0].q_fC / W_EFF_PER_ION) / 
+                              (1 + N_SECOND_PER_PRIMARY);
+            // Number of generated primary ion pairs
+            int n_p = CLHEP::RandPoisson::shoot(n_p_mean);
+            if (fDrift_clusters == 0) {
+               add_cluster(hits, splits[0], n_p, t, splits[0].x0_g);
             }
-         }
-
-         // New reduced hit list is ordered by hit time
- 
-         hit_vector_t::iterator hiter;
-         for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {
-            if (fabs(hiter->t_ns - splits[0].t_ns) < TWO_HIT_TIME_RESOL) {
-               if (splits[0].t_ns < hiter->t_ns) {
-                  *hiter = splits[0];
+            else {
+               // Loop over the number of primary ion pairs,
+               // generating a cluster at a random position
+               // along the track within the straw.
+               G4ThreeVector dx = splits[0].x1_g - splits[0].x0_g;
+               for (int n=0; n < n_p; n++) {
+                  double u = G4RandFlat::shoot();
+                  G4ThreeVector x = splits[0].x0_g + u * dx;
+                  add_cluster(hits, splits[0], 1, t, x);
                }
-               hiter->q_fC += splits[0].q_fC;
-               break;
             }
-            else if (hiter->t_ns > splits[0].t_ns) {
-               hits.insert(hiter, splits[0]);
-               break;
-            }
-         }
-         if (hiter == hits.end()) {
-            hits.push_back(splits[0]);
          }
          splits.erase(splits.begin());
       }
@@ -532,6 +509,38 @@ void GlueXSensitiveDetectorCDC::EndOfEvent(G4HCofThisEvent*)
             }
          }
          delete [] samples;
+      }
+      else {
+
+         // New reduced hit list is ordered by hit time
+ 
+         hit_vector_t::iterator hiter;
+         for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {
+            int merge_hits = 0;
+            hit_vector_t::iterator iter;
+            for (iter = splits.begin(); iter != splits.end(); ++iter) {
+               if (fabs(hiter->t_ns - iter->t_ns) < TWO_HIT_TIME_RESOL) {
+                  merge_hits = 1;
+                  break;
+               }
+               else if (hiter->t_ns < iter->t_ns) {
+                  break;
+               }
+            }
+            if (merge_hits) {
+               if (hiter->t_ns < iter->t_ns) {
+                  double q_fC = iter->q_fC;
+                  *iter = *hiter;   
+                  iter->q_fC += q_fC;
+               }
+               else {
+                  iter->q_fC += hiter->q_fC;
+               }
+            }
+            else {
+               splits.insert(iter, *hiter);
+            }
+         }
       }
 
       if (hits.size() > 0) {
@@ -603,7 +612,8 @@ double GlueXSensitiveDetectorCDC::cdc_wire_signal_mV(double t_ns,
   return signal_mV;
 }
 
-void GlueXSensitiveDetectorCDC::add_cluster(GlueXHitCDCstraw::hitinfo_t &hit,
+void GlueXSensitiveDetectorCDC::add_cluster(hit_vector_t &hits,
+                                            GlueXHitCDCstraw::hitinfo_t &hit,
                                             int n_p,
                                             double t, 
                                             G4ThreeVector &x)
@@ -687,6 +697,7 @@ void GlueXSensitiveDetectorCDC::add_cluster(GlueXHitCDCstraw::hitinfo_t &hit,
    }
    hit.q_fC = q_fC;
    hit.t_ns = total_time/ns;
+   hits.push_back(hit);
 }
 
 void GlueXSensitiveDetectorCDC::polint(double *xa, double *ya, int n,
