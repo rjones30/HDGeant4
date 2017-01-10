@@ -267,11 +267,9 @@ int GlueXUserEventInformation::AssignNextGlueXTrackID(const G4Track* track)
    }
    if (track == 0) {
       fGlueXTrackID[++lastG4] = ++lastGX;
-      G4cout << "assigned next gluex id " << lastGX << " to track " << lastG4 << G4endl;
    }
    else {
       fGlueXTrackID[track->GetTrackID()] = ++lastGX;
-      G4cout << "assigned next gluex id " << lastGX << " to track " << track->GetTrackID() << G4endl;
    }
    return lastGX;
 }
