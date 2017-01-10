@@ -126,7 +126,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static double getL1triggerTimeSigma() {
       return fL1triggerTimeSigma;
    }
-   int getEventCount() {
+   int getEventCount() const {
       return fEventCount;
    }
 

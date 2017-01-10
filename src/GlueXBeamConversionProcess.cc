@@ -96,7 +96,6 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
    pParticleChange->Initialize(track);
    GenerateBeamPairConversion(step);
    pParticleChange->ProposeTrackStatus(fStopAndKill);
-   G4cout << "bang!!!" << G4endl;
    return pParticleChange;
 }
 
