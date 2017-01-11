@@ -121,6 +121,8 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
          STRAIGHT_PROPAGATION_B[k] *= ns/cm;
          BEND_PROPAGATION_A[k] *= ns;
          BEND_PROPAGATION_B[k] *= ns/cm;
+         NOSE_PROPAGATION_A[k] *= ns;
+         NOSE_PROPAGATION_B[k] *= ns/cm;
       }
 
       G4cout << "STC: ALL parameters loaded from ccdb" << G4endl;
