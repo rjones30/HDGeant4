@@ -27,10 +27,10 @@ int GlueXHitBCALcell::operator==(const GlueXHitBCALcell &right) const
    }
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].E_GeV     == right.hits[ih].E_GeV     &&
-          hits[ih].zlocal_cm == right.hits[ih].zlocal_cm &&
-          hits[ih].t_ns      == right.hits[ih].t_ns      &&
-          hits[ih].itrack_   == right.hits[ih].itrack_ )
+      if (hits[ih].E_GeV       != right.hits[ih].E_GeV     ||
+          hits[ih].zlocal_cm   != right.hits[ih].zlocal_cm ||
+          hits[ih].t_ns        != right.hits[ih].t_ns      ||
+          hits[ih].incidentId_ != right.hits[ih].incidentId_ )
       {
          return 0;
       }
@@ -55,11 +55,7 @@ GlueXHitBCALcell &GlueXHitBCALcell::operator+=(const GlueXHitBCALcell &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
-      hiter->E_GeV = hitsrc->E_GeV;
-      hiter->zlocal_cm = hitsrc->zlocal_cm;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->itrack_ = hitsrc->itrack_;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }
@@ -80,7 +76,7 @@ void GlueXHitBCALcell::Print() const
       G4cout << "   E = " << hiter->E_GeV << " GeV" << G4endl
              << "   zlocal = " << hiter->t_ns << " cm" << G4endl
              << "   t = " << hiter->t_ns << " ns" << G4endl
-             << "   itrack = " << hiter->itrack_ << G4endl
+             << "   incidentId = " << hiter->incidentId_ << G4endl
              << G4endl;
    }
 }

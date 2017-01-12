@@ -27,12 +27,12 @@ int GlueXHitFDCcathode::operator==(const GlueXHitFDCcathode &right) const
       return 0;
    }
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].q_fC     == right.hits[ih].q_fC    &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].u_cm     == right.hits[ih].u_cm    &&
-          hits[ih].v_cm     == right.hits[ih].v_cm    &&
-          hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
+      if (hits[ih].q_fC     != right.hits[ih].q_fC    ||
+          hits[ih].t_ns     != right.hits[ih].t_ns    ||
+          hits[ih].itrack_  != right.hits[ih].itrack_ ||
+          hits[ih].u_cm     != right.hits[ih].u_cm    ||
+          hits[ih].v_cm     != right.hits[ih].v_cm    ||
+          hits[ih].ptype_G3 != right.hits[ih].ptype_G3)
       {
          return 0;
       }
@@ -58,13 +58,7 @@ GlueXHitFDCcathode &GlueXHitFDCcathode::operator+=(const GlueXHitFDCcathode &rig
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitFDCcathode::hitinfo_t());
-      hiter->q_fC = hitsrc->q_fC;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->ptype_G3 = hitsrc->ptype_G3;
-      hiter->u_cm = hitsrc->u_cm;
-      hiter->v_cm = hitsrc->v_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

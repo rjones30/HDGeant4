@@ -34,11 +34,11 @@ int GlueXHitDIRCflash::operator==(const GlueXHitDIRCflash &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].E_GeV == right.hits[ih].E_GeV &&
-          hits[ih].t_ns  == right.hits[ih].t_ns  &&
-          hits[ih].x_cm  == right.hits[ih].x_cm  &&
-          hits[ih].y_cm  == right.hits[ih].y_cm  &&
-          hits[ih].z_cm  == right.hits[ih].z_cm)
+      if (hits[ih].E_GeV != right.hits[ih].E_GeV ||
+          hits[ih].t_ns  != right.hits[ih].t_ns  ||
+          hits[ih].x_cm  != right.hits[ih].x_cm  ||
+          hits[ih].y_cm  != right.hits[ih].y_cm  ||
+          hits[ih].z_cm  != right.hits[ih].z_cm)
       {
          return 0;
       }
@@ -61,12 +61,7 @@ GlueXHitDIRCflash &GlueXHitDIRCflash::operator+=(const GlueXHitDIRCflash &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitDIRCflash::hitinfo_t());
-      hiter->E_GeV = hitsrc->E_GeV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->x_cm = hitsrc->x_cm;
-      hiter->y_cm = hitsrc->y_cm;
-      hiter->z_cm = hitsrc->z_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

@@ -21,12 +21,12 @@ int GlueXHitTPOLwedge::operator==(const GlueXHitTPOLwedge &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].dE_MeV   == right.hits[ih].dE_MeV  &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].t0_ns    == right.hits[ih].t0_ns   &&
-          hits[ih].r_cm     == right.hits[ih].r_cm    &&
-          hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
+      if (hits[ih].dE_MeV   != right.hits[ih].dE_MeV  ||
+          hits[ih].t_ns     != right.hits[ih].t_ns    ||
+          hits[ih].itrack_  != right.hits[ih].itrack_ ||
+          hits[ih].t0_ns    != right.hits[ih].t0_ns   ||
+          hits[ih].r_cm     != right.hits[ih].r_cm    ||
+          hits[ih].ptype_G3 != right.hits[ih].ptype_G3)
       {
          return 0;
       }
@@ -49,13 +49,7 @@ GlueXHitTPOLwedge &GlueXHitTPOLwedge::operator+=(const GlueXHitTPOLwedge &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitTPOLwedge::hitinfo_t());
-      hiter->dE_MeV = hitsrc->dE_MeV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->ptype_G3 = hitsrc->ptype_G3;
-      hiter->t0_ns = hitsrc->t0_ns;
-      hiter->r_cm = hitsrc->r_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

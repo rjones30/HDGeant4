@@ -23,16 +23,16 @@ int GlueXHitCDCstraw::operator==(const GlueXHitCDCstraw &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].track_   == right.hits[ih].track_  &&
-          hits[ih].q_fC     == right.hits[ih].q_fC    &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].d_cm     == right.hits[ih].d_cm    &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].t0_ns    == right.hits[ih].t0_ns   &&
-          hits[ih].t1_ns    == right.hits[ih].t1_ns   &&
-          hits[ih].x0_g     == right.hits[ih].x0_g    &&
-          hits[ih].x1_g     == right.hits[ih].x1_g    &&
-          hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
+      if (hits[ih].track_   != right.hits[ih].track_  ||
+          hits[ih].q_fC     != right.hits[ih].q_fC    ||
+          hits[ih].t_ns     != right.hits[ih].t_ns    ||
+          hits[ih].d_cm     != right.hits[ih].d_cm    ||
+          hits[ih].itrack_  != right.hits[ih].itrack_ ||
+          hits[ih].t0_ns    != right.hits[ih].t0_ns   ||
+          hits[ih].t1_ns    != right.hits[ih].t1_ns   ||
+          hits[ih].x0_g     != right.hits[ih].x0_g    ||
+          hits[ih].x1_g     != right.hits[ih].x1_g    ||
+          hits[ih].ptype_G3 != right.hits[ih].ptype_G3)
       {
          return 0;
       }
@@ -55,17 +55,7 @@ GlueXHitCDCstraw &GlueXHitCDCstraw::operator+=(const GlueXHitCDCstraw &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitCDCstraw::hitinfo_t());
-      hiter->track_ = hitsrc->track_;
-      hiter->q_fC = hitsrc->q_fC;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->d_cm = hitsrc->d_cm;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->ptype_G3 = hitsrc->ptype_G3;
-      hiter->t0_ns = hitsrc->t0_ns;
-      hiter->t1_ns = hitsrc->t1_ns;
-      hiter->x0_g = hitsrc->x0_g;
-      hiter->x1_g = hitsrc->x1_g;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

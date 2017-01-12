@@ -22,10 +22,10 @@ int GlueXHitPSCpaddle::operator==(const GlueXHitPSCpaddle &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].dE_GeV   == right.hits[ih].dE_GeV  &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
+      if (hits[ih].dE_GeV   != right.hits[ih].dE_GeV  ||
+          hits[ih].t_ns     != right.hits[ih].t_ns    ||
+          hits[ih].itrack_  != right.hits[ih].itrack_ ||
+          hits[ih].ptype_G3 != right.hits[ih].ptype_G3)
       {
          return 0;
       }
@@ -48,11 +48,7 @@ GlueXHitPSCpaddle &GlueXHitPSCpaddle::operator+=(const GlueXHitPSCpaddle &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitPSCpaddle::hitinfo_t());
-      hiter->dE_GeV = hitsrc->dE_GeV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->ptype_G3 = hitsrc->ptype_G3;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

@@ -22,13 +22,13 @@ int GlueXHitFDCwire::operator==(const GlueXHitFDCwire &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].dE_keV   == right.hits[ih].dE_keV  &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].d_cm     == right.hits[ih].d_cm    &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].t0_ns    == right.hits[ih].t0_ns   &&
-          hits[ih].t1_ns    == right.hits[ih].t1_ns   &&
-          hits[ih].ptype_G3 == right.hits[ih].ptype_G3)
+      if (hits[ih].dE_keV   != right.hits[ih].dE_keV  ||
+          hits[ih].t_ns     != right.hits[ih].t_ns    ||
+          hits[ih].d_cm     != right.hits[ih].d_cm    ||
+          hits[ih].itrack_  != right.hits[ih].itrack_ ||
+          hits[ih].t0_ns    != right.hits[ih].t0_ns   ||
+          hits[ih].t1_ns    != right.hits[ih].t1_ns   ||
+          hits[ih].ptype_G3 != right.hits[ih].ptype_G3)
       {
          return 0;
       }
@@ -51,14 +51,7 @@ GlueXHitFDCwire &GlueXHitFDCwire::operator+=(const GlueXHitFDCwire &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitFDCwire::hitinfo_t());
-      hiter->dE_keV = hitsrc->dE_keV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->d_cm = hitsrc->d_cm;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->ptype_G3 = hitsrc->ptype_G3;
-      hiter->t0_ns = hitsrc->t0_ns;
-      hiter->t1_ns = hitsrc->t1_ns;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

@@ -10,25 +10,25 @@ G4ThreadLocal G4Allocator<GlueXHitCDCpoint>* GlueXHitCDCpointAllocator = 0;
 
 int GlueXHitCDCpoint::operator==(const GlueXHitCDCpoint &right) const
 {
-   if (dEdx_GeV_cm    == right.dEdx_GeV_cm &&
-       dradius_cm     == right.dradius_cm  &&
-       phi_rad        == right.phi_rad     &&
-       primary_       == right.primary_    &&
-       ptype_G3       == right.ptype_G3    &&
-       px_GeV         == right.px_GeV      &&
-       py_GeV         == right.py_GeV      &&
-       pz_GeV         == right.pz_GeV      &&
-       r_cm           == right.r_cm        &&
-       z_cm           == right.z_cm        &&
-       t_ns           == right.t_ns        &&
-       track_         == right.track_      &&
-       trackID_       == right.trackID_    &&
-       sector_        == right.sector_     &&
-       ring_          == right.ring_       )
+   if (dEdx_GeV_cm != right.dEdx_GeV_cm ||
+       dradius_cm  != right.dradius_cm  ||
+       phi_rad     != right.phi_rad     ||
+       primary_    != right.primary_    ||
+       ptype_G3    != right.ptype_G3    ||
+       px_GeV      != right.px_GeV      ||
+       py_GeV      != right.py_GeV      ||
+       pz_GeV      != right.pz_GeV      ||
+       r_cm        != right.r_cm        ||
+       z_cm        != right.z_cm        ||
+       t_ns        != right.t_ns        ||
+       track_      != right.track_      ||
+       trackID_    != right.trackID_    ||
+       sector_     != right.sector_     ||
+       ring_       != right.ring_       )
    {
-      return 1;
+      return 0;
    }
-   return 0;
+   return 1;
 }
 
 GlueXHitCDCpoint &GlueXHitCDCpoint::operator+=(const GlueXHitCDCpoint &right)
