@@ -379,7 +379,7 @@ void GlueXSensitiveDetectorSTC::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitSTCpaddle::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].dE_MeV < THRESH_MEV) {
+         if (hits[ih].dE_MeV <= THRESH_MEV) {
             hits.erase(hits.begin() + ih);
             --ih;
          }

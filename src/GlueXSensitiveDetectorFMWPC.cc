@@ -287,7 +287,7 @@ void GlueXSensitiveDetectorFMWPC::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitFMWPCwire::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].dE_keV < THRESH_KEV) {
+         if (hits[ih].dE_keV <= THRESH_KEV) {
             hits.erase(hits.begin() + ih);
             --ih;
          }

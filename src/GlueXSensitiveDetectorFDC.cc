@@ -575,7 +575,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
          double dE_keV = 0;
          int over_threshold = 0;
          for (int i=0; i < num_samples; i++) {
-            if (samples[i] >= THRESH_ANODE) {
+            if (samples[i] > THRESH_ANODE) {
                if (!over_threshold) {
                   splits.push_back(GlueXHitFDCwire::hitinfo_t());
                   splits.back().d_cm = dradius_cm;
@@ -708,7 +708,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
          int threshold_toggle = 0;
          int FADC_BIN_SIZE = 1;
          for (int i=0; i < num_samples; i += FADC_BIN_SIZE) {
-            if (samples[i] >= THRESH_STRIPS) {
+            if (samples[i] > THRESH_STRIPS) {
                if (threshold_toggle == 0) {
                   hits.push_back(GlueXHitFDCcathode::hitinfo_t());
                   hits.back().t_ns = i;
@@ -732,7 +732,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
             }
          }
          int i = num_samples - 1;
-         if (samples[i] >= THRESH_STRIPS && threshold_toggle) {
+         if (samples[i] > THRESH_STRIPS && threshold_toggle) {
             for (int j = istart + 1; j < i - 1; j++) {
                if (samples[j] > samples[j-1] && samples[j] > samples[j+1]) {
                   hits.back().q_fC = samples[j];

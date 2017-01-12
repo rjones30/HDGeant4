@@ -322,7 +322,7 @@ void GlueXSensitiveDetectorBCAL::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitBCALcell::hitinfo_t> &hits = citer->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].E_GeV < THRESH_MEV/1e3) {
+         if (hits[ih].E_GeV <= THRESH_MEV/1e3) {
             hits.erase(hits.begin() + ih);
             --ih;
          }

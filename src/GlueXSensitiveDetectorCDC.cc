@@ -490,7 +490,7 @@ void GlueXSensitiveDetectorCDC::EndOfEvent(G4HCofThisEvent*)
          double q_mV_ns = 0.; 
          int over_threshold = 0;
          for (int i=0; i < num_samples; ++i) {
-            if (samples[i] >= THRESH_MV) {
+            if (samples[i] > THRESH_MV) {
                if (!over_threshold) {
                   hits.push_back(GlueXHitCDCstraw::hitinfo_t());
                   hits.back().track_ = track;
