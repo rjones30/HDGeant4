@@ -22,21 +22,33 @@ int GlueXHitFTOFbar::operator==(const GlueXHitFTOFbar &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].end_     == right.hits[ih].end_    &&
-          hits[ih].dE_GeV   == right.hits[ih].dE_GeV  &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].ptype_G3 == right.hits[ih].ptype_G3 &&
-          hits[ih].px_GeV   == right.hits[ih].px_GeV  &&
-          hits[ih].py_GeV   == right.hits[ih].py_GeV  &&
-          hits[ih].pz_GeV   == right.hits[ih].pz_GeV  &&
-          hits[ih].E_GeV    == right.hits[ih].E_GeV   &&
-          hits[ih].x_cm     == right.hits[ih].x_cm    &&
-          hits[ih].y_cm     == right.hits[ih].y_cm    &&
-          hits[ih].z_cm     == right.hits[ih].z_cm    &&
-          hits[ih].dist_cm  == right.hits[ih].dist_cm )
+      if (hits[ih].end_     != right.hits[ih].end_    ||
+          hits[ih].dE_GeV   != right.hits[ih].dE_GeV  ||
+          hits[ih].t_ns     != right.hits[ih].t_ns    ||
+          hits[ih].extra.size() != right.hits[ih].extra.size())
       {
          return 0;
+      }
+      std::vector<hitextra_t>::const_iterator leftextra;
+      std::vector<hitextra_t>::const_iterator rightextra;
+      for (leftextra = hits[ih].extra.begin();
+           leftextra != hits[ih].extra.end();
+           ++leftextra, ++rightextra)
+      {
+         if (leftextra->track_   != rightextra->track_  ||
+             leftextra->itrack_  != rightextra->itrack_ ||
+             leftextra->ptype_G3 != rightextra->ptype_G3 ||
+             leftextra->px_GeV   != rightextra->px_GeV  ||
+             leftextra->py_GeV   != rightextra->py_GeV  ||
+             leftextra->pz_GeV   != rightextra->pz_GeV  ||
+             leftextra->E_GeV    != rightextra->E_GeV   ||
+             leftextra->x_cm     != rightextra->x_cm    ||
+             leftextra->y_cm     != rightextra->y_cm    ||
+             leftextra->z_cm     != rightextra->z_cm    ||
+             leftextra->dist_cm  != rightextra->dist_cm )
+         {
+            return 0;
+         }
       }
    }
    return 1;
@@ -57,20 +69,7 @@ GlueXHitFTOFbar &GlueXHitFTOFbar::operator+=(const GlueXHitFTOFbar &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
-      hiter->end_   = hitsrc->end_;
-      hiter->dE_GeV = hitsrc->dE_GeV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->ptype_G3 = hitsrc->ptype_G3;
-      hiter->px_GeV = hitsrc->px_GeV;
-      hiter->py_GeV = hitsrc->py_GeV;
-      hiter->pz_GeV = hitsrc->pz_GeV;
-      hiter->E_GeV = hitsrc->E_GeV;
-      hiter->x_cm = hitsrc->x_cm;
-      hiter->y_cm = hitsrc->y_cm;
-      hiter->z_cm = hitsrc->z_cm;
-      hiter->dist_cm = hitsrc->dist_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }
@@ -90,17 +89,22 @@ void GlueXHitFTOFbar::Print() const
       G4cout << "   end = " << hiter->end_ << G4endl
              << "   dE = " << hiter->dE_GeV << " GeV" << G4endl
              << "   t = " << hiter->t_ns << " ns" << G4endl
-             << "   itrack = " << hiter->itrack_ << G4endl
-             << "   ptype = " << hiter->ptype_G3 << G4endl
-             << "   px = " << hiter->px_GeV << " GeV/c" << G4endl
-             << "   py = " << hiter->py_GeV << " GeV/c" << G4endl
-             << "   pz = " << hiter->pz_GeV << " GeV/c" << G4endl
-             << "   E = " << hiter->E_GeV << " GeV" << G4endl
-             << "   x = " << hiter->x_cm << " cm" << G4endl
-             << "   y = " << hiter->y_cm << " cm" << G4endl
-             << "   z = " << hiter->z_cm << " cm" << G4endl
-             << "   dist = " << hiter->dist_cm << " cm" << G4endl
-             << G4endl;
+             << "   extra hit truth information:" << G4endl;
+      std::vector<hitextra_t>::const_iterator xiter;
+      for (xiter = hiter->extra.begin(); xiter != hiter->extra.end(); ++xiter) {
+         G4cout << "      track = " << xiter->track_ << G4endl
+                << "      itrack = " << xiter->itrack_ << G4endl
+                << "      ptype = " << xiter->ptype_G3 << G4endl
+                << "      px = " << xiter->px_GeV << " GeV/c" << G4endl
+                << "      py = " << xiter->py_GeV << " GeV/c" << G4endl
+                << "      pz = " << xiter->pz_GeV << " GeV/c" << G4endl
+                << "      E = " << xiter->E_GeV << " GeV" << G4endl
+                << "      x = " << xiter->x_cm << " cm" << G4endl
+                << "      y = " << xiter->y_cm << " cm" << G4endl
+                << "      z = " << xiter->z_cm << " cm" << G4endl
+                << "      dist = " << xiter->dist_cm << " cm" << G4endl;
+      }
+      G4cout << G4endl;
    }
 }
 

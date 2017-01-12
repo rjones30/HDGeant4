@@ -34,11 +34,9 @@ class GlueXHitFTOFbar : public G4VHit
    G4int plane_;           // =0 (downstr, vertical) or =1 (upstr, horizontal)
    G4int bar_;             // bar number, bottom-top, south-north (see hdds)
 
-   struct hitinfo_t {
-      G4int end_;          // end=0: top, north/left; end=1: bottom, south/right
-      G4double dE_GeV;     // energy deposition by track(GeV)
-      G4double t_ns;       // pulse leading-edge time (ns)
-      G4double itrack_;    // track index of first particle making this hit
+   struct hitextra_t {
+      G4double track_;     // G4 track index of first particle making this hit
+      G4double itrack_;    // GlueX track index of first particle making this hit
       G4double ptype_G3;   // G3 type of first particle making this hit
       G4double px_GeV;     // hit track momentum x component (GeV)
       G4double py_GeV;     // hit track momentum y component (GeV)
@@ -48,6 +46,13 @@ class GlueXHitFTOFbar : public G4VHit
       G4double y_cm;       // x coordinate of the hit in global refsys (cm)
       G4double z_cm;       // z coordinate of the hit in global refsys (cm)
       G4double dist_cm;    // distance of hit from center of the bar (cm)
+   };
+
+   struct hitinfo_t {
+      G4int end_;          // end=0: top, north/left; end=1: bottom, south/right
+      G4double dE_GeV;     // energy deposition by track(GeV)
+      G4double t_ns;       // pulse leading-edge time (ns)
+      std::vector<hitextra_t> extra;
    };
    std::vector<hitinfo_t> hits;
 
