@@ -302,3 +302,23 @@ void GlueXUserEventInformation::Print() const
    G4cout << "GlueXUserEventInformation: hddm_s=" << fOutputRecord
           << G4endl;
 }
+
+int GlueXUserEventInformation::AssignBCALincidentID(const G4Track* track)
+{
+   BCALincidentParticle ipart;
+   ipart.pos = track->GetPosition();
+   ipart.mom = track->GetMomentum();
+   ipart.E = track->GetTotalEnergy();
+   ipart.ptype = track->GetDynamicParticle()->GetPDGcode();
+   ipart.trackID = track->GetTrackID();
+   fBCALincidentParticle.push_back(ipart);
+   return fBCALincidentParticle.size();
+}
+
+const BCALincidentParticle *GlueXUserEventInformation::
+                            GetBCALincidentParticle(int incidentID)
+{
+   if (incidentID < 0 || incidentID >= (int)fBCALincidentParticle.size())
+      return 0;
+   return &fBCALincidentParticle[incidentID];
+}

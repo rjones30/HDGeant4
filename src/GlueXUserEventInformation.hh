@@ -20,6 +20,8 @@
 
 #include <map>
 
+class BCALincidentParticle;
+
 class GlueXUserEventInformation: public G4VUserEventInformation
 {
  public:
@@ -44,6 +46,8 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    int GetGlueXTrackID(const G4Track *track);
    void SetGlueXTrackID(int g4ID, int gluexID);
    int AssignNextGlueXTrackID(const G4Track *track = 0);
+   int AssignBCALincidentID(const G4Track *track);
+   const BCALincidentParticle *GetBCALincidentParticle(int incidentID);
 
    void SetRandomSeeds();
    void Print() const;
@@ -58,10 +62,20 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    int fNprimaries;
    int fNvertices;
    std::map<int,int> fGlueXTrackID;
+   std::vector<BCALincidentParticle> fBCALincidentParticle;
 
  private:
    GlueXUserEventInformation(const GlueXUserEventInformation &src);
    GlueXUserEventInformation &operator=(const GlueXUserEventInformation &src);
+};
+
+class BCALincidentParticle {
+ public:
+   G4ThreeVector pos;
+   G4ThreeVector mom;
+   double E;
+   int ptype;
+   int trackID;
 };
 
 #endif // _GLUEXUSEREVENTINFORMATION_
