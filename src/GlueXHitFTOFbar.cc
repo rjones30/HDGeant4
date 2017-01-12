@@ -45,6 +45,7 @@ int GlueXHitFTOFbar::operator==(const GlueXHitFTOFbar &right) const
              leftextra->x_cm     != rightextra->x_cm    ||
              leftextra->y_cm     != rightextra->y_cm    ||
              leftextra->z_cm     != rightextra->z_cm    ||
+             leftextra->t_ns     != rightextra->t_ns    ||
              leftextra->dist_cm  != rightextra->dist_cm )
          {
             return 0;
@@ -102,6 +103,7 @@ void GlueXHitFTOFbar::Print() const
                 << "      x = " << xiter->x_cm << " cm" << G4endl
                 << "      y = " << xiter->y_cm << " cm" << G4endl
                 << "      z = " << xiter->z_cm << " cm" << G4endl
+                << "      t = " << xiter->t_ns << " cm" << G4endl
                 << "      dist = " << xiter->dist_cm << " cm" << G4endl;
       }
       G4cout << G4endl;

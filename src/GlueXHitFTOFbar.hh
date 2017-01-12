@@ -45,6 +45,7 @@ class GlueXHitFTOFbar : public G4VHit
       G4double x_cm;       // x coordinate of the hit in global refsys (cm)
       G4double y_cm;       // x coordinate of the hit in global refsys (cm)
       G4double z_cm;       // z coordinate of the hit in global refsys (cm)
+      G4double t_ns;       // time of hit without propagation delay (ns)
       G4double dist_cm;    // distance of hit from center of the bar (cm)
    };
 

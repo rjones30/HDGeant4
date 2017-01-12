@@ -256,19 +256,24 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
             hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
                            dEnorth/GeV * tnorth/ns) /
             (hiter->dE_GeV += dEnorth/GeV);
-            GlueXHitFTOFbar::hitextra_t extra;
-            extra.track_ = trackID;
-            extra.itrack_ = itrack;
-            extra.ptype_G3 = g3type;
-            extra.px_GeV = pin[0]/GeV;
-            extra.py_GeV = pin[1]/GeV;
-            extra.pz_GeV = pin[2]/GeV;
-            extra.E_GeV = Ein/GeV;
-            extra.x_cm = x[0]/cm;
-            extra.y_cm = x[1]/cm;
-            extra.z_cm = x[2]/cm;
-            extra.dist_cm = dist/cm;
-            hiter->extra.push_back(extra);
+            std::vector<GlueXHitFTOFbar::hitextra_t>::reverse_iterator xiter;
+            xiter = hiter->extra.rbegin();
+            if (trackID != xiter->track_ || fabs(tin/ns - xiter->t_ns) > 0.1) {
+               GlueXHitFTOFbar::hitextra_t extra;
+               extra.track_ = trackID;
+               extra.itrack_ = itrack;
+               extra.ptype_G3 = g3type;
+               extra.px_GeV = pin[0]/GeV;
+               extra.py_GeV = pin[1]/GeV;
+               extra.pz_GeV = pin[2]/GeV;
+               extra.E_GeV = Ein/GeV;
+               extra.x_cm = x[0]/cm;
+               extra.y_cm = x[1]/cm;
+               extra.z_cm = x[2]/cm;
+               extra.t_ns = tout/ns;
+               extra.dist_cm = dist/cm;
+               hiter->extra.push_back(extra);
+            }
          }
          else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{
             // create new hit 
@@ -287,6 +292,7 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
             extra.x_cm = x[0]/cm;
             extra.y_cm = x[1]/cm;
             extra.z_cm = x[2]/cm;
+            extra.t_ns = tout/ns;
             extra.dist_cm = dist/cm;
             hiter->extra.push_back(extra);
          }
@@ -320,19 +326,24 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
             hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
                            dEsouth/GeV * tsouth/ns) /
             (hiter->dE_GeV += dEsouth/GeV);
-            GlueXHitFTOFbar::hitextra_t extra;
-            extra.track_ = trackID;
-            extra.itrack_ = itrack;
-            extra.ptype_G3 = g3type;
-            extra.px_GeV = pin[0]/GeV;
-            extra.py_GeV = pin[1]/GeV;
-            extra.pz_GeV = pin[2]/GeV;
-            extra.E_GeV = Ein/GeV;
-            extra.x_cm = x[0]/cm;
-            extra.y_cm = x[1]/cm;
-            extra.z_cm = x[2]/cm;
-            extra.dist_cm = dist/cm;
-            hiter->extra.push_back(extra);
+            std::vector<GlueXHitFTOFbar::hitextra_t>::reverse_iterator xiter;
+            xiter = hiter->extra.rbegin();
+            if (trackID != xiter->track_ || fabs(tin/ns - xiter->t_ns) > 0.1) {
+               GlueXHitFTOFbar::hitextra_t extra;
+               extra.track_ = trackID;
+               extra.itrack_ = itrack;
+               extra.ptype_G3 = g3type;
+               extra.px_GeV = pin[0]/GeV;
+               extra.py_GeV = pin[1]/GeV;
+               extra.pz_GeV = pin[2]/GeV;
+               extra.E_GeV = Ein/GeV;
+               extra.x_cm = x[0]/cm;
+               extra.y_cm = x[1]/cm;
+               extra.z_cm = x[2]/cm;
+               extra.t_ns = tout/ns;
+               extra.dist_cm = dist/cm;
+               hiter->extra.push_back(extra);
+            }
          }
          else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{
             // create new hit 
@@ -351,6 +362,7 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
             extra.x_cm = x[0]/cm;
             extra.y_cm = x[1]/cm;
             extra.z_cm = x[2]/cm;
+            extra.t_ns = tout/ns;
             extra.dist_cm = dist/cm;
             hiter->extra.push_back(extra);
          }
@@ -416,7 +428,7 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitFTOFbar::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].dE_GeV*1e3 < THRESH_MEV) {
+         if (hits[ih].dE_GeV*1e3 <= THRESH_MEV) {
             hits.erase(hits.begin() + ih);
             --ih;
          }
