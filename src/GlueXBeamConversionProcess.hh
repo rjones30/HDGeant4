@@ -45,6 +45,9 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
    static PairConversionGeneration *fPairsGeneration;
 #endif
 
+   int fStopBeamBeforeConversion;
+   int fStopBeamAfterConversion;
+
    void prepareImportanceSamplingPDFs();
 
    static ImportanceSampler fPaircohPDF;

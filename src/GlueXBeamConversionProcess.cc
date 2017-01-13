@@ -9,10 +9,13 @@
 #include "GlueXPhotonBeamGenerator.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
+#include "GlueXUserOptions.hh"
 #include "GlueXPathFinder.hh"
 
 // Jack up this threshold to 20GeV to disable this feature
-// and let your application run without Dirac++ support.
+// and let your application run without Dirac++ support, or
+// otherwise just remove the PTAR target from the beamline
+// in the hdds geometry.
 #define FORCED_PTAR_PAIR_CONVERSION_THRESHOLD 3*GeV
 
 #include <G4SystemOfUnits.hh>
@@ -20,6 +23,7 @@
 #include "G4Electron.hh"
 #include "G4RunManager.hh"
 #include "G4TrackVector.hh"
+#include "G4Gamma.hh"
 
 #include <stdio.h>
 
@@ -38,6 +42,42 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                                                        G4ProcessType aType)
  : G4VDiscreteProcess(name, aType)
 {
+   GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
+   if (user_opts == 0) {
+      G4cerr << "Error in GlueXBeamConversionProcess constructor - "
+             << "GlueXUserOptions::GetInstance() returns null, "
+             << "cannot continue." << G4endl;
+      exit(-1);
+   }
+
+   fStopBeamBeforeConversion = 0;
+   fStopBeamAfterConversion = 0;
+
+   std::map<int,std::string> infile;
+   std::map<int,double> beampars;
+   std::map<int,std::string> genbeampars;
+   if (!user_opts->Find("INFI", infile) &&
+       user_opts->Find("BEAM", beampars) &&
+       user_opts->Find("GENBEAM", genbeampars))
+   {
+      if (genbeampars.size() > 0 &&
+         (genbeampars[1] == "POSTCOL" ||
+          genbeampars[1] == "postcol" ||
+          genbeampars[1] == "Postcol" ||
+          genbeampars[1] == "PostCol" ))
+      {
+         fStopBeamBeforeConversion = 1;
+      }
+      else if (genbeampars.size() > 0 &&
+              (genbeampars[1] == "POSTCONV" ||
+               genbeampars[1] == "postconv" ||
+               genbeampars[1] == "Postconv" ||
+               genbeampars[1] == "PostConv" ))
+      {
+         fStopBeamAfterConversion = 1;
+      }
+   }
+
 #if USING_DIRACXX
    if (fPairsGeneration == 0)
       fPairsGeneration = new PairConversionGeneration();
@@ -51,6 +91,8 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(
                             GlueXBeamConversionProcess &src)
  : G4VDiscreteProcess(src)
 {
+   fStopBeamBeforeConversion = src.fStopBeamBeforeConversion;
+   fStopBeamAfterConversion = src.fStopBeamAfterConversion;
    fPaircohPDF.Pcut = src.fPaircohPDF.Pcut;
    fTripletPDF.Pcut = src.fTripletPDF.Pcut;
 }
@@ -94,8 +136,26 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
                                                const G4Step &step)
 {
    pParticleChange->Initialize(track);
-   GenerateBeamPairConversion(step);
+   GlueXUserEventInformation *eventinfo;
+   const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+   eventinfo = (GlueXUserEventInformation*)event->GetUserInformation();
+   if (fStopBeamBeforeConversion) {
+      double tvtx = step.GetPreStepPoint()->GetGlobalTime();
+      G4ThreeVector vtx = step.GetPreStepPoint()->GetPosition();
+      G4ThreeVector mom = step.GetPreStepPoint()->GetMomentum();
+      G4ThreeVector pol = step.GetPreStepPoint()->GetPolarization();
+      G4PrimaryVertex* vertex = new G4PrimaryVertex(vtx, tvtx);
+      G4PrimaryParticle* photon = new G4PrimaryParticle(G4Gamma::Definition(),
+                                                        mom[0], mom[1], mom[2]);
+      photon->SetPolarization(pol);
+      vertex->SetPrimary(photon);
+      eventinfo->AddPrimaryVertex(*vertex);
+   }
+   else {
+      GenerateBeamPairConversion(step);
+   }
    pParticleChange->ProposeTrackStatus(fStopAndKill);
+   eventinfo->SetKeepEvent(1);
    return pParticleChange;
 }
 
@@ -551,14 +611,16 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    GlueXUserEventInformation *event_info;
    const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
    event_info = (GlueXUserEventInformation*)event->GetUserInformation();
-   G4TrackVector::iterator iter;
-   for (iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
-      GlueXUserTrackInformation *trackinfo = new GlueXUserTrackInformation();
-      if (event_info) {
-         trackinfo->SetGlueXTrackID(event_info->AssignNextGlueXTrackID());
+   if (fStopBeamAfterConversion == 0) {
+      G4TrackVector::iterator iter;
+      for (iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
+         GlueXUserTrackInformation *trackinfo = new GlueXUserTrackInformation();
+         if (event_info) {
+            trackinfo->SetGlueXTrackID(event_info->AssignNextGlueXTrackID());
+         }
+         (*iter)->SetUserInformation(trackinfo);
+         pParticleChange->AddSecondary(*iter);
       }
-      (*iter)->SetUserInformation(trackinfo);
-      pParticleChange->AddSecondary(*iter);
    }
 
    // append secondary vertex to MC record

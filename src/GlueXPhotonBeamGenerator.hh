@@ -35,6 +35,7 @@ class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
  protected:
    CobremsGeneration *fCobrems;
    static GlueXPseudoDetectorTAG *fTagger;
+   static int fGenerateNotSimulate;
 
    static double fBeamBucketPeriod;
    static double fBeamStartZ;

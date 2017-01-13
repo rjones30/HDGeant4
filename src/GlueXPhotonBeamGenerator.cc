@@ -7,6 +7,7 @@
 #include "GlueXPhotonBeamGenerator.hh"
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
+#include "GlueXUserOptions.hh"
 #include "HddmOutput.hh"
 #include <G4PhysicalConstants.hh>
 #include <G4SystemOfUnits.hh>
@@ -14,6 +15,18 @@
 
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>
+
+// This flag allows HDGeant4 to be used as a Monte Carlo event
+// generator of a coherent bremsstrahlung beam. When running in
+// "generate not simulate" mode, the output hddm file is filled
+// with MC information describing photons incident on the 
+// primary collimator, ie. before collimation. This mode is
+// enabled when the flag GENBEAM 'precol' is present together
+// with the BEAM card in the control.in file. See comments at
+// the head of GlueXBeamConversionProcess.cc for other options
+// related to the GENBEAM control.in flag.
+
+int GlueXPhotonBeamGenerator::fGenerateNotSimulate = 0;
 
 double GlueXPhotonBeamGenerator::fBeamBucketPeriod = 4. * ns;
 double GlueXPhotonBeamGenerator::fBeamStartZ = -24 * m;
@@ -30,6 +43,34 @@ GlueXPseudoDetectorTAG *GlueXPhotonBeamGenerator::fTagger = 0;
 GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
  : fCobrems(gen)
 {
+   GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
+   if (user_opts == 0) {
+      G4cerr << "Error in GlueXPhotonBeamGenerator constructor - "
+             << "GlueXUserOptions::GetInstance() returns null, "
+             << "cannot continue." << G4endl;
+      exit(-1);
+   }
+
+   std::map<int,std::string> infile;
+   std::map<int,double> beampars;
+   std::map<int,std::string> genbeampars;
+   if (!user_opts->Find("INFILE", infile) &&
+       user_opts->Find("BEAM", beampars) &&
+       user_opts->Find("GENBEAM", genbeampars))
+   {
+      if (genbeampars.size() > 0 && 
+         (genbeampars[1] == "precol" ||
+          genbeampars[1] == "PRECOL" ||
+          genbeampars[1] == "Precol" ||
+          genbeampars[1] == "PreCol" ))
+      {
+         fGenerateNotSimulate = 1;
+      }
+      else {
+         fGenerateNotSimulate = -1;
+      }
+   }
+
    prepareImportanceSamplingPDFs();
 
    // These cutoffs should be set empirically, as low as possible
@@ -388,8 +429,10 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       anEvent->SetUserInformation(event_info);
       tvtx = (vtx[2] - targetCenterZ) / fBeamVelocity;
       tvtx -= GenerateTriggerTime(anEvent);
-      event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
-      bg = 0;
+      if (fGenerateNotSimulate == 0) {
+         event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
+         bg = 0;
+      }
    }
    else {
       event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
@@ -403,24 +446,37 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    G4PrimaryParticle* photon = new G4PrimaryParticle(part, px, py, pz);
    photon->SetPolarization(pol);
    vertex->SetPrimary(photon);
-   anEvent->AddPrimaryVertex(vertex);
+   if (fGenerateNotSimulate < 1) {
+      anEvent->AddPrimaryVertex(vertex);
+   }
+
+   // If running in event generation only mode, default is not to
+   // save the event to the output file. This will be set back to
+   // true if // the beam particle makes it to the reference plane.
+   if (fGenerateNotSimulate == -1) {
+      event_info->SetKeepEvent(0);
+   }
 
    // If bg beam particle, append to MC record
    if (bg) {
       event_info->AddPrimaryVertex(*vertex);
    }
 
-   // Register a tagger hit for each beam photon
-   int runNo = HddmOutput::getRunNo();
-   if (fTagger == 0) {
-      fTagger = new GlueXPseudoDetectorTAG(runNo);
+   if (fGenerateNotSimulate == 0) {
+
+      // Register a tagger hit for each beam photon
+
+      int runNo = HddmOutput::getRunNo();
+      if (fTagger == 0) {
+         fTagger = new GlueXPseudoDetectorTAG(runNo);
+      }
+      else if (fTagger->getRunNo() != runNo) {
+         delete fTagger;
+         fTagger = new GlueXPseudoDetectorTAG(runNo);
+      }
+      double ttag = tvtx + (targetCenterZ - vtx[2]) / fBeamVelocity;
+      fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
    }
-   else if (fTagger->getRunNo() != runNo) {
-      delete fTagger;
-      fTagger = new GlueXPseudoDetectorTAG(runNo);
-   }
-   double ttag = tvtx + (targetCenterZ - vtx[2]) / fBeamVelocity;
-   fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
 
 #if VERBOSE_COBREMS_SPLITTING
    if (fIncoherentPDFlogx.Npassed / 100 * 100 == fIncoherentPDFlogx.Npassed) {
