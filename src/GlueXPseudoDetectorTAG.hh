@@ -27,9 +27,9 @@ class GlueXPseudoDetectorTAG
 
    int getRunNo() const;
    void setRunNo(int runno);
-   int addTaggerPhoton(G4Event *event, G4ThreeVector &vertex, 
+   int addTaggerPhoton(const G4Event *event,
                        double energy, double time, int bg);
-   int addRFsync(G4Event *event, double tsync);
+   int addRFsync(const G4Event *event, double tsync);
 
  protected:
    GlueXPseudoDetectorTAG(GlueXPseudoDetectorTAG &src);

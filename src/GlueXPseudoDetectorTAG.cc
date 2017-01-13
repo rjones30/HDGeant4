@@ -102,7 +102,7 @@ inline void GlueXPseudoDetectorTAG::setRunNo(int runno)
    G4cout << "TAGGER: all parameters loaded from ccdb" << G4endl;
 }
 
-int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
+int GlueXPseudoDetectorTAG::addTaggerPhoton(const G4Event *event,
                                             double energy, double time, int bg)
 {
    // look up which tagger channel is hit, if any
@@ -261,7 +261,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
    return (micro_channel > -1 || hodo_channel > -1);
 }
 
-int GlueXPseudoDetectorTAG::addRFsync(G4Event *event, double tsync)
+int GlueXPseudoDetectorTAG::addRFsync(const G4Event *event, double tsync)
 {
    G4VUserEventInformation* info = event->GetUserInformation();
    hddm_s::HDDM *record = ((GlueXUserEventInformation*)info)->getOutputRecord();
