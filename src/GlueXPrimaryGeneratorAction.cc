@@ -352,7 +352,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    // Sync the particle gun generator to the beam bunch clock
    double beamVelocity = GlueXPhotonBeamGenerator::getBeamVelocity();
    double tvtx = (pos[2] - fTargetCenterZ) / beamVelocity;
-   tvtx -= GlueXPhotonBeamGenerator::GenerateTriggerTime();
+   tvtx -= GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
    fParticleGun->SetParticleTime(tvtx);
 
    // Set the event number and fire the gun
@@ -360,6 +360,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    fParticleGun->GeneratePrimaryVertex(anEvent);
 
    // Store generated particle info so it can be written to output file
+   GlueXPhotonBeamGenerator::GenerateRFsync(anEvent);
    GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
    event_info->AddPrimaryVertex(*anEvent->GetPrimaryVertex());
    anEvent->SetUserInformation(event_info);
@@ -387,9 +388,16 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
       z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
       fPrimaryGenerator->SetParticlePosition(G4ThreeVector(x,y,z));
       t = (z - fTargetCenterZ) / beamVelocity;
-      t -= GlueXPhotonBeamGenerator::GenerateTriggerTime();
+      t -= GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
       fPrimaryGenerator->SetParticleTime(t);
       fPrimaryGenerator->GeneratePrimaryVertex(anEvent);
+      GlueXPhotonBeamGenerator::GenerateRFsync(anEvent);
+      GlueXUserEventInformation *eventinfo;
+      eventinfo = (GlueXUserEventInformation*)anEvent->GetUserInformation();
+      if (eventinfo) {
+         double E = eventinfo->GetBeamPhotonEnergy();
+         GlueXPhotonBeamGenerator::GenerateTaggerHit(anEvent, E, t);
+      }
    }
    ++fEventCount;
 
