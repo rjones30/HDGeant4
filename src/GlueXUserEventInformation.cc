@@ -26,11 +26,6 @@ GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
       fNprimaries = fOutputRecord->getProducts().size();
       fNvertices = fOutputRecord->getVertices().size();
    }
-   hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
-   pev(0).setRunNo(HddmOutput::getRunNo());
-   if (pev(0).getEventNo() == 0) {
-      pev(0).setEventNo(HddmOutput::incrementEventNo());
-   }
    SetRandomSeeds();
 }
 
@@ -44,6 +39,11 @@ GlueXUserEventInformation::~GlueXUserEventInformation()
          geometry_record_written = true;
       }
       if (fKeepEvent) {
+         hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+         pev(0).setRunNo(HddmOutput::getRunNo());
+         if (pev(0).getEventNo() == 0) {
+            pev(0).setEventNo(HddmOutput::incrementEventNo());
+         }
          HddmOutput::WriteOutputHDDM(*fOutputRecord);
       }
       delete fOutputRecord;
@@ -156,9 +156,9 @@ void GlueXUserEventInformation::AddPrimaryVertex(const G4PrimaryVertex &vertex)
       double polz = part->GetPolZ();
       if (polx != 0 || poly != 0 || polz != 0) {
          hddm_s::PolarizationList polar = pro(ip).addPolarizations();
-         polar(0).setPx(px);
-         polar(0).setPy(py);
-         polar(0).setPz(pz);
+         polar(0).setPx(polx);
+         polar(0).setPy(poly);
+         polar(0).setPz(polz);
       }
       ++fNprimaries;
    }
@@ -219,9 +219,9 @@ void GlueXUserEventInformation::AddSecondaryVertex(
        double polz = secondaries[ip]->GetPolarization()[2];
        if (polx != 0 || poly != 0 || polz != 0) {
           hddm_s::PolarizationList polar = pro(ip).addPolarizations();
-          polar(0).setPx(px);
-          polar(0).setPy(py);
-          polar(0).setPz(pz);
+          polar(0).setPx(polx);
+          polar(0).setPy(poly);
+          polar(0).setPz(polz);
        }
       ++fNprimaries;
    }
