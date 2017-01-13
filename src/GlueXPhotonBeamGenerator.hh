@@ -27,7 +27,10 @@ class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
    virtual void GeneratePrimaryVertex(G4Event *event);
    virtual void GenerateBeamPhoton(G4Event *event, double t0);
 
-   static double GenerateTriggerTime();
+   static double GenerateTriggerTime(const G4Event *event);
+   static int GenerateTaggerHit(const G4Event *event, 
+                                double energy, double time, int bg=0);
+   static void GenerateRFsync(const G4Event *event);
 
  protected:
    CobremsGeneration *fCobrems;

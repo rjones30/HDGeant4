@@ -387,7 +387,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       event_info = new GlueXUserEventInformation();
       anEvent->SetUserInformation(event_info);
       tvtx = (vtx[2] - targetCenterZ) / fBeamVelocity;
-      tvtx -= GenerateTriggerTime();
+      tvtx -= GenerateTriggerTime(anEvent);
       event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
       bg = 0;
    }
@@ -420,7 +420,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       fTagger = new GlueXPseudoDetectorTAG(runNo);
    }
    double ttag = tvtx + (targetCenterZ - vtx[2]) / fBeamVelocity;
-   fTagger->addTaggerPhoton(anEvent, vtx, pabs, ttag, bg);
+   fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
 
 #if VERBOSE_COBREMS_SPLITTING
    if (fIncoherentPDFlogx.Npassed / 100 * 100 == fIncoherentPDFlogx.Npassed) {
@@ -443,7 +443,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
 #endif
 }
 
-double GlueXPhotonBeamGenerator::GenerateTriggerTime()
+double GlueXPhotonBeamGenerator::GenerateTriggerTime(const G4Event *event)
 {
    // The primary interaction vertex time is referenced to a clock
    // whose t=0 is synchronized to the crossing of a beam bunch
@@ -462,6 +462,34 @@ double GlueXPhotonBeamGenerator::GenerateTriggerTime()
    double L1sigmat = GlueXPrimaryGeneratorAction::getL1triggerTimeSigma();
    double t0 = L1sigmat * G4RandGauss::shoot();
    return fBeamBucketPeriod * floor(t0 / fBeamBucketPeriod + 0.5);
+}
+
+int GlueXPhotonBeamGenerator::GenerateTaggerHit(const G4Event *event,
+                                                double energy, 
+                                                double time,
+                                                int bg)
+{
+   // Register a tagger hit
+
+   int runNo = HddmOutput::getRunNo();
+   if (fTagger == 0) {
+      fTagger = new GlueXPseudoDetectorTAG(runNo);
+   }
+   else if (fTagger->getRunNo() != runNo) {
+      delete fTagger;
+      fTagger = new GlueXPseudoDetectorTAG(runNo);
+   }
+   return fTagger->addTaggerPhoton(event, energy, time, bg);
+}
+
+void GlueXPhotonBeamGenerator::GenerateRFsync(const G4Event *event)
+{
+   // Append a RF sync element to the output record, assuming that
+   // GenerateTriggerTime has already been called for this event.
+
+   double tsync = 512*ns * G4UniformRand();
+   tsync = fBeamBucketPeriod * floor(tsync / fBeamBucketPeriod + 0.5);
+   fTagger->addRFsync(event, tsync);
 }
 
 double GlueXPhotonBeamGenerator::getBeamBucketPeriod(int runno)
