@@ -123,9 +123,6 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
                                               G4TouchableHistory* unused)
 {
    double dEsum = step->GetTotalEnergyDeposit();
-   if (dEsum == 0)
-      return false;
-
    const G4ThreeVector &pin = step->GetPreStepPoint()->GetMomentum();
    const G4ThreeVector &xin = step->GetPreStepPoint()->GetPosition();
    const G4ThreeVector &xout = step->GetPostStepPoint()->GetPosition();
