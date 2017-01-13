@@ -256,6 +256,14 @@ void GlueXUserEventInformation::SetRandomSeeds()
    }
 }
 
+double GlueXUserEventInformation::GetBeamPhotonEnergy()
+{
+   hddm_s::BeamList beam = fOutputRecord->getBeams();
+   if (beam.size() > 0)
+      return beam(0).getMomentum().getE()*GeV;
+   return 0;
+}
+
 int GlueXUserEventInformation::AssignNextGlueXTrackID(const G4Track* track)
 {
    int lastG4 = 0;

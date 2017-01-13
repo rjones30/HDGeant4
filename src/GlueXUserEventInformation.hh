@@ -42,6 +42,7 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    void AddSecondaryVertex(const G4TrackVector &secondaries,
                                                int parentID, int mech);
 
+   double GetBeamPhotonEnergy();
    int GetGlueXTrackID(int g4ID);
    int GetGlueXTrackID(const G4Track *track);
    void SetGlueXTrackID(int g4ID, int gluexID);
