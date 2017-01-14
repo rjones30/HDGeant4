@@ -151,6 +151,13 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       vertex->SetPrimary(photon);
       eventinfo->AddPrimaryVertex(*vertex);
    }
+   else if (fStopBeamAfterConversion) {
+      double tvtx = step.GetPreStepPoint()->GetGlobalTime();
+      G4ThreeVector vtx = step.GetPreStepPoint()->GetPosition();
+      G4ThreeVector mom = step.GetPreStepPoint()->GetMomentum();
+      G4ThreeVector pol = step.GetPreStepPoint()->GetPolarization();
+      eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
+   }
    else {
       GenerateBeamPairConversion(step);
    }
@@ -611,14 +618,14 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    GlueXUserEventInformation *event_info;
    const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
    event_info = (GlueXUserEventInformation*)event->GetUserInformation();
-   if (fStopBeamAfterConversion == 0) {
-      G4TrackVector::iterator iter;
-      for (iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
-         GlueXUserTrackInformation *trackinfo = new GlueXUserTrackInformation();
-         if (event_info) {
-            trackinfo->SetGlueXTrackID(event_info->AssignNextGlueXTrackID());
-         }
-         (*iter)->SetUserInformation(trackinfo);
+   G4TrackVector::iterator iter;
+   for (iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
+      GlueXUserTrackInformation *trackinfo = new GlueXUserTrackInformation();
+      if (event_info) {
+         trackinfo->SetGlueXTrackID(event_info->AssignNextGlueXTrackID());
+      }
+      (*iter)->SetUserInformation(trackinfo);
+      if (fStopBeamAfterConversion == 0) {
          pParticleChange->AddSecondary(*iter);
       }
    }
