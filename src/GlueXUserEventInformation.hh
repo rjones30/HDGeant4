@@ -50,7 +50,7 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    int AssignBCALincidentID(const G4Track *track);
    const BCALincidentParticle *GetBCALincidentParticle(int incidentID);
 
-   void SetKeepEvent(int flag) { fKeepEvent = (flag == 0); }
+   void SetKeepEvent(int flag) { fKeepEvent = flag; }
    int GetKeepEvent() const { return fKeepEvent; }
 
    void SetRandomSeeds();
