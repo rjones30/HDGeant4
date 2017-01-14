@@ -431,8 +431,8 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       tvtx -= GenerateTriggerTime(anEvent);
       if (fGenerateNotSimulate == 0) {
          event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
-         bg = 0;
       }
+      bg = 0;
    }
    else {
       event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
@@ -458,7 +458,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    }
 
    // If bg beam particle, append to MC record
-   if (bg) {
+   if (bg || fGenerateNotSimulate == 1) {
       event_info->AddPrimaryVertex(*vertex);
    }
 
