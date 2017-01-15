@@ -137,7 +137,7 @@ G4bool GlueXSensitiveDetectorTPOL::ProcessHits(G4Step* step,
    // Post the hit to the points list in the
    // order of appearance in the event simulation.
 
-   int ring = GetIdent("ring", touch);
+   int ring = 0; // GetIdent("ring", touch);
    int sector = GetIdent("sector", touch);
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
