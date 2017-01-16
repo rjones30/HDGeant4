@@ -145,6 +145,7 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
    G4int trackID = track->GetTrackID();
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (trackinfo->GetGlueXHistory() == 0 &&
        xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
    {
@@ -155,7 +156,7 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
       newPoint->ptype_G3 = g3type;
       newPoint->track_ = trackID;
-      newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+      newPoint->trackID_ = itrack;
       newPoint->primary_ = (track->GetParentID() == 0);
       newPoint->t_ns = t/ns;
       newPoint->x_cm = xin[0]/cm;

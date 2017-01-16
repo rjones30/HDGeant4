@@ -143,10 +143,10 @@ G4bool GlueXSensitiveDetectorTPOL::ProcessHits(G4Step* step,
    G4int trackID = track->GetTrackID();
    int pdgtype = track->GetDynamicParticle()->GetPDGcode();
    int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
+   GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
+                                          track->GetUserInformation();
    int itrack = trackinfo->GetGlueXTrackID();
-   if (trackinfo->GetGlueXHistory() == 0) {
+   if (trackinfo->GetGlueXHistory() == 0 && itrack > 0) {
       G4int key = fPointsMap->entries();
       GlueXHitTPOLpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||

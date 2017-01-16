@@ -136,7 +136,8 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
    G4int trackID = track->GetTrackID();
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
-   if (trackinfo->GetGlueXHistory() == 0 && xin.dot(pin) > 0) {
+   int itrack = trackinfo->GetGlueXTrackID();
+   if (trackinfo->GetGlueXHistory() == 0 && itrack > 0 && xin.dot(pin) > 0) {
       G4int key = fPointsMap->entries();
       GlueXHitFMWPCpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
@@ -151,7 +152,7 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
          int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->t_ns = t/ns;
          newPoint->x_cm = x[0]/cm;
