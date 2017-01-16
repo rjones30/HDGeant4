@@ -139,8 +139,8 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
    // order of appearance in the event simulation.
 
    int module = GetIdent("module", touch);
-   int arm = module / NUM_MODULES_PER_ARM;
-   module %= NUM_MODULES_PER_ARM;
+   int arm = (module - 1) / NUM_MODULES_PER_ARM;
+   module = (module - 1) % NUM_MODULES_PER_ARM + 1;
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
    int pdgtype = track->GetDynamicParticle()->GetPDGcode();
@@ -148,7 +148,7 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
    int itrack = trackinfo->GetGlueXTrackID();
-   if (trackinfo->GetGlueXHistory() == 0) {
+   if (trackinfo->GetGlueXHistory() == 0 && itrack > 0) {
       G4int key = fPointsMap->entries();
       GlueXHitPSCpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
@@ -201,13 +201,10 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
          }
       }
       if (merge_hit) {
-         // Use the time from the earlier hit but add the charge
+         // Add the charge, do energy-weighted time averaging
+         hiter->t_ns = (hiter->t_ns * hiter->dE_GeV + t/ns * dEsum/GeV) /
+                       (hiter->dE_GeV + dEsum/GeV);
          hiter->dE_GeV += dEsum/GeV;
-         if (hiter->t_ns*ns > t) {
-            hiter->t_ns = t/ns;
-            hiter->itrack_ = itrack;
-            hiter->ptype_G3 = g3type;
-         }
       }
       else if ((int)paddle->hits.size() < MAX_HITS)	{
          // create new hit 
