@@ -28,6 +28,7 @@ class GlueXSteppingAction : public G4UserSteppingAction
 
  protected:
    int fStopTracksInCollimator;
+   int fSaveTrajectories;
    static G4Mutex fMutex;
 };
 

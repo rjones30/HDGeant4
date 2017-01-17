@@ -228,6 +228,104 @@ void GlueXUserEventInformation::AddSecondaryVertex(
    ++fNvertices;
 }
 
+void GlueXUserEventInformation::AddMCtrajectoryPoint(const G4Step &step,
+                                                     int save_option)
+{
+   // The meaning of the save_option argument is as follows.
+   //  save_option = 0  don't store trajectory info
+   //  save_option = 1  store birth and death points of primary tracks
+   //  save_option = 2  store birth and death points of all particles
+   //  save_option = 3  store full trajectory of primary tracks
+   //  save_option = 4  store full trajectory of primary tracks and
+   //                   birth/death points of secondaries
+   //  save_option = 5  store full trajectory for all particles
+
+   const G4Track *track = step.GetTrack();
+   GlueXUserTrackInformation *trackinfo;
+   trackinfo = (GlueXUserTrackInformation*)track->GetUserInformation();
+   int isBorn = (track->GetCurrentStepNumber() == 1);
+   int isDead = (track->GetTrackStatus() == fStopAndKill);
+   int isPrimary = (trackinfo->GetGlueXTrackID() > 0);
+   if ((save_option == 1 && isPrimary && (isBorn || isDead)) ||
+       (save_option == 2 && (isBorn || isDead)) ||
+       (save_option == 3 && isPrimary) ||
+       (save_option == 4 && (isPrimary || isBorn || isDead)) ||
+       (save_option == 5))
+   {
+      int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+      int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+      int itrack = trackinfo->GetGlueXTrackID();
+      G4StepPoint *xin = step.GetPreStepPoint();
+      G4StepPoint *xout = step.GetPostStepPoint();
+      G4StepPoint *xref = (isBorn)?xin : xout;
+      G4ThreeVector mom(xref->GetMomentum());
+      G4ThreeVector pos(xref->GetPosition());
+      G4ProcessType mechtype(xout->GetProcessDefinedStep()->GetProcessType());
+      double radlen = xin->GetMaterial()->GetRadlen();
+
+      int mech4c[2];
+      switch (mechtype) {
+         case fTransportation:
+            snprintf((char*)mech4c, 5, "GEOM");
+            break;
+         case fElectromagnetic:
+            snprintf((char*)mech4c, 5, "ELEC");
+            break;
+         case fOptical:
+            snprintf((char*)mech4c, 5, "OPTI");
+            break;
+         case fHadronic:
+            snprintf((char*)mech4c, 5, "HADR");
+            break;
+         case fPhotolepton_hadron:
+            snprintf((char*)mech4c, 5, "PHOT");
+            break;
+         case fDecay:
+            snprintf((char*)mech4c, 5, "DCAY");
+            break;
+         case fGeneral:
+            snprintf((char*)mech4c, 5, "GENE");
+            break;
+         case fParameterisation:
+            snprintf((char*)mech4c, 5, "PARA");
+            break;
+         case fUserDefined:
+            snprintf((char*)mech4c, 5, "USER");
+            break;
+         default:
+            snprintf((char*)mech4c, 5, "????");
+            break;
+      }
+
+      hddm_s::McTrajectoryList traj = fOutputRecord->getMcTrajectorys();
+      if (traj.size() == 0) {
+         hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+         if (pev.size() == 0) 
+            pev = fOutputRecord->addPhysicsEvents();
+         hddm_s::HitViewList view = pev(0).getHitViews();
+         if (view.size() == 0) 
+            view = pev(0).addHitViews();
+         traj = view(0).addMcTrajectorys();
+      }
+      hddm_s::McTrajectoryPointList trajpt = traj(0).addMcTrajectoryPoints();
+      trajpt(0).setStep(step.GetStepLength()/cm);
+      trajpt(0).setDE(step.GetTotalEnergyDeposit()/GeV);
+      trajpt(0).setE(xref->GetKineticEnergy()/GeV);
+      trajpt(0).setMech(mech4c[0]);
+      trajpt(0).setPart(g3type);
+      trajpt(0).setPrimary_track((itrack > 0));
+      trajpt(0).setPx(mom[0]/GeV);
+      trajpt(0).setPy(mom[1]/GeV);
+      trajpt(0).setPz(mom[2]/GeV);
+      trajpt(0).setRadlen(radlen/cm);
+      trajpt(0).setT(xref->GetGlobalTime()/ns);
+      trajpt(0).setTrack(track->GetTrackID());
+      trajpt(0).setX(pos[0]/cm);
+      trajpt(0).setY(pos[1]/cm);
+      trajpt(0).setZ(pos[2]/cm);
+   }
+}
+
 void GlueXUserEventInformation::SetRandomSeeds()
 {
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
