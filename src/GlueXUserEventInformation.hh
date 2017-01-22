@@ -41,6 +41,7 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    void AddPrimaryVertex(const G4PrimaryVertex &vertex);
    void AddSecondaryVertex(const G4TrackVector &secondaries,
                                                int parentID, int mech);
+   void AddMCtrajectoryPoint(const G4Step &step, int save_option);
 
    double GetBeamPhotonEnergy();
    int GetGlueXTrackID(int g4ID);
@@ -82,4 +83,4 @@ class BCALincidentParticle {
    int trackID;
 };
 
-#endif // _GLUEXUSEREVENTINFORMATION_
+#endif

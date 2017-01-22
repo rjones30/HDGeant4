@@ -202,9 +202,9 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       if (user_opts->Find("BGRATE", bgratepars) &&
           user_opts->Find("BGGATE", bggatepars))
       {
-         fBeamBackgroundRate = bgratepars[1] * 1/s;
-         fBeamBackgroundGateStart = bgratepars[1] * ns;
-         fBeamBackgroundGateStop = bgratepars[2] * ns;
+         fBeamBackgroundRate = bgratepars[1] * 1/ns;
+         fBeamBackgroundGateStart = bggatepars[1] * ns;
+         fBeamBackgroundGateStop = bggatepars[2] * ns;
          if (fBeamBackgroundRate > 0 &&
              fBeamBackgroundGateStart >= fBeamBackgroundGateStop)
          {

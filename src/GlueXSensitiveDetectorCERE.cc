@@ -143,7 +143,7 @@ G4bool GlueXSensitiveDetectorCERE::ProcessHits(G4Step* step,
                                           track->GetUserInformation();
    int itrack = trackinfo->GetGlueXTrackID();
    if (touch->GetVolume()->GetName() == "CERW") {
-      if (trackinfo->GetGlueXHistory() == 0 && xin.dot(pin) > 0) {
+      if (trackinfo->GetGlueXHistory() == 0 && itrack > 0 && xin.dot(pin) > 0) {
          G4int key = fPointsMap->entries();
          GlueXHitCEREpoint* lastPoint = (*fPointsMap)[key - 1];
          if (lastPoint == 0 || lastPoint->track_ != trackID ||

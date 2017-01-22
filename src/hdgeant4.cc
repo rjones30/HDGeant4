@@ -211,10 +211,44 @@ int main(int argc,char** argv)
              << "          total for run:" << totalused
              << std::endl;
  
-   // Clean up and exit
+   // Close output file and clean up
    if (visManager)
       delete visManager;
    if (hddmOut)
       delete hddmOut;
+
+   // Invoke mcsmear to smear the results, if requested
+   if (nsim > 0 && hddmOut) {
+      std::map<int, int> postsmear_opts;
+      if (opts.Find("POSTSMEAR", postsmear_opts) &&
+          postsmear_opts.size() > 0 && postsmear_opts[1] > 0)
+      {
+         std::stringstream cmd;
+         cmd << "mcsmear ";
+         std::map<int,std::string> mcsmear_opts;
+         if (opts.Find("MCSMEAROPTS", mcsmear_opts)) {
+            cmd << mcsmear_opts[1];
+         }
+         cmd << " " << outfile_opts[1];
+         std::cout << "Smearing data with: " << std::endl 
+                   << cmd.str() << std::endl;
+         int res = system(cmd.str().c_str());
+         if (opts.Find("DELETEUNSMEARED", postsmear_opts) && 
+             postsmear_opts.size() > 0 && postsmear_opts[1] > 0)
+         {
+            if (res == 0) {
+               cmd.str("");
+               cmd << "rm -f " << outfile_opts[1];
+               res = system(cmd.str().c_str());
+            }
+            else {
+               std::cout << "Not deleting unsmeared file "
+                         << "because of problems with the smearing."
+                         << std::endl;
+            }
+         }
+         return res;
+      }
+   }
    return 0;
 }

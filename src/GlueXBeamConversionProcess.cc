@@ -150,6 +150,7 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       photon->SetPolarization(pol);
       vertex->SetPrimary(photon);
       eventinfo->AddPrimaryVertex(*vertex);
+      eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
    }
    else if (fStopBeamAfterConversion) {
       double tvtx = step.GetPreStepPoint()->GetGlobalTime();
@@ -157,6 +158,7 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       G4ThreeVector mom = step.GetPreStepPoint()->GetMomentum();
       G4ThreeVector pol = step.GetPreStepPoint()->GetPolarization();
       eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
+      GenerateBeamPairConversion(step);
    }
    else {
       GenerateBeamPairConversion(step);
