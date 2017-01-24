@@ -96,9 +96,6 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
       if (strt == cards.npos) {
          continue;
       }
-      else if (cards[strt] == 'c' || cards[strt] == 'C') {
-         continue;
-      }
       size_t stop = cards.substr(strt).find_first_of(" ");
       if (stop == cards.npos) {
          std::string key(askey(cards.substr(strt)));
@@ -107,6 +104,9 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
       }
       else {
          std::string key(askey(cards.substr(strt, stop - strt)));
+         if (key == "c" || key == "C") {
+            continue;
+         }
          size_t args = strt + stop;
          size_t argo = cards.substr(args).find_first_not_of(" ");
          if (argo == cards.npos) {
