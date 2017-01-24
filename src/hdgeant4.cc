@@ -139,10 +139,13 @@ int main(int argc,char** argv)
    runManager.SetUserInitialization(geometry);
 
    // Physics process initialization
-   runManager.SetUserInitialization(new GlueXPhysicsList());
+   GlueXPhysicsList *physicslist = new GlueXPhysicsList();
+   runManager.SetUserInitialization(physicslist);
     
    // User actions initialization
-   runManager.SetUserInitialization(new GlueXUserActionInitialization());
+   GlueXUserActionInitialization *userinit;
+   userinit = new GlueXUserActionInitialization(physicslist);
+   runManager.SetUserInitialization(userinit);
 
    // Initialize G4 kernel
    runManager.Initialize();
