@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-// $Id: G4VDivisionParameterisation.cc 90699 2015-06-08 09:34:37Z gcosmo $
+// $Id: G4VDivisionParameterisation.cc 92625 2015-09-09 12:34:07Z gcosmo $
 //
 // class G4VDivisionParameterisation Implementation file
 //
@@ -39,8 +39,10 @@
 #include "G4RotationMatrix.hh"
 #include "G4ReflectedSolid.hh"
 #include "G4GeometryTolerance.hh"
+#include "G4AutoDelete.hh"
 
 const G4int G4VDivisionParameterisation::verbose = 5;
+G4ThreadLocal G4RotationMatrix* G4VDivisionParameterisation::fRot = 0;
 
 //--------------------------------------------------------------------------
 G4VDivisionParameterisation::
@@ -49,7 +51,7 @@ G4VDivisionParameterisation( EAxis axis, G4int nDiv,
                              DivisionType divType, G4VSolid* motherSolid )
   : faxis(axis), fnDiv( nDiv), fwidth(step), foffset(offset),
     fDivisionType(divType), fmotherSolid( motherSolid ), fReflectedSolid(false),
-    fDeleteSolid(false), theVoluFirstCopyNo(1), fhgap(0.) //, fRotMatrix(0)
+    fDeleteSolid(false), theVoluFirstCopyNo(1), fhgap(0.)
 {
 #ifdef G4DIVDEBUG
   if (verbose >= 1)
@@ -67,7 +69,6 @@ G4VDivisionParameterisation( EAxis axis, G4int nDiv,
 G4VDivisionParameterisation::~G4VDivisionParameterisation()
 {
   if (fDeleteSolid) delete fmotherSolid;
-  //if (fRotMatrix) { delete fRotMatrix; fRotMatrix=0; }
 }
 
 //--------------------------------------------------------------------------
@@ -88,9 +89,35 @@ void
 G4VDivisionParameterisation::
 ChangeRotMatrix( G4VPhysicalVolume *physVol, G4double rotZ ) const
 {
-  G4RotationMatrix *fRot = physVol->GetRotation();
-  *fRot = G4RotationMatrix();
-  fRot->rotateZ( rotZ );
+  static std::map<int,std::map<void*,void*> > frotTable;
+  int threadId = G4Threading::G4GetThreadId();
+  G4RotationMatrix *frot = (G4RotationMatrix*)frotTable[threadId][physVol];
+  if (frot == 0) {
+    if (threadId == -1)
+      frot = physVol->GetRotation();
+    else {
+      frot = new G4RotationMatrix();
+      physVol->SetRotation(frot);
+    }
+    frotTable[threadId][physVol] = frot;
+  }
+  *frot = G4RotationMatrix();
+  frot->rotateZ( rotZ );
+
+  static std::map<void*,void*> frot2physVol;
+  static std::map<void*,int> frot2threadId;
+  if (frot2physVol[frot] == 0) {
+    frot2physVol[frot] = physVol;
+    frot2threadId[frot] = threadId;
+  }
+  else if (frot2physVol[frot] != physVol || frot2threadId[frot] != threadId) {
+    G4cerr << "Hot diggitty dog!" << G4endl;
+    G4cerr << "  bad frot = " << frot << G4endl;
+    G4cerr << "  bad physVol = " << physVol << " =?= " << frot2physVol[frot] << G4endl;
+    G4cerr << "  bad threadId = " << threadId << " =?= " << frot2threadId[frot] << G4endl;
+    frot2physVol[frot] = physVol;
+    frot2threadId[frot] = threadId;
+  }
 }
 
 //--------------------------------------------------------------------------
