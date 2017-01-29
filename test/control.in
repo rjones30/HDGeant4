@@ -232,7 +232,7 @@ c in that CUTS are applied to the corresponding particles when they are being
 c tracked, whereas RANGECUTS are used to decide whether they should be
 c generated (as secondaries) in the first place.
 
-RANGECUTS 0.1 0.1 1.0 1.0 0.1
+cRANGECUTS 0.1 0.1 1.0 1.0 0.1
 
 c Geant4 physics models are more comprehensive than the ones provided in G3,
 c and one consequence of this is that some particles (eg. neutrons) seem to go
