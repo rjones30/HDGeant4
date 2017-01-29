@@ -22,6 +22,7 @@ ifdef DIRACXX_HOME
 endif
 
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
+CPPFLAGS += -I./src/G4debug
 CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
@@ -37,7 +38,7 @@ CPPFLAGS += -DLAYERED_GEOMETRY_PICKING_EXTENSIONS
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
-#CPPFLAGS += -DG4MULTITHREADED
+CPPFLAGS += -DG4MULTITHREADED
 #CPPFLAGS += -DFORCE_PARTICLE_TYPE_CHARGED_GEANTINO
 #CPPFLAGS += -DBP_DEBUG
 #CPPFLAGS += -DMOD_SPONCE
@@ -49,7 +50,9 @@ G4LIB_USE_GDML = 1
 CPPVERBOSE = 1
 #G4DEBUG = 1
 
+hdgeant4_sources := $(filter-out src/CobremsGeneration.cc, $(wildcard src/*.cc))
 G4fixes_sources := $(wildcard src/G4fixes/*.cc)
+G4debug_sources := $(wildcard src/G4debug/*.cc)
 HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
 
 ROOTLIBS = $(shell root-config --libs) -lGeom
@@ -72,18 +75,16 @@ G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I/usr/local/xerces/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
-INTYLIBS += -L$(G4TMPDIR) -lhdds -lG4fixes
+INTYLIBS += -L$(G4TMPDIR) -lhdds
 INTYLIBS += -lboost_python
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
-all: hdds cobrems fixes exe lib bin g4py
+all: hdds cobrems sharedlib exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
-LDLIBS2 := -lG4fixes $(LDLIBS2)
 
 cobrems: $(G4TMPDIR)/libcobrems.so
-fixes: $(G4TMPDIR)/libG4fixes.so
 hdds:  $(G4TMPDIR)/libhdds.so
 
 CXXFLAGS = -g -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
@@ -92,12 +93,22 @@ $(G4TMPDIR)/libcobrems.so: src/CobremsGeneration.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
 	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
+hdgeant4_objects := $(patsubst src/%.cc, $(G4TMPDIR)/%.o, $(hdgeant4_sources))
 G4fixes_objects := $(patsubst src/G4fixes/%.cc, $(G4TMPDIR)/%.o, $(G4fixes_sources))
-$(G4TMPDIR)/libG4fixes.so: $(G4fixes_objects) $(G4TMPDIR)/G4fixes.o
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
-	-shared -o $@ $^ $(G4shared_libs) -lboost_python
+G4debug_objects := $(patsubst src/G4debug/%.cc, $(G4TMPDIR)/%.o, $(G4debug_sources))
+sharedlib: $(G4TMPDIR)/libhdgeant4.so
+
+$(G4TMPDIR)/libhdgeant4.so: $(hdgeant4_objects) $(G4fixes_objects) $(G4debug_objects)
 
 $(G4TMPDIR)/%.o: src/G4fixes/%.cc
+ifdef CPPVERBOSE
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
+else
+	@echo Compiling $*.cc ...
+	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
+endif
+
+$(G4TMPDIR)/%.o: src/G4debug/%.cc
 ifdef CPPVERBOSE
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
 else
@@ -122,16 +133,11 @@ exe:
 	@mkdir -p $(G4LIBDIR)/$@
 
 g4py: $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so \
-      $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so \
       $(G4LIBDIR)/../../../g4py/Cobrems/libcobrems.so
 
 $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so: $(G4LIBDIR)/libhdgeant4.so
 	@rm -f $@
 	@cd g4py/HDGeant4 && ln -s ../../tmp/*/hdgeant4/libhdgeant4.so .
-
-$(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so: $(G4LIBDIR)/libG4fixes.so
-	@rm -f $@
-	@cd g4py/G4fixes && ln -s ../../tmp/*/hdgeant4/libG4fixes.so .
 
 $(G4LIBDIR)/../../../g4py/Cobrems/libcobrems.so: $(G4LIBDIR)/libcobrems.so 
 	@rm -f $@
