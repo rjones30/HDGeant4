@@ -25,7 +25,7 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
 {
  public:
    GlueXBeamConversionProcess(const G4String &name, 
-                              G4ProcessType aType=fNotDefined);
+                              G4ProcessType aType=fGeneral);
    GlueXBeamConversionProcess(GlueXBeamConversionProcess &src);
    virtual ~GlueXBeamConversionProcess();
 

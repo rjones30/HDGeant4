@@ -12,14 +12,19 @@
 #define GlueXEventAction_h 1
 
 #include "G4UserEventAction.hh"
+#include "G4Event.hh"
 
 class G4Event;
 
 class GlueXEventAction : public G4UserEventAction
 {
-  public:
-    void BeginOfEventAction(const G4Event*);
-    void EndOfEventAction(const G4Event*);
+ public:
+   GlueXEventAction();
+   void BeginOfEventAction(const G4Event*);
+   void EndOfEventAction(const G4Event*);
+
+ protected:
+   int fDebugPrint[3]; 
 };
 
 #endif

@@ -38,7 +38,7 @@ void GlueXSteppingVerbose::StepInfo()
               << G4endl;
      }
  
-     G4TouchableHandle touch = GlueXPathFinder::CreateTouchableHandle();
+     G4TouchableHandle touch = 0; //GlueXPathFinder::CreateTouchableHandle();
      G4VPhysicalVolume *pvol = (touch)? touch->GetVolume() : 0;
      G4String volname = (pvol)? pvol->GetName() : "NULL";
      int copyno = (touch)? touch->GetCopyNumber() : 0;

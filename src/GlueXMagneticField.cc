@@ -517,12 +517,12 @@ void GlueXComputedMagField::SetFunction(std::string function)
       std::map<int, std::string> map_opts;
       GlueXUserOptions::GetInstance()->Find("BFIELDTYPE", type_opts);
       GlueXUserOptions::GetInstance()->Find("BFIELDMAP", map_opts);
-      if (type_opts.size() == 0 || type_opts[1] == "CalibDB") {
+      if (type_opts.find(1) == type_opts.end() || type_opts[1] == "CalibDB") {
 
          // if the magnetic field is specified in control.in
          // then use that value instead of the CCDB values
  
-         if (map_opts.size() > 0) {
+         if (map_opts.find(1) != map_opts.end()) {
             fJanaFieldMap = new DMagneticFieldMapFineMesh(japp, run_number,
                                                           map_opts[1]);
          }
@@ -581,12 +581,12 @@ void GlueXComputedMagField::SetFunction(std::string function)
       std::map<int, std::string> map_opts;
       GlueXUserOptions::GetInstance()->Find("PSBFIELDTYPE", type_opts);
       GlueXUserOptions::GetInstance()->Find("PSBFIELDMAP", map_opts);
-      if (type_opts.size() == 0 || type_opts[1] == "CalibDB") {
+      if (type_opts.find(1) == type_opts.end() || type_opts[1] == "CalibDB") {
  
          // if the magnetic field is specified in control.in
          // then use that value instead of the CCDB values
  
-         if (map_opts.size() > 0) {
+         if (map_opts.find(1) != map_opts.end()) {
             fJanaFieldMapPS = new DMagneticFieldMapPS2DMap(japp, run_number,
                                                            map_opts[1]);
          }

@@ -34,6 +34,9 @@ GlueXSteppingAction::GlueXSteppingAction()
    if (user_opts->Find("SHOWERSINCOL", showersInCol)) {
       fStopTracksInCollimator = (showersInCol[1] == 0);
    }
+   else {
+      fStopTracksInCollimator = 0;
+   }
 
    std::map<int,int> trajectories;
    if (user_opts->Find("TRAJECTORIES", trajectories)) {
@@ -61,7 +64,7 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
                                           event->GetUserInformation();
    GlueXUserTrackInformation *trackinfo;
    trackinfo = (GlueXUserTrackInformation*)track->GetUserInformation();
-   G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
+   G4VPhysicalVolume *pvol = 0; //GlueXPathFinder::GetLocatedVolume();
 
    // Kill tracks at entry to primary collimator or active collimator
    // if this was asked for in the control file.
@@ -100,26 +103,7 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
          }
       }
    }
-
-   // Kill neutrinos as soon as they start,
-   // neutrons below some energy cutoff
-   int PDGtype = track->GetDefinition()->GetPDGEncoding();
-   switch (PDGtype) {
-      case 12:
-      case -12:
-      case 14:
-      case -14:
-      case 16:
-      case -16:
-         track->SetTrackStatus(fStopAndKill);
-         break;
-      case 2112:
-         double Ekin = step->GetPreStepPoint()->GetKineticEnergy();
-         if (Ekin < NEUTRON_KINETIC_ENERGY_CUTOFF_MEV*MeV)
-            track->SetTrackStatus(fStopAndKill);
-         break;
-   }
-
+ 
    // Save mc trajectory information if requested
    if (fSaveTrajectories) {
       eventinfo->AddMCtrajectoryPoint(*step, fSaveTrajectories);

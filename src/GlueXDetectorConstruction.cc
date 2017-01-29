@@ -165,6 +165,7 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    fHddsBuilder.translate(rootEl);
 
    XMLPlatformUtils::Terminate();
+   delete document;
 }
 
 GlueXDetectorConstruction::
