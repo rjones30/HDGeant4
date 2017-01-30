@@ -334,8 +334,17 @@ void GlueXUserEventInformation::AddMCtrajectoryPoint(const G4Step &step,
       }
       G4ThreeVector mom(xout->GetMomentum());
       G4ThreeVector pos(xout->GetPosition());
+      double steplen;
+      if (save_option == 1 || save_option == 2 ||
+          (save_option == 4 && !isPrimary))
+      {
+         steplen = track->GetTrackLength();
+      }
+      else {
+         steplen = step.GetStepLength();
+      }
       hddm_s::McTrajectoryPointList trajpt = traj(0).addMcTrajectoryPoints();
-      trajpt(0).setStep(step.GetStepLength()/cm);
+      trajpt(0).setStep(steplen/cm);
       trajpt(0).setDE(step.GetTotalEnergyDeposit()/GeV);
       trajpt(0).setE(xout->GetKineticEnergy()/GeV);
       trajpt(0).setMech(mech4c[0]);
