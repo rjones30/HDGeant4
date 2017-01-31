@@ -10,6 +10,7 @@
 #include <GlueXUserActionInitialization.hh>
 #include <GlueXPrimaryGeneratorAction.hh>
 #include <GlueXPhysicsList.hh>
+#include <GlueXTimer.hh>
 #include <HddmOutput.hh>
 #include <Randomize.hh>
 
@@ -253,5 +254,7 @@ int main(int argc,char** argv)
          return res;
       }
    }
+
+   GlueXTimer::PrintAll();
    return 0;
 }
