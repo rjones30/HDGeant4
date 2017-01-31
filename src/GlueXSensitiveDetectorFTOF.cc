@@ -24,6 +24,9 @@
 int GlueXSensitiveDetectorFTOF::MAX_HITS = 25;
 int GlueXSensitiveDetectorFTOF::MAX_HITS_PER_BAR = 25;
 
+// Cutoff on the maximum time of flight
+double GlueXSensitiveDetectorFTOF::MAX_TOF = 1000*ns;
+
 // Light propagation parameters in tof bars
 double GlueXSensitiveDetectorFTOF::ATTENUATION_LENGTH = 150.*cm;
 double GlueXSensitiveDetectorFTOF::C_EFFECTIVE = 15*cm/ns;
@@ -233,7 +236,7 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
-      if (dEnorth/MeV > 0) {
+      if (dEnorth/MeV > 0 && tnorth < MAX_TOF) {
          // add the hit on end=0 (north/top end of the bar)
          int merge_hit = 0;
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
@@ -275,7 +278,7 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
                hiter->extra.push_back(extra);
             }
          }
-         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{
+         else if ((int)counter->hits.size() < 2 * MAX_HITS_PER_BAR)	{
             // create new hit 
             hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
             hiter->end_ = 0;
@@ -304,7 +307,7 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
          }
       }
 
-      if (dEsouth/MeV > 0) {
+      if (dEsouth/MeV > 0 && tsouth < MAX_TOF) {
          // add the hit on end=1 (south/bottom end of the bar)
          int merge_hit = 0;
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
@@ -345,7 +348,7 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
                hiter->extra.push_back(extra);
             }
          }
-         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{
+         else if ((int)counter->hits.size() < 2 * MAX_HITS_PER_BAR)	{
             // create new hit 
             hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
             hiter->end_ = 1;
