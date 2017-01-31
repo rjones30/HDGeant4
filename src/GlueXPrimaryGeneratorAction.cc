@@ -376,19 +376,13 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
                      p * sin(thetap) * sin(phip),
                      p * cos(thetap));
    fParticleGun->SetParticleMomentum(mom);
-
-   // Sync the particle gun generator to the beam bunch clock
-   double beamVelocity = GlueXPhotonBeamGenerator::getBeamVelocity();
-   double tvtx = (pos[2] - fTargetCenterZ) / beamVelocity;
-   tvtx -= GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
-   fParticleGun->SetParticleTime(tvtx);
+   fParticleGun->SetParticleTime(0);
 
    // Set the event number and fire the gun
    anEvent->SetEventID(++fEventCount);
    fParticleGun->GeneratePrimaryVertex(anEvent);
 
    // Store generated particle info so it can be written to output file
-   GlueXPhotonBeamGenerator::GenerateRFsync(anEvent);
    GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
    event_info->AddPrimaryVertex(*anEvent->GetPrimaryVertex());
    anEvent->SetUserInformation(event_info);
