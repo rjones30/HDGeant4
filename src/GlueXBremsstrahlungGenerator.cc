@@ -1,8 +1,8 @@
 //
-// GlueXBremsstrahlungGenerator class header
+// GlueXBremsstrahlungGenerator class implementation
 //
 // author: richard.t.jones at uconn.edu
-// version: december 24, 2016
+// version: february 4, 2017
 //
 // In the context of the Geant4 event-level multithreading model,
 // this class is "shared", ie. has no thread-local state. It is
@@ -28,26 +28,26 @@
 #ifndef GlueXBremsstrahlungGenerator_H
 #define GlueXBremsstrahlungGenerator_H
 
-#include <ImportanceSampler.hh>
+#include <GlueXBremsstrahlungGenerator.hh>
 
-class GlueXBremsstrahlungGenerator
-{
- public:
-   GlueXBremsstrahlungGenerator();
-   ~GlueXBremsstrahlungGenerator();
+#if USING_DIRACXX
 
-   void GenerateBeamPhotons(int nevents);
-   double AtomicFormFactor(double q2);
+GlueXBremsstrahlungGenerator::GlueXBremsstrahlungGenerator()
+ : fBeamEnergy(12.), fMinEnergy(3.)
+{}
 
- protected:
-   static ImportanceSampler fCoherentPDFx; 
-   static ImportanceSampler fIncoherentPDFlogx;
-   static ImportanceSampler fIncoherentPDFy;
+GlueXBremsstrahlungGenerator::~GlueXBremsstrahlungGenerator()
+{}
 
-   void prepareImportanceSamplingPDFs();
+void GlueXBremsstrahlungGenerator::GenerateBeamPhotons(int nevents)
+{}
 
-   double fBeamEnergy;
-   double fMinEnergy;
+double GlueXBremsstrahlungGenerator::AtomicFormFactor(double q2)
+{}
+
+void GlueXBremsstrahlungGenerator::prepareImportanceSamplingPDFs()
+{}
+
 };
 
 #endif
