@@ -142,3 +142,8 @@ $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so: $(G4LIBDIR)/libhdgeant4.so
 $(G4LIBDIR)/../../../g4py/Cobrems/libcobrems.so: $(G4LIBDIR)/libcobrems.so 
 	@rm -f $@
 	@cd g4py/Cobrems && ln -s ../../tmp/*/hdgeant4/libcobrems.so .
+
+utils: $(G4BINDIR)/beamtree
+
+$(G4BINDIR)/beamtree: src/utils/beamtree.cc
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
