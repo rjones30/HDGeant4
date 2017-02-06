@@ -29,6 +29,7 @@
 #define GlueXBremsstrahlungGenerator_H
 
 #include <ImportanceSampler.hh>
+#include <CLHEP/Random/Random.h>
 
 class GlueXBremsstrahlungGenerator
 {
@@ -40,14 +41,29 @@ class GlueXBremsstrahlungGenerator
    double AtomicFormFactor(double q2);
 
  protected:
-   static ImportanceSampler fCoherentPDFx; 
-   static ImportanceSampler fIncoherentPDFlogx;
-   static ImportanceSampler fIncoherentPDFy;
+   static ImportanceSampler fDummyPDFx; 
 
    void prepareImportanceSamplingPDFs();
 
    double fBeamEnergy;
    double fMinEnergy;
+   CLHEP::HepRandom fRandom;
+
+ private:
+   double Ebeam;
+   double qT;
+   double qTphi;
+   double qL;
+   double kstar;
+   double M2;
+   double phi;
+   double u[5];
+   double k[4];
+   double pR[4];
+   double polar_0_90;
+   double polar_45_135;
+   double diffXS;
+   double weight;
 };
 
 #endif
