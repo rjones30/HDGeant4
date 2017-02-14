@@ -12,6 +12,8 @@
 #include "HddsG4Builder.hh"
 #include "Randomize.hh"
 
+int GlueXUserEventInformation::fWriteNoHitEvents = 0;
+
 GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
  : fKeepEvent(true),
    fNprimaries(0),
@@ -44,7 +46,9 @@ GlueXUserEventInformation::~GlueXUserEventInformation()
          if (pev(0).getEventNo() == 0) {
             pev(0).setEventNo(HddmOutput::incrementEventNo());
          }
-         HddmOutput::WriteOutputHDDM(*fOutputRecord);
+         if (fWriteNoHitEvents || pev(0).getHitViews().size() > 0) {
+            HddmOutput::WriteOutputHDDM(*fOutputRecord);
+         }
       }
       delete fOutputRecord;
    }
@@ -240,29 +244,61 @@ void GlueXUserEventInformation::AddMCtrajectoryPoint(const G4Step &step,
    //                   birth/death points of secondaries
    //  save_option = 5  store full trajectory for all particles
 
+   hddm_s::McTrajectoryList traj = fOutputRecord->getMcTrajectorys();
+   if (traj.size() == 0) {
+      hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+      if (pev.size() == 0) 
+         pev = fOutputRecord->addPhysicsEvents();
+      hddm_s::HitViewList view = pev(0).getHitViews();
+      if (view.size() == 0) 
+         view = pev(0).addHitViews();
+      traj = view(0).addMcTrajectorys();
+   }
+
    const G4Track *track = step.GetTrack();
    GlueXUserTrackInformation *trackinfo;
    trackinfo = (GlueXUserTrackInformation*)track->GetUserInformation();
    int isBorn = (track->GetCurrentStepNumber() == 1);
    int isDead = (track->GetTrackStatus() == fStopAndKill);
    int isPrimary = (trackinfo->GetGlueXTrackID() > 0);
-   if ((save_option == 1 && isPrimary && (isBorn || isDead)) ||
-       (save_option == 2 && (isBorn || isDead)) ||
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+   int itrack = trackinfo->GetGlueXTrackID();
+   G4StepPoint *xin = step.GetPreStepPoint();
+   G4StepPoint *xout = step.GetPostStepPoint();
+   double radlen = xin->GetMaterial()->GetRadlen();
+   if ((save_option == 1 && isPrimary && isBorn) ||
+       (save_option == 2 && isBorn) ||
        (save_option == 3 && isPrimary) ||
-       (save_option == 4 && (isPrimary || isBorn || isDead)) ||
+       (save_option == 4 && (isPrimary || isBorn)) ||
+       (save_option == 5 && isBorn))
+   {
+      G4ThreeVector mom(xin->GetMomentum());
+      G4ThreeVector pos(xin->GetPosition());
+      hddm_s::McTrajectoryPointList trajpt = traj(0).addMcTrajectoryPoints();
+      trajpt(0).setStep(0);
+      trajpt(0).setDE(0);
+      trajpt(0).setE(xin->GetKineticEnergy()/GeV);
+      trajpt(0).setMech(0);
+      trajpt(0).setPart(g3type);
+      trajpt(0).setPrimary_track(abs(itrack));
+      trajpt(0).setPx(mom[0]/GeV);
+      trajpt(0).setPy(mom[1]/GeV);
+      trajpt(0).setPz(mom[2]/GeV);
+      trajpt(0).setRadlen(radlen/cm);
+      trajpt(0).setT(xin->GetGlobalTime()/ns*1e-9);
+      trajpt(0).setTrack(track->GetTrackID());
+      trajpt(0).setX(pos[0]/cm);
+      trajpt(0).setY(pos[1]/cm);
+      trajpt(0).setZ(pos[2]/cm);
+   }
+   if ((save_option == 1 && isPrimary && isDead) ||
+       (save_option == 2 && isDead) ||
+       (save_option == 3 && isPrimary) ||
+       (save_option == 4 && (isPrimary || isDead)) ||
        (save_option == 5))
    {
-      int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-      int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-      int itrack = trackinfo->GetGlueXTrackID();
-      G4StepPoint *xin = step.GetPreStepPoint();
-      G4StepPoint *xout = step.GetPostStepPoint();
-      G4StepPoint *xref = (isBorn)?xin : xout;
-      G4ThreeVector mom(xref->GetMomentum());
-      G4ThreeVector pos(xref->GetPosition());
       G4ProcessType mechtype(xout->GetProcessDefinedStep()->GetProcessType());
-      double radlen = xin->GetMaterial()->GetRadlen();
-
       int mech4c[2];
       switch (mechtype) {
          case fTransportation:
@@ -293,32 +329,32 @@ void GlueXUserEventInformation::AddMCtrajectoryPoint(const G4Step &step,
             snprintf((char*)mech4c, 5, "USER");
             break;
          default:
-            snprintf((char*)mech4c, 5, "????");
+            snprintf((char*)mech4c, 5, "STOP");
             break;
       }
-
-      hddm_s::McTrajectoryList traj = fOutputRecord->getMcTrajectorys();
-      if (traj.size() == 0) {
-         hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
-         if (pev.size() == 0) 
-            pev = fOutputRecord->addPhysicsEvents();
-         hddm_s::HitViewList view = pev(0).getHitViews();
-         if (view.size() == 0) 
-            view = pev(0).addHitViews();
-         traj = view(0).addMcTrajectorys();
+      G4ThreeVector mom(xout->GetMomentum());
+      G4ThreeVector pos(xout->GetPosition());
+      double steplen;
+      if (save_option == 1 || save_option == 2 ||
+          (save_option == 4 && !isPrimary))
+      {
+         steplen = track->GetTrackLength();
+      }
+      else {
+         steplen = step.GetStepLength();
       }
       hddm_s::McTrajectoryPointList trajpt = traj(0).addMcTrajectoryPoints();
-      trajpt(0).setStep(step.GetStepLength()/cm);
+      trajpt(0).setStep(steplen/cm);
       trajpt(0).setDE(step.GetTotalEnergyDeposit()/GeV);
-      trajpt(0).setE(xref->GetKineticEnergy()/GeV);
+      trajpt(0).setE(xout->GetKineticEnergy()/GeV);
       trajpt(0).setMech(mech4c[0]);
       trajpt(0).setPart(g3type);
-      trajpt(0).setPrimary_track((itrack > 0));
+      trajpt(0).setPrimary_track(abs(itrack));
       trajpt(0).setPx(mom[0]/GeV);
       trajpt(0).setPy(mom[1]/GeV);
       trajpt(0).setPz(mom[2]/GeV);
       trajpt(0).setRadlen(radlen/cm);
-      trajpt(0).setT(xref->GetGlobalTime()/ns);
+      trajpt(0).setT(xout->GetGlobalTime()/ns*1e-9);
       trajpt(0).setTrack(track->GetTrackID());
       trajpt(0).setX(pos[0]/cm);
       trajpt(0).setY(pos[1]/cm);

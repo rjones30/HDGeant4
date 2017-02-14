@@ -15,21 +15,46 @@
 
 #include <GlueXDetectorConstruction.hh>
 #include <GlueXBeamConversionProcess.hh>
+#include <GlueXUserOptions.hh>
+#include <GlueXSpecialCuts.hh>
+#include <CLHEP/Units/SystemOfUnits.h>
 
-#include <QGSP_FTFP_BERT.hh>
+#include "globals.hh"
+#include "G4VModularPhysicsList.hh"
+#include "G4OpticalPhysics.hh"
+#include "CompileTimeConstraints.hh"
 
-class GlueXPhysicsList: public QGSP_FTFP_BERT
+class GlueXPhysicsList: public G4VModularPhysicsList
 {
  public:
-   GlueXPhysicsList(const GlueXDetectorConstruction *geometry=0);
+   GlueXPhysicsList(const GlueXDetectorConstruction *geometry=0, 
+                    G4int verbosity=1);
    virtual ~GlueXPhysicsList();
 
    virtual void ConstructProcess();
+   virtual void SetCuts();
+
+   virtual void ListActiveProcesses();
+   virtual void SelectActiveProcesses(G4int verbosity=1);
+
+   virtual void DoMultipleScattering(G4int flag);
+   virtual void DoBremsstrahlung(G4int flag);
+   virtual void DoComptonScattering(G4int flag);
+   virtual void DoIonizationEnergyLoss(G4int flag);
+   virtual void DoPairConversion(G4int flag);
+   virtual void DoParticleDecay(G4int flag);
+   virtual void DoDeltaRayProduction(G4int flag);
+   virtual void DoHadronicInteractions(G4int flag);
+   virtual void DoCerenkovRadiation(G4int flag);
+   virtual void DoOpticalAbsorption(G4int flag);
 
  protected:
+   GlueXUserOptions *fOptions;
+
 #if USING_DIRACXX
    static G4ThreadLocal GlueXBeamConversionProcess *fBeamConversion;
 #endif
+   G4OpticalPhysics *fOpticalPhysics;
 };
 
 #endif

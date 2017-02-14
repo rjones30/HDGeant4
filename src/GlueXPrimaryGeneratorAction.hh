@@ -84,6 +84,8 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
       double deltaMom;
       double deltaTheta;
       double deltaPhi;
+      int plogOption;
+      int tlogOption;
    };
 
  private:

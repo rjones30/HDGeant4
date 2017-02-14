@@ -47,6 +47,7 @@ class GlueXSensitiveDetectorFTOF : public G4VSensitiveDetector
    static double FULL_BAR_LENGTH;
    static double TWO_HIT_TIME_RESOL;
    static double THRESH_MEV;
+   static double MAX_TOF;
 
    static int instanceCount;
    static G4Mutex fMutex;

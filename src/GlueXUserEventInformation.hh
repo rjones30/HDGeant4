@@ -61,6 +61,8 @@ class GlueXUserEventInformation: public G4VUserEventInformation
       return fOutputRecord;
    }
 
+   static int fWriteNoHitEvents;
+
  protected:
    hddm_s::HDDM *fOutputRecord;
    bool fKeepEvent;

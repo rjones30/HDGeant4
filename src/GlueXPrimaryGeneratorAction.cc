@@ -146,6 +146,16 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          fGunParticle.deltaR = 0;
          fGunParticle.deltaZ = 0;
       }
+      fGunParticle.plogOption = 0;
+      std::map<int,int> plogpars;
+      if (user_opts->Find("PLOG", plogpars)) {
+         fGunParticle.plogOption = plogpars[1];
+      }
+      fGunParticle.tlogOption = 0;
+      std::map<int,int> tlogpars;
+      if (user_opts->Find("PLOG", tlogpars)) {
+         fGunParticle.tlogOption = tlogpars[1];
+      }
 
       fGunParticle.mom = kinepars[2] * GeV;
       if (kinepars[1] > 100) {
@@ -338,29 +348,41 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    double p = fGunParticle.mom;
    double thetap = fGunParticle.theta;
    double phip = fGunParticle.phi;
-   if (fGunParticle.deltaMom > 0)
-      p += (G4UniformRand() - 0.5) * fGunParticle.deltaMom;
-   if (fGunParticle.deltaTheta > 0)
-      thetap += (G4UniformRand() - 0.5) * fGunParticle.deltaTheta;
+   if (fGunParticle.deltaMom > 0) {
+      if (fGunParticle.plogOption) {
+         double pmin = p - fGunParticle.deltaMom / 2;
+         double pmax = p + fGunParticle.deltaMom / 2;
+         pmin = (pmin > 0)? pmin : 1e-6*GeV;
+         p = pmin * pow(pmax/pmin, G4UniformRand());
+      }
+      else {
+         p += (G4UniformRand() - 0.5) * fGunParticle.deltaMom;
+      }
+   }
+   if (fGunParticle.deltaTheta > 0) {
+      if (fGunParticle.plogOption) {
+         double thetamin = thetap - fGunParticle.deltaMom / 2;
+         double thetamax = thetap + fGunParticle.deltaMom / 2;
+         thetamin = (thetamin > 0)? thetamin : 1e-6*degree;
+         thetap = thetamin * pow(thetamax/thetamin, G4UniformRand());
+      }
+      else {
+         thetap += (G4UniformRand() - 0.5) * fGunParticle.deltaTheta;
+      }
+   }
    if (fGunParticle.deltaPhi > 0)
       phip += (G4UniformRand() - 0.5) * fGunParticle.deltaPhi;
    G4ThreeVector mom(p * sin(thetap) * cos(phip),
                      p * sin(thetap) * sin(phip),
                      p * cos(thetap));
    fParticleGun->SetParticleMomentum(mom);
-
-   // Sync the particle gun generator to the beam bunch clock
-   double beamVelocity = GlueXPhotonBeamGenerator::getBeamVelocity();
-   double tvtx = (pos[2] - fTargetCenterZ) / beamVelocity;
-   tvtx -= GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
-   fParticleGun->SetParticleTime(tvtx);
+   fParticleGun->SetParticleTime(0);
 
    // Set the event number and fire the gun
    anEvent->SetEventID(++fEventCount);
    fParticleGun->GeneratePrimaryVertex(anEvent);
 
    // Store generated particle info so it can be written to output file
-   GlueXPhotonBeamGenerator::GenerateRFsync(anEvent);
    GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
    event_info->AddPrimaryVertex(*anEvent->GetPrimaryVertex());
    anEvent->SetUserInformation(event_info);

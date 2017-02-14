@@ -15,27 +15,30 @@
 #include <GlueXPrimaryGeneratorAction.hh>
 #include <GlueXRunAction.hh>
 #include <GlueXEventAction.hh>
+#include <GlueXStackingAction.hh>
 #include <GlueXTrackingAction.hh>
 #include <GlueXSteppingAction.hh>
 #include <GlueXSteppingVerbose.hh>
+#include <GlueXPhysicsList.hh>
 
 class GlueXUserActionInitialization : public G4VUserActionInitialization
 {
  public:
-   
-   GlueXUserActionInitialization() {}
+   GlueXUserActionInitialization(GlueXPhysicsList *plist)
+    : fPhysicsList(plist) {}
    ~GlueXUserActionInitialization() {}
    
    virtual void Build() const {
-      SetUserAction(new GlueXRunAction());
+      SetUserAction(new GlueXRunAction(fPhysicsList));
       SetUserAction(new GlueXEventAction());
+      SetUserAction(new GlueXStackingAction());
       SetUserAction(new GlueXTrackingAction());
       SetUserAction(new GlueXSteppingAction());
       SetUserAction(new GlueXPrimaryGeneratorAction());
    }
 
    virtual void BuildForMaster() const {
-      SetUserAction(new GlueXRunAction());
+      SetUserAction(new GlueXRunAction(fPhysicsList));
    }
 
    virtual G4VSteppingVerbose* InitializeSteppingVerbose() const {
@@ -45,6 +48,9 @@ class GlueXUserActionInitialization : public G4VUserActionInitialization
       else
          return new GlueXSteppingVerbose();
    }
+
+ protected:
+   GlueXPhysicsList *fPhysicsList;
 };
 
 #endif // _GlueXUserActionInitialization_

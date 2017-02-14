@@ -58,7 +58,7 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
        user_opts->Find("BEAM", beampars) &&
        user_opts->Find("GENBEAM", genbeampars))
    {
-      if (genbeampars.size() > 0 && 
+      if (genbeampars.find(1) != genbeampars.end() && 
          (genbeampars[1] == "precol" ||
           genbeampars[1] == "PRECOL" ||
           genbeampars[1] == "Precol" ||
@@ -69,6 +69,7 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
       else {
          fGenerateNotSimulate = -1;
       }
+      GlueXUserEventInformation::fWriteNoHitEvents = 1;
    }
 
    prepareImportanceSamplingPDFs();

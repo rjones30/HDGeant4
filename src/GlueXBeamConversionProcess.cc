@@ -60,7 +60,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
        user_opts->Find("BEAM", beampars) &&
        user_opts->Find("GENBEAM", genbeampars))
    {
-      if (genbeampars.size() > 0 &&
+      if (genbeampars.find(1) != genbeampars.end() &&
          (genbeampars[1] == "POSTCOL" ||
           genbeampars[1] == "postcol" ||
           genbeampars[1] == "Postcol" ||
@@ -68,7 +68,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
       {
          fStopBeamBeforeConversion = 1;
       }
-      else if (genbeampars.size() > 0 &&
+      else if (genbeampars.find(1) != genbeampars.end() &&
               (genbeampars[1] == "POSTCONV" ||
                genbeampars[1] == "postconv" ||
                genbeampars[1] == "Postconv" ||
@@ -120,6 +120,7 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
                                      G4double previousStepSize,
                                      G4ForceCondition *condition)
 {
+#if DISABLE_FOR_DEBUGGING
    G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
    if (pvol && pvol->GetName() == "PTAR" && track.GetTrackID() == 1 &&
        track.GetKineticEnergy() > FORCED_PTAR_PAIR_CONVERSION_THRESHOLD)
@@ -127,6 +128,7 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
       *condition = Forced;
       return 100*cm;
    }
+#endif
    *condition = NotForced;
    return 1e99;
 }
