@@ -15,7 +15,7 @@
 #include "G4VHit.hh"
 #include "G4THitsMap.hh"
 #include "G4Allocator.hh"
-#include "G4SystemOfUnits.hh"
+#include "G4ThreeVector.hh"
 
 class GlueXHitFDCwire : public G4VHit
 {
@@ -42,8 +42,12 @@ class GlueXHitFDCwire : public G4VHit
       G4double d_cm;       // distance (cm) of closest cluster to the wire
       G4double itrack_;    // track index of first particle making this hit
       G4double ptype_G3;   // G3 type of first particle making this hit
-      G4double t0_ns;      // time of passage of the track making this hit
-      G4double v_cm;       // v coordinate of the hit in local refsys
+      G4double t0_ns;      // start time of the track segment making this hit
+      G4double t1_ns;      // end time time of the track segment making this hit
+      G4ThreeVector x0_g;  // global coordinates of start of track segment
+      G4ThreeVector x0_l;  // local coordinates of start of track segment
+      G4ThreeVector x1_g;  // global coordinates of end of track segment
+      G4ThreeVector x1_l;  // local coordinates of end of track segment
    };
    std::vector<hitinfo_t> hits;
 

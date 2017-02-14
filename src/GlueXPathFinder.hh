@@ -15,7 +15,6 @@
 #ifndef GlueXPathFinder_h
 #define GlueXPathFinder_h 1
 
-#include "G4PathFinder.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4TouchableHandle.hh"
 

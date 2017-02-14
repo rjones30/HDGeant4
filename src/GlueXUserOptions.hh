@@ -15,7 +15,6 @@
 #include <list>
 #include <map>
 
-#include "G4Threading.hh"
 #include "G4AutoLock.hh"
 
 class GlueXUserOptions

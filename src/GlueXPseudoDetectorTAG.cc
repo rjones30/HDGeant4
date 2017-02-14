@@ -5,11 +5,11 @@
 // version: october 20, 2016
 
 #include "GlueXPseudoDetectorTAG.hh"
-#include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
-#include "GlueXUserOptions.hh"
+#include "GlueXPhotonBeamGenerator.hh"
 
 #include "G4EventManager.hh"
+#include "G4SystemOfUnits.hh"
 
 #include <JANA/JApplication.h>
 
@@ -102,7 +102,7 @@ inline void GlueXPseudoDetectorTAG::setRunNo(int runno)
    G4cout << "TAGGER: all parameters loaded from ccdb" << G4endl;
 }
 
-int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
+int GlueXPseudoDetectorTAG::addTaggerPhoton(const G4Event *event,
                                             double energy, double time, int bg)
 {
    // look up which tagger channel is hit, if any
@@ -137,11 +137,8 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
    if (micro_channel < 0 && hodo_channel < 0)
       return false;
 
-   double time_ref_plane_z = GlueXPrimaryGeneratorAction::getTargetCenterZ();
-   double beam_period = GlueXPrimaryGeneratorAction::getBeamBucketPeriod();
-   double beam_velocity = GlueXPrimaryGeneratorAction::getBeamVelocity();
-   double t = time - (vtx[2] - time_ref_plane_z) / beam_velocity;
-   t = floor(t / beam_period + 0.5) * beam_period;
+   double beam_period = GlueXPhotonBeamGenerator::getBeamBucketPeriod();
+   double t = floor(time / beam_period + 0.5) * beam_period;
 
    // pack hit into ouptut hddm record
  
@@ -186,7 +183,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
          if (fabs(t - hiter->getT()*ns) < MICRO_TWO_HIT_TIME_RESOL)
             break;
          else if (hiter->getT()*ns > t) {
-            hits = citer->addTaggerTruthHits(1, ++hit);
+            hits = citer->addTaggerTruthHits(1, hit);
             hiter = hits.begin();
             hiter->setE(energy/GeV);
             hiter->setT(1e99);
@@ -235,7 +232,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
          if (fabs(t - hiter->getT()*ns) < HODO_TWO_HIT_TIME_RESOL)
             break;
          else if (hiter->getT()*ns > t) {
-            hits = citer->addTaggerTruthHits(1, ++hit);
+            hits = citer->addTaggerTruthHits(1, hit);
             hiter = hits.begin();
             hiter->setE(energy/GeV);
             hiter->setT(1e99);
@@ -264,7 +261,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(G4Event *event, G4ThreeVector &vtx,
    return (micro_channel > -1 || hodo_channel > -1);
 }
 
-int GlueXPseudoDetectorTAG::addRFsync(G4Event *event, double tsync)
+int GlueXPseudoDetectorTAG::addRFsync(const G4Event *event, double tsync)
 {
    G4VUserEventInformation* info = event->GetUserInformation();
    hddm_s::HDDM *record = ((GlueXUserEventInformation*)info)->getOutputRecord();

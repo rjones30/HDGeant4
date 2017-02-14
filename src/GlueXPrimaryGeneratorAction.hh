@@ -2,7 +2,7 @@
 // GlueXPrimaryGeneratorAction class header
 //
 // author: richard.t.jones at uconn.edu
-// version: may 12, 2012
+// version: december 24, 2016
 //
 // In the context of the Geant4 event-level multithreading model,
 // this class is "thread-local", ie. has thread-local state.
@@ -15,22 +15,19 @@
 #ifndef _GLUEXPRIMARYGENERATORACTION_H_
 #define _GLUEXPRIMARYGENERATORACTION_H_
 
-#include "G4Threading.hh"
-#include "G4AutoLock.hh"
-
-#include "CobremsGenerator.hh"
+#include "CobremsGeneration.hh"
 #include "G4VUserPrimaryGeneratorAction.hh"
+#include "GlueXPhotonBeamGenerator.hh"
+#include "GlueXPrimaryGenerator.hh"
 #include "G4ParticleDefinition.hh"
+#include "G4ParticleTable.hh"
+#include "G4AutoLock.hh"
 #include "GlueXParticleGun.hh"
-#include "G4SystemOfUnits.hh"
-
-#include "globals.hh"
+#include "G4Event.hh"
 
 #include <HDDM/hddm_s.hpp>
 
 #include <fstream>
-
-class G4Event;
 
 class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
@@ -52,22 +49,26 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    void GeneratePrimariesHDDM(G4Event* anEvent);
    void GeneratePrimariesParticleGun(G4Event* anEvent);
    void GeneratePrimariesCobrems(G4Event* anEvent);
-   void GenerateBeamPhoton(G4Event* anEvent, double t0);
 
    static int ConvertGeant3ToPdg(int Geant3Type);
    static int ConvertPdgToGeant3(int PDGtype);
+   static G4ParticleDefinition *GetParticle(int PDGtype);
+   static G4ParticleDefinition *GetParticle(const G4String &name);
    static double GetMassPDG(int PDGtype);
    static double GetMass(int Geant3Type);
-   static double GenerateTriggerTime();
  
+   static const GlueXPrimaryGeneratorAction* GetInstance();
+
  private:
    static int instanceCount;
    static source_type_t fSourceType;
    static std::ifstream *fHDDMinfile;
    static hddm_s::istream *fHDDMistream;
-   static CobremsGenerator *fCobremsGenerator;
+   static CobremsGeneration *fCobremsGeneration;
+   static GlueXPhotonBeamGenerator *fPhotonBeamGenerator;
    static G4ParticleTable *fParticleTable;
    static GlueXParticleGun *fParticleGun;
+   static GlueXPrimaryGenerator *fPrimaryGenerator;
 
  public:
    struct single_particle_gun_t {
@@ -83,18 +84,17 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
       double deltaMom;
       double deltaTheta;
       double deltaPhi;
+      int plogOption;
+      int tlogOption;
    };
 
  private:
    static single_particle_gun_t fGunParticle;
 
-   static double fBeamBucketPeriod;
    static double fBeamBackgroundRate;
    static double fBeamBackgroundGateStart;
    static double fBeamBackgroundGateStop;
    static double fL1triggerTimeSigma;
-   static double fBeamStartZ;
-   static double fBeamVelocity;
 
    static int fEventCount;
 
@@ -108,7 +108,6 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    // can be accessed/changed by the getter/setter methods below.
    static double fTargetCenterZ;
    static double fTargetLength;
-   static double fBeamDiameter;
 
  public:
    static void setTargetCenterZ(double Z) {
@@ -117,72 +116,35 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static void setTargetLength(double L) {
       fTargetLength = L;
    }
-   static void setBeamDiameter(double D) {
-      fBeamDiameter = D;
-   }
    static double getTargetCenterZ() {
       return fTargetCenterZ;
    }
    static double getTargetLength() {
       return fTargetLength;
    }
-   static double getBeamDiameter() {
-      return fBeamDiameter;
-   }
-   static double getBeamVelocity() {
-      return fBeamVelocity;
-   }
-
-   static double getBeamBucketPeriod(int runno=0);
-
-   int getEventCount() {
-      return fEventCount;
-   }
-
-   static void setBeamBucketPeriod(double period) {
-      fBeamBucketPeriod = period;
-   }
    static void setL1triggerTimeSigma(double sigma) {
       fL1triggerTimeSigma = sigma;
-   }
-   static void setBeamStartZ(double z) {
-      fBeamStartZ = z;
    }
    static double getL1triggerTimeSigma() {
       return fL1triggerTimeSigma;
    }
-   static double getBeamStartZ() {
-      return fBeamStartZ;
+   int getEventCount() const {
+      return fEventCount;
    }
-
-   // The following tables contain PDFs for importance-sampling the
-   // kinematic variables in coherent bremsstrahlung beam generation.
- 
-   struct ImportanceSampler {
-      std::vector<double> randvar;
-      std::vector<double> density;
-      std::vector<double> integral;
-      double Psum;
-      double Pcut;
-      double Pmax;
-      int Nfailed;
-      int Npassed;
-
-      ImportanceSampler()
-       : Psum(0), Pcut(1), Pmax(0), Nfailed(0), Npassed(0) {}
-   };
-
- private:
-   static ImportanceSampler fCoherentPDFx; 
-   static ImportanceSampler fIncoherentPDFlogx;
-   static ImportanceSampler fIncoherentPDFy;
-
-   static double fIncoherentPDFtheta02;
-
-   void prepareCobremsImportanceSamplingPDFs();
 
  private:
    static G4Mutex fMutex;
+   static std::list<GlueXPrimaryGeneratorAction*> fInstance;
 };
+
+inline G4ParticleDefinition *GlueXPrimaryGeneratorAction::GetParticle(int PDGtype)
+{
+   return fParticleTable->FindParticle(PDGtype);
+}
+
+inline G4ParticleDefinition *GlueXPrimaryGeneratorAction::GetParticle(const G4String &name)
+{
+   return fParticleTable->FindParticle(name);
+}
 
 #endif

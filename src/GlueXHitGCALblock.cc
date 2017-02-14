@@ -23,8 +23,8 @@ int GlueXHitGCALblock::operator==(const GlueXHitGCALblock &right) const
    }
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].E_GeV == right.hits[ih].E_GeV &&
-          hits[ih].t_ns == right.hits[ih].t_ns)
+      if (hits[ih].E_GeV != right.hits[ih].E_GeV ||
+          hits[ih].t_ns != right.hits[ih].t_ns)
       {
          return 0;
       }
@@ -47,10 +47,7 @@ GlueXHitGCALblock &GlueXHitGCALblock::operator+=(const GlueXHitGCALblock &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitGCALblock::hitinfo_t());
-      hiter->E_GeV = hitsrc->E_GeV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->zlocal_cm = hitsrc->zlocal_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

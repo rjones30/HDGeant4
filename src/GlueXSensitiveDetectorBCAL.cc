@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorBCAL::MAX_HITS = 100;
@@ -132,9 +125,6 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
                                               G4TouchableHistory* unused)
 {
    double dEsum = step->GetTotalEnergyDeposit();
-   if (dEsum == 0)
-      return false;
-
    const G4ThreeVector &pin = step->GetPreStepPoint()->GetMomentum();
    const G4ThreeVector &xin = step->GetPreStepPoint()->GetPosition();
    const G4ThreeVector &xout = step->GetPostStepPoint()->GetPosition();
@@ -163,20 +153,22 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
 
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (touch->GetVolume()->GetName() == "BCL0") {
       if (trackinfo->GetGlueXHistory() == 0 &&
-          xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
+          xin[0] * pin[0] + xin[1] * pin[1] > 0 &&
+          Ein > THRESH_MEV*MeV)
       {
          GlueXHitBCALpoint* newPoint = new GlueXHitBCALpoint();
          G4int key = fPointsMap->entries();
          fPointsMap->add(key, newPoint);
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->t_ns = t/ns;
          newPoint->z_cm = xin[2]/cm;
@@ -187,7 +179,42 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
          newPoint->pz_GeV = pin[2]/GeV;
          newPoint->E_GeV = Ein/GeV;
          trackinfo->SetGlueXHistory(1);
-         trackinfo->SetGlueXTrackID(trackID);
+ 
+         // The original HDGeant hits code for the BCal had a heavy-weight
+         // recording system implemented to assign every hit to a particular
+         // incident particle ID. This ID was unique to the BCal subsystem,
+         // and not used anywhere else in the hits record. Each track that
+         // entered the BCAL modules was assigned its own ID unless it was
+         // within some rectangular window of an existing entry in the
+         // incident_particle table, in which case it could supersede the
+         // existing entry (if its energy was greater) or be ignored. When
+         // BCAL hits were recorded, each was assigned the incident particle
+         // id that it was closest to in the phi,z plane. There was no upper
+         // limit on that distance, so the association could be considered
+         // to be a weak link.
+         //
+         // At one time, it seems that the incident particle table was being
+         // written out to the hddm record at the end of event processing
+         // because there is a tag defined in the hddm record called 
+         // bcalTruthIncidentParticle, but the present code in hitBCal.cc 
+         // does not fill in this tag when it writes out the hits. I have
+         // no idea whether this ID system is of any use or if it is an
+         // artifact of some obsolete studies, but since it is being 
+         // tracked and saved in the existing HDGeant bcal hits code, I
+         // make some attempt to replicate that behavior here.
+         // 
+         // DO NOT use proximity of hits to incident particle entry points
+         // in (phi,z) to associate hits to incident particles -- that is
+         // a time waster and the causal linkage based on this is weak.
+         // Instead, use an inheritance mechanism based on the G4 user
+         // track information object. This user track info object gets
+         // copied from parent track to secondaries through the entire
+         // tracking workflow. The first ancestor that enters the BCal
+         // gets assigned the next available BCAL incident ID, and that
+         // is kept for that track and all of its descendants in the user
+         // trackinfo object.
+  
+         trackinfo->AssignBCALincidentID(track);
       }
       return false;
    }
@@ -207,36 +234,33 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitBCALcell::hitinfo_t>::iterator hiter;
       for (hiter = cell->hits.begin(); hiter != cell->hits.end(); ++hiter) {
          if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+            merge_hit = 1;
             break;
          }
          else if (hiter->t_ns*ns > t) {
-            hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
       }
-
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-      if (hiter != cell->hits.end()) {             // merge with former hit
+      if (merge_hit) {
          // Use the time from the earlier hit but add the energy deposition
          hiter->E_GeV += dEsum/GeV;
          if (hiter->t_ns*ns > t) {
             hiter->t_ns = t/ns;
-            hiter->zlocal_cm = x[2]/cm;
-            hiter->itrack_ = trackinfo->GetGlueXTrackID();
+            hiter->zlocal_cm = xlocal[2]/cm;
+            hiter->incidentId_ = trackinfo->GetBCALincidentID();
          }
       }
-      else if ((int)cell->hits.size() < MAX_HITS)	{   // create new hit 
-         GlueXHitBCALcell::hitinfo_t newhit;
-         newhit.E_GeV = dEsum/GeV;
-         newhit.t_ns = t/ns;
-         newhit.zlocal_cm = x[2]/cm;
-         newhit.itrack_ = trackinfo->GetGlueXTrackID();
-         cell->hits.push_back(newhit);
+      else if ((int)cell->hits.size() < MAX_HITS) {
+         // create new hit 
+         hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
+         hiter->E_GeV = dEsum/GeV;
+         hiter->t_ns = t/ns;
+         hiter->zlocal_cm = xlocal[2]/cm;
+         hiter->incidentId_ = trackinfo->GetBCALincidentID();
       }
       else {
          G4cerr << "GlueXSensitiveDetectorBCAL::ProcessHits error: "
@@ -298,7 +322,7 @@ void GlueXSensitiveDetectorBCAL::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitBCALcell::hitinfo_t> &hits = citer->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].E_GeV < THRESH_MEV/1e3) {
+         if (hits[ih].E_GeV <= THRESH_MEV/1e3) {
             hits.erase(hits.begin() + ih);
             --ih;
          }
@@ -313,7 +337,7 @@ void GlueXSensitiveDetectorBCAL::EndOfEvent(G4HCofThisEvent*)
             thit(0).setE(hits[ih].E_GeV);
             thit(0).setT(hits[ih].t_ns);
             thit(0).setZLocal(hits[ih].zlocal_cm);
-            thit(0).setIncident_id(hits[ih].itrack_);
+            thit(0).setIncident_id(hits[ih].incidentId_);
          }
       }
    }

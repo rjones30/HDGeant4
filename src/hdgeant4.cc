@@ -8,7 +8,9 @@
 #include <GlueXUserOptions.hh>
 #include <GlueXDetectorConstruction.hh>
 #include <GlueXUserActionInitialization.hh>
+#include <GlueXPrimaryGeneratorAction.hh>
 #include <GlueXPhysicsList.hh>
+#include <GlueXTimer.hh>
 #include <HddmOutput.hh>
 #include <Randomize.hh>
 
@@ -18,6 +20,7 @@
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4UImanager.hh>
+#include <G4Timer.hh>
 
 #ifdef G4VIS_USE
 #include <G4VisExecutive.hh>
@@ -87,6 +90,10 @@ int main(int argc,char** argv)
       }
    }
 
+   G4Timer runtimer;
+   G4Timer simtimer;
+   runtimer.Start();
+
    HddmOutput *hddmOut = 0;
    std::map<int, std::string> outfile_opts;
    if (opts.Find("OUTFILE", outfile_opts)) {
@@ -133,14 +140,17 @@ int main(int argc,char** argv)
    runManager.SetUserInitialization(geometry);
 
    // Physics process initialization
-   runManager.SetUserInitialization(new GlueXPhysicsList());
+   GlueXPhysicsList *physicslist = new GlueXPhysicsList();
+   runManager.SetUserInitialization(physicslist);
     
    // User actions initialization
-   runManager.SetUserInitialization(new GlueXUserActionInitialization());
+   GlueXUserActionInitialization *userinit;
+   userinit = new GlueXUserActionInitialization(physicslist);
+   runManager.SetUserInitialization(userinit);
 
    // Initialize G4 kernel
    runManager.Initialize();
-       
+
    // Initialize graphics (option -v)
    G4VisManager* visManager = 0;
    if (use_visualization) {
@@ -154,6 +164,8 @@ int main(int argc,char** argv)
       exit(1);
 #endif
    }
+
+   simtimer.Start();
 
    // Start the user interface
    G4UImanager * UImanager = G4UImanager::GetUIpointer();  
@@ -177,11 +189,72 @@ int main(int argc,char** argv)
       G4UIterminal UIterm(new G4UItcsh());
       UIterm.SessionStart();
    }
+
+   double nsim = GlueXPrimaryGeneratorAction::GetInstance()->getEventCount();
+   nsim += 1e-99;
+   runtimer.Stop();
+   double realrun = runtimer.GetRealElapsed();
+   double sysrun = runtimer.GetSystemElapsed();
+   double userrun = runtimer.GetUserElapsed();
+   simtimer.Stop();
+   double realsim = simtimer.GetRealElapsed();
+   double syssim = simtimer.GetSystemElapsed();
+   double usersim = simtimer.GetUserElapsed();
+   char perevent[200];
+   snprintf(perevent, 200, "%18f%18f%18f", realsim/nsim, syssim/nsim,
+                                                         usersim/nsim);
+   char totalused[200];
+   snprintf(totalused, 200, "%18f%18f%18f", realrun, sysrun, userrun);
+   
+   std::cout << nsim << " events generated." << std::endl
+             << "Processing usage report:"
+             << "     real time (s)   system time (s)     user time (s)" 
+             << std::endl
+             << "      per event average:" << perevent
+             << std::endl
+             << "          total for run:" << totalused
+             << std::endl;
  
-   // Clean up and exit
+   // Close output file and clean up
    if (visManager)
       delete visManager;
    if (hddmOut)
       delete hddmOut;
+
+   // Invoke mcsmear to smear the results, if requested
+   if (nsim > 0 && hddmOut) {
+      std::map<int, int> postsmear_opts;
+      if (opts.Find("POSTSMEAR", postsmear_opts) &&
+          postsmear_opts.size() > 0 && postsmear_opts[1] > 0)
+      {
+         std::stringstream cmd;
+         cmd << "mcsmear ";
+         std::map<int,std::string> mcsmear_opts;
+         if (opts.Find("MCSMEAROPTS", mcsmear_opts)) {
+            cmd << mcsmear_opts[1];
+         }
+         cmd << " " << outfile_opts[1];
+         std::cout << "Smearing data with: " << std::endl 
+                   << cmd.str() << std::endl;
+         int res = system(cmd.str().c_str());
+         if (opts.Find("DELETEUNSMEARED", postsmear_opts) && 
+             postsmear_opts.size() > 0 && postsmear_opts[1] > 0)
+         {
+            if (res == 0) {
+               cmd.str("");
+               cmd << "rm -f " << outfile_opts[1];
+               res = system(cmd.str().c_str());
+            }
+            else {
+               std::cout << "Not deleting unsmeared file "
+                         << "because of problems with the smearing."
+                         << std::endl;
+            }
+         }
+         return res;
+      }
+   }
+
+   GlueXTimer::PrintAll();
    return 0;
 }

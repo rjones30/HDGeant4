@@ -1,0 +1,16 @@
+# Before invoking this macro, make sure you first
+# initialize the visualization system, eg.  /control/execute ../vis.mac
+
+/vis/viewer/set/autoRefresh false
+/vis/viewer/set/sectionPlane off
+/vis/viewer/set/sectionPlane on 0 0 -1500 cm 0 1 0
+/vis/viewer/set/upVector 1 0 0
+/vis/viewer/set/style wireframe
+/vis/verbose warnings
+/vis/drawVolume worlds
+/vis/viewer/set/targetPoint 0 0 -1510 cm
+/vis/viewer/zoomTo 300
+/vis/viewer/set/picking true
+/vis/viewer/set/autoRefresh true
+
+# use /vis/ogl/export z-1500.eps to save the image to an eps file

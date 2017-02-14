@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 // Geant3-style particle index for optical photon
 #define OPTICAL_PHOTON 50
@@ -146,8 +139,9 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
    G4int trackID = track->GetTrackID();
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (touch->GetVolume()->GetName() == "RDCD") {
-      if (trackinfo->GetGlueXHistory() == 0 && xin.dot(pin) > 0) {
+      if (trackinfo->GetGlueXHistory() == 0 && itrack > 0 && xin.dot(pin) > 0) {
          G4int key = fPointsMap->entries();
          GlueXHitDIRCpoint* lastPoint = (*fPointsMap)[key - 1];
          if (lastPoint == 0 || lastPoint->track_ != trackID ||
@@ -162,7 +156,7 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
             int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
             newPoint->ptype_G3 = g3type;
             newPoint->track_ = trackID;
-            newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+            newPoint->trackID_ = itrack;
             newPoint->primary_ = (track->GetParentID() == 0);
             newPoint->t_ns = t/ns;
             newPoint->x_cm = x[0]/cm;
@@ -190,47 +184,47 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
       // int bar = GetIdent("bar", touch);
       // int key = GlueXHitDIRCflash::GetKey(bar);
       int key = 0;
-      GlueXHitDIRCflash *counter = (*fFlashesMap)[key];
-      if (counter == 0) {
-         counter = new GlueXHitDIRCflash();
-         fFlashesMap->add(key, counter);
+      GlueXHitDIRCflash *flash = (*fFlashesMap)[key];
+      if (flash == 0) {
+         flash = new GlueXHitDIRCflash();
+         fFlashesMap->add(key, flash);
       }
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitDIRCflash::hitinfo_t>::iterator hiter;
-      for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
+      for (hiter = flash->hits.begin(); hiter != flash->hits.end(); ++hiter)
+      {
          //if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+         //   merge_hit = 1;
          //   break;
          //}
          if (hiter->t_ns*ns > t) {
-            hiter = counter->hits.insert(hiter, GlueXHitDIRCflash::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
-
-         if (hiter != counter->hits.end()) {             // merge with former hit
-            // Use the time from the earlier hit but add the charge
-            hiter->E_GeV += Ein/GeV;
-            if (hiter->t_ns*ns > t) {
-               hiter->t_ns = t/ns;
-            }
+      }
+      if (merge_hit) { // more like overwrite
+         if (hiter->t_ns*ns > t) {
+            hiter->E_GeV = Ein/GeV;
+            hiter->t_ns = t/ns;
+            hiter->x_cm = x[0]/cm;
+            hiter->y_cm = x[1]/cm;
+            hiter->z_cm = x[2]/cm;
          }
-         else if ((int)counter->hits.size() < MAX_HITS)	{ // create new hit 
-            GlueXHitDIRCflash::hitinfo_t newhit;
-            newhit.E_GeV = Ein/GeV;
-            newhit.t_ns = t/ns;
-            newhit.x_cm = x[0]/cm;
-            newhit.y_cm = x[1]/cm;
-            newhit.z_cm = x[2]/cm;
-            counter->hits.push_back(newhit);
-         }
-         else {
-            G4cerr << "GlueXSensitiveDetectorDIRC::ProcessHits error: "
-                << "max hit count " << MAX_HITS
-                << " exceeded, truncating!"
-                << G4endl;
-         }
+      }
+      else if ((int)flash->hits.size() < MAX_HITS)	{ // create new hit 
+         hiter = flash->hits.insert(hiter, GlueXHitDIRCflash::hitinfo_t());
+         hiter->E_GeV = Ein/GeV;
+         hiter->t_ns = t/ns;
+         hiter->x_cm = x[0]/cm;
+         hiter->y_cm = x[1]/cm;
+         hiter->z_cm = x[2]/cm;
+      }
+      else {
+         G4cerr << "GlueXSensitiveDetectorDIRC::ProcessHits error: "
+             << "max hit count " << MAX_HITS << " exceeded, truncating!"
+             << G4endl;
       }
    }
    return true;

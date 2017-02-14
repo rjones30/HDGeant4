@@ -12,14 +12,10 @@
 #define GlueXSensitiveDetectorPSC_h 1
 
 #include "G4VSensitiveDetector.hh"
-#include "G4VPhysicalVolume.hh"
-#include "G4Threading.hh"
 #include "G4AutoLock.hh"
 
 #include "GlueXHitPSCpaddle.hh"
 #include "GlueXHitPSCpoint.hh"
-
-#include <vector>
 
 class G4Step;
 class G4HCofThisEvent;
@@ -45,7 +41,7 @@ class GlueXSensitiveDetectorPSC : public G4VSensitiveDetector
    static std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static int MAX_HITS;
-   static int NUM_COLUMNS_PER_ARM;
+   static int NUM_MODULES_PER_ARM;
    static double TWO_HIT_TIME_RESOL;
    static double THRESH_MEV;
 

@@ -12,7 +12,8 @@
 #define _GLUEXTRACKINGACTION_
 
 #include "G4UserTrackingAction.hh"
-#include "GlueXUserTrackInformation.hh"
+
+#include <map>
 
 class GlueXTrackingAction : public G4UserTrackingAction
 {
@@ -22,6 +23,9 @@ class GlueXTrackingAction : public G4UserTrackingAction
    
    virtual void PreUserTrackingAction(const G4Track*);
    virtual void PostUserTrackingAction(const G4Track*);
+
+ private:
+   std::map<int,int> fTrackingCounter;
 };
 
 #endif // _GLUEXTRACKINGACTION_

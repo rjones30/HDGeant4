@@ -10,7 +10,6 @@
 #ifndef GlueXDetectorMessenger_h
 #define GlueXDetectorMessenger_h 1
 
-#include "globals.hh"
 #include "G4UImessenger.hh"
 
 class GlueXDetectorConstruction;

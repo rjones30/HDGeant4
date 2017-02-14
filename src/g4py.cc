@@ -233,7 +233,8 @@ BOOST_PYTHON_MODULE(libhdgeant4)
    class_<GlueXRunAction, GlueXRunAction*,
           boost::python::bases<G4UserRunAction> >
          ("GlueXRunAction",
-          "encapsulates actions to take at start and end of each run")
+          "encapsulates actions to take at start and end of each run",
+           boost::python::init<GlueXPhysicsList*>())
    ;
 
    class_<GlueXSteppingAction, GlueXSteppingAction*,

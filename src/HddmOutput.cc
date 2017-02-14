@@ -11,8 +11,6 @@ int HddmOutput::fEventNo = 0;
 std::ofstream *HddmOutput::fHDDMoutfile = 0;
 hddm_s::ostream *HddmOutput::fHDDMostream = 0;
 
-GlueXPseudoDetectorTAG HddmOutput::fTagger(0);
-
 int HddmOutput::instanceCount = 0;
 G4Mutex HddmOutput::fMutex = G4MUTEX_INITIALIZER;
 
@@ -56,7 +54,6 @@ HddmOutput& HddmOutput::operator=(HddmOutput &src)
 void HddmOutput::setRunNo(int runno)
 {
    fRunNo = runno;
-   fTagger.setRunNo(runno);
 }
 
 void HddmOutput::WriteOutputHDDM(hddm_s::HDDM &record)

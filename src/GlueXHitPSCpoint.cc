@@ -10,26 +10,25 @@ G4ThreadLocal G4Allocator<GlueXHitPSCpoint>* GlueXHitPSCpointAllocator = 0;
 
 int GlueXHitPSCpoint::operator==(const GlueXHitPSCpoint &right) const
 {
-   if (arm_        == right.arm_        &&
-       module_     == right.module_     &&
-       E_GeV       == right.E_GeV       &&
-       dEdx_GeV_cm == right.dEdx_GeV_cm &&
-       phi_rad     == right.phi_rad     &&
-       primary_    == right.primary_    &&
-       ptype_G3    == right.ptype_G3    &&
-       px_GeV      == right.px_GeV      &&
-       py_GeV      == right.py_GeV      &&
-       pz_GeV      == right.pz_GeV      &&
-       x_cm        == right.x_cm        &&
-       y_cm        == right.y_cm        &&
-       z_cm        == right.z_cm        &&
-       t_ns        == right.t_ns        &&
-       track_      == right.track_      &&
-       trackID_    == right.trackID_    )
+   if (arm_        != right.arm_        ||
+       module_     != right.module_     ||
+       E_GeV       != right.E_GeV       ||
+       dEdx_GeV_cm != right.dEdx_GeV_cm ||
+       primary_    != right.primary_    ||
+       ptype_G3    != right.ptype_G3    ||
+       px_GeV      != right.px_GeV      ||
+       py_GeV      != right.py_GeV      ||
+       pz_GeV      != right.pz_GeV      ||
+       x_cm        != right.x_cm        ||
+       y_cm        != right.y_cm        ||
+       z_cm        != right.z_cm        ||
+       t_ns        != right.t_ns        ||
+       track_      != right.track_      ||
+       trackID_    != right.trackID_    )
    {
-      return 1;
+      return 0;
    }
-   return 0;
+   return 1;
 }
 
 GlueXHitPSCpoint &GlueXHitPSCpoint::operator+=(const GlueXHitPSCpoint &right)
@@ -54,7 +53,6 @@ void GlueXHitPSCpoint::Print() const
           << "   trackID = " << trackID_ << G4endl
           << "   E = " << E_GeV << " GeV" << G4endl
           << "   dEdx = " << dEdx_GeV_cm << " GeV/cm" << G4endl
-          << "   phi = " << phi_rad << " rad" << G4endl
           << "   primary = " << primary_ << G4endl
           << "   ptype = " << ptype_G3 << G4endl
           << "   px = " << px_GeV << " GeV/c" << G4endl

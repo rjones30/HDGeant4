@@ -12,32 +12,42 @@
 #define _GLUEXUSERTRACKINFORMATION_
 
 #include "G4VUserTrackInformation.hh"
+#include "GlueXUserEventInformation.hh"
+#include "G4RunManager.hh"
 #include "G4Track.hh"
 
 class GlueXUserTrackInformation: public G4VUserTrackInformation
 {
  public:
    GlueXUserTrackInformation() 
-   : fGlueXTrackID(0), fGlueXHistory(0)
+   : fGlueXTrackID(0), fGlueXHistory(0), fBCALincidentID(0)
    {}
 
    GlueXUserTrackInformation(const G4Track *trk)
-   : fGlueXTrackID(trk->GetTrackID()), fGlueXHistory(0)
+   : fGlueXTrackID(trk->GetTrackID()), fGlueXHistory(0), fBCALincidentID(0)
    {}
 
    GlueXUserTrackInformation(GlueXUserTrackInformation *info)
    : fGlueXTrackID(info->GetGlueXTrackID()),
-     fGlueXHistory(info->GetGlueXHistory())
+     fGlueXHistory(info->GetGlueXHistory()),
+     fBCALincidentID(info->GetBCALincidentID())
    {}
 
    int GetGlueXTrackID() { return fGlueXTrackID; }
    int GetGlueXHistory() { return fGlueXHistory; }
+   int GetBCALincidentID() { return fBCALincidentID; }
 
    void SetGlueXTrackID(int trackID) {
       fGlueXTrackID = trackID;
    }
    void SetGlueXHistory(int history) {
       fGlueXHistory = history;
+   }
+   void AssignBCALincidentID(G4Track *track) {
+      const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+      GlueXUserEventInformation *eventinfo = (GlueXUserEventInformation*)
+                                             event->GetUserInformation();
+      fBCALincidentID = eventinfo->AssignBCALincidentID(track);
    }
 
    void Print() const {
@@ -48,6 +58,7 @@ class GlueXUserTrackInformation: public G4VUserTrackInformation
  private:
    int fGlueXTrackID;
    int fGlueXHistory;
+   int fBCALincidentID;
 };
 
 #endif // _GLUEXUSERTRACKINFORMATION_

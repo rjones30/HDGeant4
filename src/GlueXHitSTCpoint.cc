@@ -10,24 +10,24 @@ G4ThreadLocal G4Allocator<GlueXHitSTCpoint>* GlueXHitSTCpointAllocator = 0;
 
 int GlueXHitSTCpoint::operator==(const GlueXHitSTCpoint &right) const
 {
-   if (E_GeV          == right.E_GeV       &&
-       dEdx_GeV_cm    == right.dEdx_GeV_cm &&
-       phi_rad        == right.phi_rad     &&
-       primary_       == right.primary_    &&
-       ptype_G3       == right.ptype_G3    &&
-       px_GeV         == right.px_GeV      &&
-       py_GeV         == right.py_GeV      &&
-       pz_GeV         == right.pz_GeV      &&
-       r_cm           == right.r_cm        &&
-       z_cm           == right.z_cm        &&
-       t_ns           == right.t_ns        &&
-       sector_        == right.sector_     &&
-       track_         == right.track_      &&
-       trackID_       == right.trackID_    )
+   if (E_GeV       != right.E_GeV       ||
+       dEdx_GeV_cm != right.dEdx_GeV_cm ||
+       phi_rad     != right.phi_rad     ||
+       primary_    != right.primary_    ||
+       ptype_G3    != right.ptype_G3    ||
+       px_GeV      != right.px_GeV      ||
+       py_GeV      != right.py_GeV      ||
+       pz_GeV      != right.pz_GeV      ||
+       r_cm        != right.r_cm        ||
+       z_cm        != right.z_cm        ||
+       t_ns        != right.t_ns        ||
+       sector_     != right.sector_     ||
+       track_      != right.track_      ||
+       trackID_    != right.trackID_    )
    {
-      return 1;
+      return 0;
    }
-   return 0;
+   return 1;
 }
 
 GlueXHitSTCpoint &GlueXHitSTCpoint::operator+=(const GlueXHitSTCpoint &right)

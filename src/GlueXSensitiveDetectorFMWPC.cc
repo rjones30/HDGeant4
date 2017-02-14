@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorFMWPC::MAX_HITS = 100;
@@ -143,7 +136,8 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
    G4int trackID = track->GetTrackID();
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
-   if (trackinfo->GetGlueXHistory() == 0 && xin.dot(pin) > 0) {
+   int itrack = trackinfo->GetGlueXTrackID();
+   if (trackinfo->GetGlueXHistory() == 0 && itrack > 0 && xin.dot(pin) > 0) {
       G4int key = fPointsMap->entries();
       GlueXHitFMWPCpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
@@ -158,7 +152,7 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
          int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->t_ns = t/ns;
          newPoint->x_cm = x[0]/cm;
@@ -207,18 +201,17 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitFMWPCwire::hitinfo_t>::iterator hiter;
       for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
          if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+            merge_hit = 1;
             break;
          }
          else if (hiter->t_ns*ns > t) {
-            hiter = counter->hits.insert(hiter, GlueXHitFMWPCwire::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
-
-         if (hiter != counter->hits.end()) {             // merge with former hit
+         if (merge_hit) {
             // Use the time from the earlier hit but add the charge
             hiter->dE_keV += dEsum/keV;
             hiter->dx_cm += dx.mag()/cm;
@@ -226,12 +219,12 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
                hiter->t_ns = t/ns;
             }
          }
-         else if ((int)counter->hits.size() < MAX_HITS)	{ // create new hit 
-            GlueXHitFMWPCwire::hitinfo_t newhit;
-            newhit.dE_keV = dEsum/keV;
-            newhit.dx_cm = dx.mag()/cm;
-            newhit.t_ns = t/ns;
-            counter->hits.push_back(newhit);
+         else if ((int)counter->hits.size() < MAX_HITS)	{
+            // create new hit 
+            hiter = counter->hits.insert(hiter, GlueXHitFMWPCwire::hitinfo_t());
+            hiter->dE_keV = dEsum/keV;
+            hiter->dx_cm = dx.mag()/cm;
+            hiter->t_ns = t/ns;
          }
          else {
             G4cerr << "GlueXSensitiveDetectorFMWPC::ProcessHits error: "
@@ -295,7 +288,7 @@ void GlueXSensitiveDetectorFMWPC::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitFMWPCwire::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].dE_keV < THRESH_KEV) {
+         if (hits[ih].dE_keV <= THRESH_KEV) {
             hits.erase(hits.begin() + ih);
             --ih;
          }

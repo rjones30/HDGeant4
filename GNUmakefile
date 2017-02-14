@@ -17,9 +17,15 @@ ifndef G4SYSTEM
     $(error Geant4 environment not set up, please source $(G4ROOT)/share/Geant4-10.2.2/geant4make/geant4make.sh and try again)
 endif
 
+ifdef DIRACXX_HOME
+    CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
+endif
+
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
+CPPFLAGS += -I./src/G4debug
 CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
+CPPFLAGS += -I$(shell root-config --incdir)
 CPPFLAGS += -I/usr/include/Qt
 CPPFLAGS += -I/usr/include/python2.7
 CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
@@ -44,7 +50,9 @@ G4LIB_USE_GDML = 1
 CPPVERBOSE = 1
 G4DEBUG = 1
 
+hdgeant4_sources := $(filter-out src/CobremsGeneration.cc, $(wildcard src/*.cc))
 G4fixes_sources := $(wildcard src/G4fixes/*.cc)
+G4debug_sources := $(wildcard src/G4debug/*.cc)
 HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
 
 ROOTLIBS = $(shell root-config --libs) -lGeom
@@ -67,32 +75,40 @@ G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I/usr/local/xerces/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
-INTYLIBS += -L$(G4TMPDIR) -lhdds -lG4fixes
+INTYLIBS += -L$(G4TMPDIR) -lhdds
 INTYLIBS += -lboost_python
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
-all: hdds cobrems fixes exe lib bin g4py
+all: hdds cobrems sharedlib exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
-LDLIBS2 := -lG4fixes $(LDLIBS2)
 
 cobrems: $(G4TMPDIR)/libcobrems.so
-fixes: $(G4TMPDIR)/libG4fixes.so
 hdds:  $(G4TMPDIR)/libhdds.so
 
-CXXFLAGS = -g -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
-$(G4TMPDIR)/libcobrems.so: src/CobremsGenerator.cc
+$(G4TMPDIR)/libcobrems.so: src/CobremsGeneration.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
 	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
+hdgeant4_objects := $(patsubst src/%.cc, $(G4TMPDIR)/%.o, $(hdgeant4_sources))
 G4fixes_objects := $(patsubst src/G4fixes/%.cc, $(G4TMPDIR)/%.o, $(G4fixes_sources))
-$(G4TMPDIR)/libG4fixes.so: $(G4fixes_objects) $(G4TMPDIR)/G4fixes.o
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
-	-shared -o $@ $^ $(G4shared_libs) -lboost_python
+G4debug_objects := $(patsubst src/G4debug/%.cc, $(G4TMPDIR)/%.o, $(G4debug_sources))
+sharedlib: $(G4TMPDIR)/libhdgeant4.so
+
+$(G4TMPDIR)/libhdgeant4.so: $(hdgeant4_objects) $(G4fixes_objects) $(G4debug_objects)
 
 $(G4TMPDIR)/%.o: src/G4fixes/%.cc
+ifdef CPPVERBOSE
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
+else
+	@echo Compiling $*.cc ...
+	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
+endif
+
+$(G4TMPDIR)/%.o: src/G4debug/%.cc
 ifdef CPPVERBOSE
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
 else
@@ -117,17 +133,17 @@ exe:
 	@mkdir -p $(G4LIBDIR)/$@
 
 g4py: $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so \
-      $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so \
       $(G4LIBDIR)/../../../g4py/Cobrems/libcobrems.so
 
 $(G4LIBDIR)/../../../g4py/HDGeant4/libhdgeant4.so: $(G4LIBDIR)/libhdgeant4.so
 	@rm -f $@
 	@cd g4py/HDGeant4 && ln -s ../../tmp/*/hdgeant4/libhdgeant4.so .
 
-$(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so: $(G4LIBDIR)/libG4fixes.so
-	@rm -f $@
-	@cd g4py/G4fixes && ln -s ../../tmp/*/hdgeant4/libG4fixes.so .
-
 $(G4LIBDIR)/../../../g4py/Cobrems/libcobrems.so: $(G4LIBDIR)/libcobrems.so 
 	@rm -f $@
 	@cd g4py/Cobrems && ln -s ../../tmp/*/hdgeant4/libcobrems.so .
+
+utils: $(G4BINDIR)/beamtree
+
+$(G4BINDIR)/beamtree: src/utils/beamtree.cc
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)

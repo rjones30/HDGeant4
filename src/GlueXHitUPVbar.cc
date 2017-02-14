@@ -22,10 +22,10 @@ int GlueXHitUPVbar::operator==(const GlueXHitUPVbar &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].end_      == right.hits[ih].end_   &&
-          hits[ih].E_GeV     == right.hits[ih].E_GeV  &&
-          hits[ih].t_ns      == right.hits[ih].t_ns   &&
-          hits[ih].xlocal_cm == right.hits[ih].xlocal_cm)
+      if (hits[ih].end_      != right.hits[ih].end_   ||
+          hits[ih].E_GeV     != right.hits[ih].E_GeV  ||
+          hits[ih].t_ns      != right.hits[ih].t_ns   ||
+          hits[ih].xlocal_cm != right.hits[ih].xlocal_cm)
       {
          return 0;
       }
@@ -48,11 +48,7 @@ GlueXHitUPVbar &GlueXHitUPVbar::operator+=(const GlueXHitUPVbar &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitUPVbar::hitinfo_t());
-      hiter->end_   = hitsrc->end_;
-      hiter->E_GeV = hitsrc->E_GeV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->xlocal_cm = hitsrc->xlocal_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

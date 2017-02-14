@@ -22,16 +22,12 @@
 #include "GlueXSensitiveDetectorUPV.hh"
 #include "GlueXSensitiveDetectorPSC.hh"
 #include "GlueXSensitiveDetectorPS.hh"
+#include "GlueXSensitiveDetectorTPOL.hh"
 
-#include "G4Box.hh"
-#include "G4Material.hh"
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
-#include "G4PVParameterised.hh"
 #include "G4SDManager.hh"
-#include "G4GeometryTolerance.hh"
-#include "G4GeometryManager.hh"
-#include "G4MTRunManager.hh"
+#include "G4RunManager.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4TransportationManager.hh"
 #include "G4MagIntegratorDriver.hh"
@@ -41,11 +37,9 @@
 #include "G4HelixMixedStepper.hh"
 #include "G4ClassicalRK4.hh"
 
-#include "G4UserLimits.hh"
 #include "G4SystemOfUnits.hh"
 
 #include "G4VisAttributes.hh"
-#include "G4Colour.hh"
 
 #include "G4ios.hh"
 
@@ -171,6 +165,7 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    fHddsBuilder.translate(rootEl);
 
    XMLPlatformUtils::Terminate();
+   delete document;
 }
 
 GlueXDetectorConstruction::
@@ -268,6 +263,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorUPV* upvHandler = 0;
    GlueXSensitiveDetectorPSC* pscHandler = 0;
    GlueXSensitiveDetectorPS* psHandler = 0;
+   GlueXSensitiveDetectorTPOL* tpolHandler = 0;
 
    // During geometry building, certain logical volumes were marked as
    // sensitive by adding them to a list. Now we need to go down that
@@ -390,6 +386,13 @@ void GlueXDetectorConstruction::ConstructSDandField()
             SDman->AddNewDetector(pscHandler);
          }
          iter->second->SetSensitiveDetector(pscHandler);
+      }
+      else if (volname(0,3) == "PTS") {
+         if (tpolHandler == 0) {
+            tpolHandler = new GlueXSensitiveDetectorTPOL("tpol");
+            SDman->AddNewDetector(tpolHandler);
+         }
+         iter->second->SetSensitiveDetector(tpolHandler);
       }
       else if (volname == "PSF1" || volname == "PSF2") {
          if (psHandler == 0) {

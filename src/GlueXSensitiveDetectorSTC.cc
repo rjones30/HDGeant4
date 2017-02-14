@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -23,17 +20,13 @@
 
 #include <JANA/JApplication.h>
 
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
-
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorSTC::MAX_HITS = 100;
 
 // Light propagation parameters in start counter
 double GlueXSensitiveDetectorSTC::ATTENUATION_LENGTH = 150.*cm;
 double GlueXSensitiveDetectorSTC::C_EFFECTIVE = 15*cm/ns;
-double GlueXSensitiveDetectorSTC::LIGHT_GUIDE = 0.; // ??
+double GlueXSensitiveDetectorSTC::LIGHT_GUIDE = 0.*cm;
 double GlueXSensitiveDetectorSTC::ANGLE_COR = 1.054;
 
 // Geometric parameters of STC scintillators
@@ -98,9 +91,9 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
       TWO_HIT_TIME_RESOL = stc_parms.at("START_TWO_HIT_RESOL")*ns;
       MAX_HITS = stc_parms.at("START_MAX_HITS");
       THRESH_MEV = stc_parms.at("START_THRESH_MEV");
-      LIGHT_GUIDE = stc_parms.at("START_LIGHT_GUIDE");
+      LIGHT_GUIDE = stc_parms.at("START_LIGHT_GUIDE")*cm;
       ANGLE_COR = stc_parms.at("START_ANGLE_COR");
-      BENT_REGION = stc_parms.at("START_BENT_REGION");
+      BENT_REGION = stc_parms.at("START_BENT_REGION")*cm;
 
       std::vector< std::map<std::string, float> > values;
       jcalib->Get("START_COUNTER/attenuation_factor", values);
@@ -126,8 +119,10 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
          // A factors are in units of ns, B factors are ns/cm
          STRAIGHT_PROPAGATION_A[k] *= ns;
          STRAIGHT_PROPAGATION_B[k] *= ns/cm;
-         BEND_PROPAGATION_A[k] *= ns/cm;
+         BEND_PROPAGATION_A[k] *= ns;
          BEND_PROPAGATION_B[k] *= ns/cm;
+         NOSE_PROPAGATION_A[k] *= ns;
+         NOSE_PROPAGATION_B[k] *= ns/cm;
       }
 
       G4cout << "STC: ALL parameters loaded from ccdb" << G4endl;
@@ -207,9 +202,12 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
    int sector = GetIdent("sector", touch);
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-   if (trackinfo->GetGlueXHistory() == 0) {
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+   GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
+                                          track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
+   if (trackinfo->GetGlueXHistory() == 0 && itrack > 0) {
       G4int key = fPointsMap->entries();
       GlueXHitSTCpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
@@ -218,11 +216,9 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
       {
          GlueXHitSTCpoint* newPoint = new GlueXHitSTCpoint();
          fPointsMap->add(key, newPoint);
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->sector_ = sector;
          newPoint->t_ns = t/ns;
@@ -291,44 +287,37 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
       
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitSTCpaddle::hitinfo_t>::iterator hiter;
       for (hiter = paddle->hits.begin(); hiter != paddle->hits.end(); ++hiter) {
          if (fabs(hiter->t_ns*ns - tcorr) < TWO_HIT_TIME_RESOL) {
+            merge_hit = 1;
             break;
          }
          else if (hiter->t_ns*ns > tcorr) {
-            hiter = paddle->hits.insert(hiter, GlueXHitSTCpaddle::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
       }
-
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-      if (hiter != paddle->hits.end()) {             // merge with former hit
+      if (merge_hit) {
          // Use the time from the earlier hit but add the charge
          hiter->dE_MeV += dEcorr/MeV;
          if (hiter->t_ns*ns > tcorr) {
             hiter->t_ns = tcorr/ns;
-            int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-            int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-            hiter->itrack_ = trackinfo->GetGlueXTrackID();
+            hiter->itrack_ = itrack;
             hiter->ptype_G3 = g3type;
             hiter->t0_ns = t/ns;
             hiter->z_cm = x[2]/cm;
          }
       }
-      else if ((int)paddle->hits.size() < MAX_HITS)	{   // create new hit 
-         GlueXHitSTCpaddle::hitinfo_t newhit;
-         newhit.dE_MeV = dEcorr/MeV;
-         newhit.t_ns = tcorr/ns;
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-         newhit.itrack_ = trackinfo->GetGlueXTrackID();
-         newhit.ptype_G3 = g3type;
-         newhit.t0_ns = t/ns;
-         newhit.z_cm = x[2]/cm;
-         paddle->hits.push_back(newhit);
+      else if ((int)paddle->hits.size() < MAX_HITS)	{
+         // create new hit 
+         hiter = paddle->hits.insert(hiter, GlueXHitSTCpaddle::hitinfo_t());
+         hiter->dE_MeV = dEcorr/MeV;
+         hiter->t_ns = tcorr/ns;
+         hiter->itrack_ = itrack;
+         hiter->ptype_G3 = g3type;
+         hiter->t0_ns = t/ns;
+         hiter->z_cm = x[2]/cm;
       }
       else {
          G4cerr << "GlueXSensitiveDetectorSTC::ProcessHits error: "
@@ -390,7 +379,7 @@ void GlueXSensitiveDetectorSTC::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitSTCpaddle::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].dE_MeV < THRESH_MEV) {
+         if (hits[ih].dE_MeV <= THRESH_MEV) {
             hits.erase(hits.begin() + ih);
             --ih;
          }

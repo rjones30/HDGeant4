@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -23,13 +20,12 @@
 
 #include <JANA/JApplication.h>
 
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
-
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorFTOF::MAX_HITS = 25;
 int GlueXSensitiveDetectorFTOF::MAX_HITS_PER_BAR = 25;
+
+// Cutoff on the maximum time of flight
+double GlueXSensitiveDetectorFTOF::MAX_TOF = 1000*ns;
 
 // Light propagation parameters in tof bars
 double GlueXSensitiveDetectorFTOF::ATTENUATION_LENGTH = 150.*cm;
@@ -160,9 +156,12 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
    barNo = (barNo > 44)? barNo - 23 : barNo;
    G4Track *track = step->GetTrack();
    G4int trackID = track->GetTrackID();
+   int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+   int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
-   if (trackinfo->GetGlueXHistory() == 0 && plane == 0) {
+   int itrack = trackinfo->GetGlueXTrackID();
+   if (trackinfo->GetGlueXHistory() == 0 && itrack > 0 && plane == 0) {
       G4int key = fPointsMap->entries();
       GlueXHitFTOFpoint* lastPoint = (*fPointsMap)[key - 1];
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
@@ -173,11 +172,9 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
       {
          GlueXHitFTOFpoint* newPoint = new GlueXHitFTOFpoint();
          fPointsMap->add(key, newPoint);
-         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
          newPoint->ptype_G3 = g3type;
          newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint->trackID_ = itrack;
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->t_ns = t/ns;
          newPoint->x_cm = x[0]/cm;
@@ -239,62 +236,68 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
-      GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
-                                             track->GetUserInformation();
-      if (dEnorth/MeV > 0) {
+      if (dEnorth/MeV > 0 && tnorth < MAX_TOF) {
          // add the hit on end=0 (north/top end of the bar)
+         int merge_hit = 0;
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
-         for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
+         for (hiter = counter->hits.begin(); 
+              hiter != counter->hits.end(); ++hiter)
+         {
             if (hiter->end_ == 0) {
                if (fabs(hiter->t_ns*ns - tnorth) < TWO_HIT_TIME_RESOL) {
+                  merge_hit = 1;
                   break;
                }
                else if (hiter->t_ns*ns > tnorth) {
-                  hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
-                  hiter->end_ = 0;
-                  hiter->t_ns = 1e99;
                   break;
                }
             }
          }
 
-         if (hiter != counter->hits.end()) {             // merge with former hit
-            // Use the time from the earlier hit but add the charge
-            hiter->dE_GeV += dEnorth/GeV;
-            if (hiter->t_ns*ns > tnorth) {
-               hiter->t_ns = tnorth/ns;
-               int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-               int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-               hiter->itrack_ = trackinfo->GetGlueXTrackID();
-               hiter->ptype_G3 = g3type;
-               hiter->px_GeV = pin[0]/GeV;
-               hiter->py_GeV = pin[1]/GeV;
-               hiter->pz_GeV = pin[2]/GeV;
-               hiter->E_GeV = Ein/GeV;
-               hiter->x_cm = x[0]/cm;
-               hiter->y_cm = x[1]/cm;
-               hiter->z_cm = x[2]/cm;
-               hiter->dist_cm = dist/cm;
+         if (merge_hit) {
+            // sum the charge, do energy weighting of the time
+            hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
+                           dEnorth/GeV * tnorth/ns) /
+            (hiter->dE_GeV += dEnorth/GeV);
+            std::vector<GlueXHitFTOFbar::hitextra_t>::reverse_iterator xiter;
+            xiter = hiter->extra.rbegin();
+            if (trackID != xiter->track_ || fabs(tin/ns - xiter->t_ns) > 0.1) {
+               GlueXHitFTOFbar::hitextra_t extra;
+               extra.track_ = trackID;
+               extra.itrack_ = itrack;
+               extra.ptype_G3 = g3type;
+               extra.px_GeV = pin[0]/GeV;
+               extra.py_GeV = pin[1]/GeV;
+               extra.pz_GeV = pin[2]/GeV;
+               extra.E_GeV = Ein/GeV;
+               extra.x_cm = x[0]/cm;
+               extra.y_cm = x[1]/cm;
+               extra.z_cm = x[2]/cm;
+               extra.t_ns = tout/ns;
+               extra.dist_cm = dist/cm;
+               hiter->extra.push_back(extra);
             }
          }
-         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{ // create new hit 
-            GlueXHitFTOFbar::hitinfo_t newhit;
-            newhit.end_ = 0;
-            newhit.dE_GeV = dEnorth/GeV;
-            newhit.t_ns = tnorth/ns;
-            int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-            int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-            newhit.itrack_ = trackinfo->GetGlueXTrackID();
-            newhit.ptype_G3 = g3type;
-            newhit.px_GeV = pin[0]/GeV;
-            newhit.py_GeV = pin[1]/GeV;
-            newhit.pz_GeV = pin[2]/GeV;
-            newhit.E_GeV = Ein/GeV;
-            newhit.x_cm = x[0]/cm;
-            newhit.y_cm = x[1]/cm;
-            newhit.z_cm = x[2]/cm;
-            newhit.dist_cm = dist/cm;
-            counter->hits.push_back(newhit);
+         else if ((int)counter->hits.size() < 2 * MAX_HITS_PER_BAR)	{
+            // create new hit 
+            hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
+            hiter->end_ = 0;
+            hiter->t_ns = tnorth/ns;
+            hiter->dE_GeV = dEnorth/GeV;
+            GlueXHitFTOFbar::hitextra_t extra;
+            extra.track_ = trackID;
+            extra.itrack_ = itrack;
+            extra.ptype_G3 = g3type;
+            extra.px_GeV = pin[0]/GeV;
+            extra.py_GeV = pin[1]/GeV;
+            extra.pz_GeV = pin[2]/GeV;
+            extra.E_GeV = Ein/GeV;
+            extra.x_cm = x[0]/cm;
+            extra.y_cm = x[1]/cm;
+            extra.z_cm = x[2]/cm;
+            extra.t_ns = tout/ns;
+            extra.dist_cm = dist/cm;
+            hiter->extra.push_back(extra);
          }
          else {
             G4cerr << "GlueXSensitiveDetectorFTOF::ProcessHits error: "
@@ -304,60 +307,67 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
          }
       }
 
-      if (dEsouth/MeV > 0) {
+      if (dEsouth/MeV > 0 && tsouth < MAX_TOF) {
          // add the hit on end=1 (south/bottom end of the bar)
+         int merge_hit = 0;
          std::vector<GlueXHitFTOFbar::hitinfo_t>::iterator hiter;
-         for (hiter = counter->hits.begin(); hiter != counter->hits.end(); ++hiter) {
+         for (hiter = counter->hits.begin(); 
+              hiter != counter->hits.end(); ++hiter)
+         {
             if (hiter->end_ == 1) {
                if (fabs(hiter->t_ns*ns - tsouth) < TWO_HIT_TIME_RESOL) {
+                  merge_hit = 1;
                   break;
                }
                else if (hiter->t_ns*ns > tsouth) {
-                  hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
-                  hiter->end_ = 1;
-                  hiter->t_ns = 1e99;
                   break;
                }
             }
          }
-
-         if (hiter != counter->hits.end()) {             // merge with former hit
-            // Use the time from the earlier hit but add the charge
-            hiter->dE_GeV += dEsouth/GeV;
-            if (hiter->t_ns*ns > tsouth) {
-               hiter->t_ns = tsouth/ns;
-               int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-               int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-               hiter->itrack_ = trackinfo->GetGlueXTrackID();
-               hiter->ptype_G3 = g3type;
-               hiter->px_GeV = pin[0]/GeV;
-               hiter->py_GeV = pin[1]/GeV;
-               hiter->pz_GeV = pin[2]/GeV;
-               hiter->E_GeV = Ein/GeV;
-               hiter->x_cm = x[0]/cm;
-               hiter->y_cm = x[1]/cm;
-               hiter->z_cm = x[2]/cm;
-               hiter->dist_cm = dist/cm;
+         if (merge_hit) {
+            // sum the charge, do energy weighting of the time
+            hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
+                           dEsouth/GeV * tsouth/ns) /
+            (hiter->dE_GeV += dEsouth/GeV);
+            std::vector<GlueXHitFTOFbar::hitextra_t>::reverse_iterator xiter;
+            xiter = hiter->extra.rbegin();
+            if (trackID != xiter->track_ || fabs(tin/ns - xiter->t_ns) > 0.1) {
+               GlueXHitFTOFbar::hitextra_t extra;
+               extra.track_ = trackID;
+               extra.itrack_ = itrack;
+               extra.ptype_G3 = g3type;
+               extra.px_GeV = pin[0]/GeV;
+               extra.py_GeV = pin[1]/GeV;
+               extra.pz_GeV = pin[2]/GeV;
+               extra.E_GeV = Ein/GeV;
+               extra.x_cm = x[0]/cm;
+               extra.y_cm = x[1]/cm;
+               extra.z_cm = x[2]/cm;
+               extra.t_ns = tout/ns;
+               extra.dist_cm = dist/cm;
+               hiter->extra.push_back(extra);
             }
          }
-         else if ((int)counter->hits.size() < MAX_HITS_PER_BAR)	{ // create new hit 
-            GlueXHitFTOFbar::hitinfo_t newhit;
-            newhit.end_ = 1;
-            newhit.dE_GeV = dEsouth/GeV;
-            newhit.t_ns = tsouth/ns;
-            int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-            int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-            newhit.itrack_ = trackinfo->GetGlueXTrackID();
-            newhit.ptype_G3 = g3type;
-            newhit.px_GeV = pin[0]/GeV;
-            newhit.py_GeV = pin[1]/GeV;
-            newhit.pz_GeV = pin[2]/GeV;
-            newhit.E_GeV = Ein/GeV;
-            newhit.x_cm = x[0]/cm;
-            newhit.y_cm = x[1]/cm;
-            newhit.z_cm = x[2]/cm;
-            newhit.dist_cm = dist/cm;
-            counter->hits.push_back(newhit);
+         else if ((int)counter->hits.size() < 2 * MAX_HITS_PER_BAR)	{
+            // create new hit 
+            hiter = counter->hits.insert(hiter, GlueXHitFTOFbar::hitinfo_t());
+            hiter->end_ = 1;
+            hiter->t_ns = tsouth/ns;
+            hiter->dE_GeV = dEsouth/GeV;
+            GlueXHitFTOFbar::hitextra_t extra;
+            extra.track_ = trackID;
+            extra.itrack_ = itrack;
+            extra.ptype_G3 = g3type;
+            extra.px_GeV = pin[0]/GeV;
+            extra.py_GeV = pin[1]/GeV;
+            extra.pz_GeV = pin[2]/GeV;
+            extra.E_GeV = Ein/GeV;
+            extra.x_cm = x[0]/cm;
+            extra.y_cm = x[1]/cm;
+            extra.z_cm = x[2]/cm;
+            extra.t_ns = tout/ns;
+            extra.dist_cm = dist/cm;
+            hiter->extra.push_back(extra);
          }
          else {
             G4cerr << "GlueXSensitiveDetectorFTOF::ProcessHits error: "
@@ -421,7 +431,7 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitFTOFbar::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].dE_GeV*1e3 < THRESH_MEV) {
+         if (hits[ih].dE_GeV*1e3 <= THRESH_MEV) {
             hits.erase(hits.begin() + ih);
             --ih;
          }
@@ -437,17 +447,19 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
                thit(0).setEnd(hits[ih].end_);
                thit(0).setDE(hits[ih].dE_GeV);
                thit(0).setT(hits[ih].t_ns);
-               hddm_s::FtofTruthExtraList xtra = thit(0).addFtofTruthExtras(1);
-               xtra(0).setItrack(hits[ih].itrack_);
-               xtra(0).setPtype(hits[ih].ptype_G3);
-               xtra(0).setPx(hits[ih].px_GeV);
-               xtra(0).setPy(hits[ih].py_GeV);
-               xtra(0).setPz(hits[ih].pz_GeV);
-               xtra(0).setE(hits[ih].E_GeV);
-               xtra(0).setX(hits[ih].x_cm);
-               xtra(0).setY(hits[ih].y_cm);
-               xtra(0).setZ(hits[ih].z_cm);
-               xtra(0).setDist(hits[ih].dist_cm);
+               for (int ihx=0; ihx < (int)hits[ih].extra.size(); ++ihx) {
+                  hddm_s::FtofTruthExtraList xtra = thit(0).addFtofTruthExtras(1);
+                  xtra(0).setItrack(hits[ih].extra[ihx].itrack_);
+                  xtra(0).setPtype(hits[ih].extra[ihx].ptype_G3);
+                  xtra(0).setPx(hits[ih].extra[ihx].px_GeV);
+                  xtra(0).setPy(hits[ih].extra[ihx].py_GeV);
+                  xtra(0).setPz(hits[ih].extra[ihx].pz_GeV);
+                  xtra(0).setE(hits[ih].extra[ihx].E_GeV);
+                  xtra(0).setX(hits[ih].extra[ihx].x_cm);
+                  xtra(0).setY(hits[ih].extra[ihx].y_cm);
+                  xtra(0).setZ(hits[ih].extra[ihx].z_cm);
+                  xtra(0).setDist(hits[ih].extra[ihx].dist_cm);
+               }
             }
          }
          // followed by the end=1 hits
@@ -457,17 +469,19 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
                thit(0).setEnd(hits[ih].end_);
                thit(0).setDE(hits[ih].dE_GeV);
                thit(0).setT(hits[ih].t_ns);
-               hddm_s::FtofTruthExtraList xtra = thit(0).addFtofTruthExtras(1);
-               xtra(0).setItrack(hits[ih].itrack_);
-               xtra(0).setPtype(hits[ih].ptype_G3);
-               xtra(0).setPx(hits[ih].px_GeV);
-               xtra(0).setPy(hits[ih].py_GeV);
-               xtra(0).setPz(hits[ih].pz_GeV);
-               xtra(0).setE(hits[ih].E_GeV);
-               xtra(0).setX(hits[ih].x_cm);
-               xtra(0).setY(hits[ih].y_cm);
-               xtra(0).setZ(hits[ih].z_cm);
-               xtra(0).setDist(hits[ih].dist_cm);
+               for (int ihx=0; ihx < (int)hits[ih].extra.size(); ++ihx) {
+                  hddm_s::FtofTruthExtraList xtra = thit(0).addFtofTruthExtras(1);
+                  xtra(0).setItrack(hits[ih].extra[ihx].itrack_);
+                  xtra(0).setPtype(hits[ih].extra[ihx].ptype_G3);
+                  xtra(0).setPx(hits[ih].extra[ihx].px_GeV);
+                  xtra(0).setPy(hits[ih].extra[ihx].py_GeV);
+                  xtra(0).setPz(hits[ih].extra[ihx].pz_GeV);
+                  xtra(0).setE(hits[ih].extra[ihx].E_GeV);
+                  xtra(0).setX(hits[ih].extra[ihx].x_cm);
+                  xtra(0).setY(hits[ih].extra[ihx].y_cm);
+                  xtra(0).setZ(hits[ih].extra[ihx].z_cm);
+                  xtra(0).setDist(hits[ih].extra[ihx].dist_cm);
+               }
             }
          }
       }

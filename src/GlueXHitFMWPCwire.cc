@@ -22,11 +22,11 @@ int GlueXHitFMWPCwire::operator==(const GlueXHitFMWPCwire &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].dE_keV   == right.hits[ih].dE_keV  &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].dx_cm    == right.hits[ih].dx_cm   &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].z0_cm    == right.hits[ih].z0_cm)
+      if (hits[ih].dE_keV   != right.hits[ih].dE_keV  ||
+          hits[ih].t_ns     != right.hits[ih].t_ns    ||
+          hits[ih].dx_cm    != right.hits[ih].dx_cm   ||
+          hits[ih].itrack_  != right.hits[ih].itrack_ ||
+          hits[ih].z0_cm    != right.hits[ih].z0_cm)
       {
          return 0;
       }
@@ -49,12 +49,7 @@ GlueXHitFMWPCwire &GlueXHitFMWPCwire::operator+=(const GlueXHitFMWPCwire &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitFMWPCwire::hitinfo_t());
-      hiter->dE_keV = hitsrc->dE_keV;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->dx_cm = hitsrc->dx_cm;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->z0_cm = hitsrc->z0_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

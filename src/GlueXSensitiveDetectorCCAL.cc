@@ -9,12 +9,9 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
-#include "GlueXUserOptions.hh"
 
-#include <CLHEP/Random/RandPoisson.h>
-#include <Randomize.hh>
-
-#include "G4THitsMap.hh"
+#include "G4VPhysicalVolume.hh"
+#include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
 #include "G4HCofThisEvent.hh"
 #include "G4Step.hh"
@@ -22,10 +19,6 @@
 #include "G4ios.hh"
 
 #include <JANA/JApplication.h>
-
-#include <stdio.h>
-#include <malloc.h>
-#include <math.h>
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorCCAL::MAX_HITS = 100;
@@ -152,6 +145,7 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
    G4int trackID = track->GetTrackID();
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
+   int itrack = trackinfo->GetGlueXTrackID();
    if (trackinfo->GetGlueXHistory() == 0 &&
        xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
    {
@@ -162,7 +156,7 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
       newPoint->ptype_G3 = g3type;
       newPoint->track_ = trackID;
-      newPoint->trackID_ = trackinfo->GetGlueXTrackID();
+      newPoint->trackID_ = itrack;
       newPoint->primary_ = (track->GetParentID() == 0);
       newPoint->t_ns = t/ns;
       newPoint->x_cm = xin[0]/cm;
@@ -173,7 +167,6 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
       newPoint->pz_GeV = pin[2]/GeV;
       newPoint->E_GeV = Ein/GeV;
       trackinfo->SetGlueXHistory(4);
-      trackinfo->SetGlueXTrackID(trackID);
    }
 
    // Post the hit to the hits map, ordered by sector index
@@ -193,30 +186,29 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
 
       // Add the hit to the hits vector, maintaining strict time ordering
 
+      int merge_hit = 0;
       std::vector<GlueXHitCCALblock::hitinfo_t>::iterator hiter;
       for (hiter = block->hits.begin(); hiter != block->hits.end(); ++hiter) {
          if (fabs(hiter->t_ns*ns - tcorr) < TWO_HIT_TIME_RESOL) {
+            merge_hit = 1;
             break;
          }
          else if (hiter->t_ns*ns > t) {
-            hiter = block->hits.insert(hiter, GlueXHitCCALblock::hitinfo_t());
-            hiter->t_ns = 1e99;
             break;
          }
       }
-
-      if (hiter != block->hits.end()) {             // merge with former hit
+      if (merge_hit) {
          // Use the time from the earlier hit but add the energy deposition
          hiter->E_GeV += dEcorr/GeV;
          if (hiter->t_ns*ns > tcorr) {
             hiter->t_ns = tcorr/ns;
          }
       }
-      else if ((int)block->hits.size() < MAX_HITS)	{   // create new hit 
-         GlueXHitCCALblock::hitinfo_t newhit;
-         newhit.E_GeV = dEcorr/GeV;
-         newhit.t_ns = tcorr/ns;
-         block->hits.push_back(newhit);
+      else if ((int)block->hits.size() < MAX_HITS) {
+         // create new hit 
+          hiter = block->hits.insert(hiter, GlueXHitCCALblock::hitinfo_t());
+         hiter->E_GeV = dEcorr/GeV;
+         hiter->t_ns = tcorr/ns;
       }
       else {
          G4cerr << "GlueXSensitiveDetectorCCAL::ProcessHits error: "
@@ -278,7 +270,7 @@ void GlueXSensitiveDetectorCCAL::EndOfEvent(G4HCofThisEvent*)
       std::vector<GlueXHitCCALblock::hitinfo_t> &hits = biter->second->hits;
       // apply a pulse height threshold cut
       for (unsigned int ih=0; ih < hits.size(); ++ih) {
-         if (hits[ih].E_GeV < THRESH_MEV/1e3) {
+         if (hits[ih].E_GeV <= THRESH_MEV/1e3) {
             hits.erase(hits.begin() + ih);
             --ih;
          }

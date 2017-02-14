@@ -20,6 +20,7 @@
 #include <G4Sphere.hh>
 #include <G4Polycone.hh>
 #include <G4Polyhedra.hh>
+#include <G4EllipticalTube.hh>
 #include <G4SystemOfUnits.hh>
 #include <G4Mag_UsualEqRhs.hh>
 #include <G4MagIntegratorStepper.hh>
@@ -27,6 +28,23 @@
 #include <G4HelixMixedStepper.hh>
 #include <G4ClassicalRK4.hh>
 #include <G4ChordFinder.hh>
+#include <G4PVPlacement.hh>
+#include <G4PVDivision.hh>
+#include <G4OpticalSurface.hh>
+#include <G4LogicalSkinSurface.hh>
+#include <G4VisAttributes.hh>
+
+#include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/util/XMLString.hpp>
+#include <xercesc/util/XMLStringTokenizer.hpp>
+#include <xercesc/sax/SAXParseException.hpp>
+#include <xercesc/parsers/XercesDOMParser.hpp>
+#include <xercesc/framework/LocalFileFormatTarget.hpp>
+#include <xercesc/dom/DOM.hpp>
+#include <xercesc/util/XercesDefs.hpp>
+#include <xercesc/sax/ErrorHandler.hpp>
+
+using namespace xercesc;
 
 #include <assert.h>
 #include <stdlib.h>

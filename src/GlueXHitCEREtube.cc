@@ -21,10 +21,10 @@ int GlueXHitCEREtube::operator==(const GlueXHitCEREtube &right) const
       return 0;
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
-      if (hits[ih].pe_      == right.hits[ih].pe_     &&
-          hits[ih].t_ns     == right.hits[ih].t_ns    &&
-          hits[ih].itrack_  == right.hits[ih].itrack_ &&
-          hits[ih].z0_cm    == right.hits[ih].z0_cm)
+      if (hits[ih].pe_     != right.hits[ih].pe_     ||
+          hits[ih].t_ns    != right.hits[ih].t_ns    ||
+          hits[ih].itrack_ != right.hits[ih].itrack_ ||
+          hits[ih].z0_cm   != right.hits[ih].z0_cm)
       {
          return 0;
       }
@@ -47,11 +47,7 @@ GlueXHitCEREtube &GlueXHitCEREtube::operator+=(const GlueXHitCEREtube &right)
          if (hiter->t_ns > hitsrc->t_ns)
             break;
       }
-      hiter = hits.insert(hiter, GlueXHitCEREtube::hitinfo_t());
-      hiter->pe_ = hitsrc->pe_;
-      hiter->t_ns = hitsrc->t_ns;
-      hiter->itrack_ = hitsrc->itrack_;
-      hiter->z0_cm = hitsrc->z0_cm;
+      hiter = hits.insert(hiter, *hitsrc);
    }
    return *this;
 }

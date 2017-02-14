@@ -13,7 +13,6 @@
 #include "G4UIcmdWithADoubleAndUnit.hh"
 #include "G4UIcmdWithoutParameter.hh"
 #include "G4GeometryManager.hh"
-#include "globals.hh"
 
 GlueXDetectorMessenger::GlueXDetectorMessenger(GlueXDetectorConstruction* myDet)
 :myDetector(myDet)
