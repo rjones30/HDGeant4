@@ -28,35 +28,76 @@
 #include <GlueXBremsstrahlungGenerator.hh>
 
 #include <iostream>
+#include <stdlib.h>
 #include <math.h>
 
 #define sqr(x) ((x)*(x))
 
+#define IMPORTANCE_SAMPLING_HIST_FILE "bsampling_weights.root"
+
 #if USING_DIRACXX
 
+#include <TROOT.h>
 #include <TPhoton.h>
 #include <TLepton.h>
 #include <TLorentzBoost.h>
 #include <TCrossSection.h>
+#include <Complex.h>
+#include <constants.h>
 
-#include <TFile.h>
-#include <TTree.h>
+TTree *GlueXBremsstrahlungGenerator::fTree = 0;
+TFile *GlueXBremsstrahlungGenerator::fTreeFile = 0;
 
-ImportanceSampler GlueXBremsstrahlungGenerator::fDummyPDFx;
-
-TTree *fTree = 0;
-TFile *treefile = 0;
-
-GlueXBremsstrahlungGenerator::GlueXBremsstrahlungGenerator()
- : fBeamEnergy(12.), fMinEnergy(3.)
+GlueXBremsstrahlungGenerator::GlueXBremsstrahlungGenerator(TFile *rootfile)
+ : fBeamEnergy(12.), fMinEnergy(3.), fRandom(0)
 {
-   if (treefile == 0) {
-      treefile = new TFile("beamtree.root", "update");
+   gRandom = &fRandom;
+   for (int i=0; i < 5; i++) {
+      fImportSample[i] = 0;
+   }
+
+#if defined IMPORTANCE_SAMPLING_HIST_FILE
+   {
+      TFile bsamples(IMPORTANCE_SAMPLING_HIST_FILE);
+      fImportSample[0] = (TH1D*)bsamples.Get("u0_weight");
+      fImportSample[1] = (TH1D*)bsamples.Get("u1_weight");
+      fImportSample[2] = (TH1D*)bsamples.Get("u2_weight");
+      fImportSample[3] = (TH1D*)bsamples.Get("u3_weight");
+      fImportSample[4] = (TH1D*)bsamples.Get("u4_weight");
+      bool found = true;
+      for (int i=0; i < 5; ++i) {
+         if (fImportSample[i]) {
+            fImportSample[i]->SetDirectory(0);
+            normalize(fImportSample[i]);
+         }
+         else {
+            found = false;
+         }
+      }
+      if (found) {
+         std::cout << "GlueXBremsstrahlungGenerator constructor: "
+                   << std::endl
+                   << "  importance sampling histograms read from "
+                   << IMPORTANCE_SAMPLING_HIST_FILE
+                   << std::endl;
+      }
+   }
+#endif
+
+   if (rootfile) {
+      if (fTreeFile)
+         delete fTreeFile;
+      fTreeFile = rootfile;
+   }
+   else if (fTreeFile == 0) {
+      fTreeFile = new TFile("beamtree.root", "recreate");
       if (fTree) {
          delete fTree;
          fTree = 0;
       }
    }
+   fTreeFile->cd();
+
    if (fTree == 0) {
       fTree = new TTree("beam", "polarized bremstrahlung generator");
       fTree->Branch("Ebeam", &Ebeam, "Ebeam/D");
@@ -71,31 +112,23 @@ GlueXBremsstrahlungGenerator::GlueXBremsstrahlungGenerator()
       fTree->Branch("pR", &pR[0], "pR[4]/D");
       fTree->Branch("polar_0_90", &polar_0_90, "polar_0_90/D");
       fTree->Branch("polar_45_135", &polar_45_135, "polar_45_135/D");
+      fTree->Branch("polar_90_0", &polar_90_0, "polar_90_0/D");
+      fTree->Branch("polar_135_45", &polar_135_45, "polar_135_45/D");
       fTree->Branch("diffXS", &diffXS, "diffXS/D");
       fTree->Branch("weight", &weight, "weight/D");
    }
-
-#if defined DO_IMPORTANCE_SAMPLE
-   if (fTDummyPDFx.density.size() == 0) {
-      std::cout << "GlueXBremsstrahlungGenerator constructor: "
-                << "Setting up importance sampling tables, please wait... "
-                << std::flush;
-      prepareImportanceSamplingPDFs();
-      std::cout << "finished." << std::endl;
-   }
-#endif
 }
 
 GlueXBremsstrahlungGenerator::~GlueXBremsstrahlungGenerator()
 {
-   if (fTree && treefile) {
+   if (fTree && fTreeFile) {
       fTree->Write();
       delete fTree;
       fTree = 0;
    }
-   if (treefile) {
-      delete treefile;
-      treefile = 0;
+   if (fTreeFile) {
+      delete fTreeFile;
+      fTreeFile = 0;
    }
 }
 
@@ -146,20 +179,30 @@ void GlueXBremsstrahlungGenerator::GenerateBeamPhotons(int nevents)
    int good_event;
    for (int event=0; event < nevents; event += good_event) {
       good_event = 0; 
-      fRandom.flatArray(5, u);
-      Ebeam = fBeamEnergy;
       weight = 1;
+      for (int i=0; i < 5; ++i) {
+         if (fImportSample[i]) {
+            u[i] = fImportSample[i]->GetRandom();
+            int bin = fImportSample[i]->FindBin(u[i]);
+            weight /= fImportSample[i]->GetBinContent(bin);
+         }
+         else {
+            u[i] = fRandom.Uniform();
+         }
+      }
+      Ebeam = fBeamEnergy;
+      double pbeam = sqrt(sqr(Ebeam) - sqr(mElectron));
 
       // generate u = q0^2 / (q0^2 + qT^2) ~ Uniform[0,1]
-      double q0 = 30.e-6; // 30 keV typical atomic scale
+      double q0 = 0.2e-3; // 200 keV/c 
       qT = q0 * sqrt(1/u[0] - 1);
       qTphi = u[1] * 2*M_PI;
       weight *= sqr((sqr(q0) + sqr(qT)) / q0);
 
       // generate u = m0^2 / (m0^2 + M2 -mElectron^2) ~ Uniform[0,1]
-      double m0sqr = sqr(0.3e-3); // 300 keV
+      double m0sqr = sqr(1.e-3); // 1 MeV
       M2 = sqr(mElectron) + m0sqr * (1/u[2] - 1);
-      qL = (sqr(mElectron) - M2 - sqr(qT)) / (2 * Ebeam);
+      qL = sqrt(sqr(Ebeam) - M2 - sqr(qT)) - pbeam;
       weight *= sqr(m0sqr + M2 - sqr(mElectron)) / m0sqr;
 
       // generate cm angles theta,phi uniform on the unit sphere
@@ -172,10 +215,16 @@ void GlueXBremsstrahlungGenerator::GenerateBeamPhotons(int nevents)
       weight *= (M2 - sqr(mElectron)) / (4 * M2);
 
       // compute the reaction kinematics based on what was generated above
-      TFourVectorReal pin(Ebeam, 0, 0, sqrt(sqr(Ebeam) - sqr(mElectron)));
+      TFourVectorReal pin(Ebeam, 0, 0, pbeam);
       TFourVectorReal q(0, qT * cos(qTphi), qT * sin(qTphi), qL);
       TThreeVectorReal pcm(sintheta * cos(phi), sintheta * sin(phi), costheta);
-      TLorentzBoost toLab(pin + q);
+      TFourVectorReal plab(pin + q);
+      if (plab.InvariantSqr() < M2 - 1e-9) {
+         std::cout << "bad kinematics!!" 
+                   << " M2 - plab^2 = " << M2 - plab.InvariantSqr()
+                   << std::endl;
+      }
+      TLorentzBoost toLab(plab);
       toLab.Invert();
       kstar = (M2 - sqr(mElectron)) / (2 * sqrt(M2));
       TFourVectorReal kout(kstar, kstar * pcm);
@@ -190,9 +239,12 @@ void GlueXBremsstrahlungGenerator::GenerateBeamPhotons(int nevents)
       TLepton eout(pout, mElectron);
       TPhoton gout(kout);
       TThreeVectorReal zeroVector(0,0,0);
-      TThreeVectorReal posXhat(1,0,-kout[1]/kout[3]);
-      TThreeVectorReal posUhat(1,1,-(kout[1] + kout[2])/kout[3]);
+      TThreeVectorReal posXhat(1,0,0);
+      TThreeVectorReal posYhat(0,1,0);
+      TThreeVectorReal posUhat(1,1,0);
+      TThreeVectorReal posVhat(-1,1,0);
       posUhat /= sqrt(2.);
+      posVhat /= sqrt(2.);
       ein.SetPol(zeroVector);
       eout.AllPol();
       gout.AllPol();
@@ -200,8 +252,12 @@ void GlueXBremsstrahlungGenerator::GenerateBeamPhotons(int nevents)
       diffXS = FF2 * TCrossSection::Bremsstrahlung(ein, eout, gout);
       gout.SetPol(posXhat);
       double polar0 = FF2 * TCrossSection::Bremsstrahlung(ein, eout, gout);
+      gout.SetPol(posYhat);
+      double polar90 = FF2 * TCrossSection::Bremsstrahlung(ein, eout, gout);
       gout.SetPol(posUhat);
       double polar45 = FF2 * TCrossSection::Bremsstrahlung(ein, eout, gout);
+      gout.SetPol(posVhat);
+      double polar135 = FF2 * TCrossSection::Bremsstrahlung(ein, eout, gout);
 
       for (int i=0; i < 4; ++i) {
          k[i] = kout[i];
@@ -209,6 +265,8 @@ void GlueXBremsstrahlungGenerator::GenerateBeamPhotons(int nevents)
       }
       polar_0_90 = polar0 / diffXS;
       polar_45_135 = polar45 / diffXS;
+      polar_90_0 = polar90 / diffXS;
+      polar_135_45 = polar135 / diffXS;
       fTree->Fill();
       good_event = 1;
       if (event % 1000 == 0) {
@@ -232,7 +290,20 @@ double GlueXBremsstrahlungGenerator::AtomicFormFactor(double q2)
    return Z * (1 - Fff);
 }
 
-void GlueXBremsstrahlungGenerator::prepareImportanceSamplingPDFs()
-{}
+void GlueXBremsstrahlungGenerator::SetRandomSeed(long int seed)
+{
+   fRandom.SetSeed(seed);
+}
+
+void GlueXBremsstrahlungGenerator::normalize(TH1D *hist)
+{
+   double sum = hist->Integral();
+   double dx = hist->GetBinWidth(1);
+   double normfactor = 1 / (sum * dx);
+   int nbins = hist->GetNbinsX();
+   for (int i=1; i <= nbins; ++i) {
+      hist->SetBinContent(i, hist->GetBinContent(i) * normfactor);
+   }
+}
 
 #endif
