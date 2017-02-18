@@ -48,7 +48,7 @@ CPPFLAGS += -DG4MULTITHREADED
 
 G4LIB_USE_GDML = 1
 CPPVERBOSE = 1
-G4DEBUG = 1
+#G4DEBUG = 1
 
 hdgeant4_sources := $(filter-out src/CobremsGeneration.cc, $(wildcard src/*.cc))
 G4fixes_sources := $(wildcard src/G4fixes/*.cc)
