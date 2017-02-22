@@ -28,26 +28,25 @@
 #ifndef GlueXBremsstrahlungGenerator_H
 #define GlueXBremsstrahlungGenerator_H
 
-#include <ImportanceSampler.hh>
-#include <CLHEP/Random/Random.h>
+#include <TRandom3.h>
+#include <TFile.h>
+#include <TTree.h>
+#include <TH1D.h>
 
 class GlueXBremsstrahlungGenerator
 {
  public:
-   GlueXBremsstrahlungGenerator();
+   GlueXBremsstrahlungGenerator(TFile *rootfile=0);
    ~GlueXBremsstrahlungGenerator();
 
    void GenerateBeamPhotons(int nevents);
    double AtomicFormFactor(double q2);
+   void SetRandomSeed(long int seed);
 
  protected:
-   static ImportanceSampler fDummyPDFx; 
-
-   void prepareImportanceSamplingPDFs();
-
    double fBeamEnergy;
    double fMinEnergy;
-   CLHEP::HepRandom fRandom;
+   TRandom3 fRandom;
 
  private:
    double Ebeam;
@@ -62,8 +61,16 @@ class GlueXBremsstrahlungGenerator
    double pR[4];
    double polar_0_90;
    double polar_45_135;
+   double polar_90_0;
+   double polar_135_45;
    double diffXS;
    double weight;
+
+   void normalize(TH1D *hist);
+
+   TH1D *fImportSample[5];
+   static TTree *fTree;
+   static TFile *fTreeFile;
 };
 
 #endif
