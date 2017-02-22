@@ -636,9 +636,10 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 
    // append secondary vertex to MC record
    if (event_info) {
-      char mech[5];
-      sprintf(mech, "%c%c%c%c", 'C', 'O', 'N', 'V');
-      event_info->AddSecondaryVertex(secondaries, 1, *(int*)mech);
+      int mech[2];
+      char *cmech = (char*)mech;
+      snprintf(cmech, 5, "%c%c%c%c", 'C', 'O', 'N', 'V');
+      event_info->AddSecondaryVertex(secondaries, 1, mech[0]);
    }
 
 #if VERBOSE_PAIRS_SPLITTING

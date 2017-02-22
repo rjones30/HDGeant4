@@ -96,9 +96,10 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
                (*iter)->SetUserInformation(trackinfo);
             }
             if (eventinfo) {
-               char mech[5];
-               sprintf(mech, "%c%c%c%c", 'D', 'C', 'A', 'Y');
-               eventinfo->AddSecondaryVertex(secondary, primeID, *(int*)mech);
+               int mech[2];
+               char *cmech = (char*)mech;
+               snprintf(cmech, 5, "%c%c%c%c", 'D', 'C', 'A', 'Y');
+               eventinfo->AddSecondaryVertex(secondary, primeID, mech[0]);
             }
          }
       }

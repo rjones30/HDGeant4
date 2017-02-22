@@ -68,9 +68,6 @@ G4ClassificationOfNewTrack GlueXStackingAction::ClassifyNewTrack(
    //                > 0 : secondary particle
    //                < 0 : postponed from the previous event
 
-   GlueXUserTrackInformation* info = (GlueXUserTrackInformation*)
-                                     aTrack->GetUserInformation();
-   //if (nosecondaries && info && info->GetGlueXTrackID() < 0)
    if (nosecondaries && aTrack->GetParentID() != 0)
       return fKill;
 

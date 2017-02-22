@@ -1201,7 +1201,7 @@ void HddsG4Builder::createMapFunctions(DOMElement* el, const XString& ident)
             sunit.getConversions(sampleEl);
             std::stringstream listr(boundsS);
             listr >> bound[0] >> bound[1];
-            int iaxis;
+            int iaxis=0;
             if (gridtype == "cartesian")
             {
                if (axisS == "x" && 
