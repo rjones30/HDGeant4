@@ -532,7 +532,7 @@ void GlueXComputedMagField::SetFunction(std::string function)
 
          else {
             std::map<std::string, std::string> map_name;
-            const char *map_key = "/Magnets/Solenoid/solenoid.map";
+            const char *map_key = "/Magnets/Solenoid/solenoid_map";
             if (jcalib->GetCalib(map_key, map_name)) {
                G4cerr << "Error in GlueXComputedMagField::SetFunction - "
                       << "failed to figure out which magnetic field map "
