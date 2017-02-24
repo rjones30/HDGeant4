@@ -27,7 +27,7 @@ CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
 CPPFLAGS += -I/usr/include/Qt
-CPPFLAGS += -I/usr/include/python2.6
+CPPFLAGS += -I/usr/include/python2.7
 CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
 CPPFLAGS += -DUSE_SSE2 -std=c++11
 #CPPFLAGS += -I/usr/include/Qt
@@ -55,7 +55,7 @@ G4fixes_sources := $(wildcard src/G4fixes/*.cc)
 G4debug_sources := $(wildcard src/G4debug/*.cc)
 HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
 
-ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA
+ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer
 
 DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
@@ -73,10 +73,10 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
-INTYLIBS += -fPIC -I$(HDDS_HOME) -I/usr/local/xerces/include
+INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCES_INCLUDE)
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -lboost_python
+INTYLIBS += -lboost_python -lpython2.7
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all

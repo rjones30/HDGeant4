@@ -8,3 +8,7 @@
 *.o
 *.so
 src/G4fixes
+.clone_done
+.link_to_fixes_done
+.make_done
+hdgeant4_prereqs_version.xml
