@@ -73,7 +73,7 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
-INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCES_INCLUDE)
+INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
 INTYLIBS += -lboost_python -lpython2.7
