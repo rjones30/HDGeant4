@@ -51,7 +51,6 @@
 #define COBREMS_GENERATOR_VERBOSITY 1
 #define BOOST_PYTHON_WRAPPING 1
 
-#include <iostream>
 #include <stdio.h>
 #include <CobremsGeneration.hh>
 #include <boost/math/special_functions/expint.hpp>
