@@ -55,7 +55,7 @@ G4fixes_sources := $(wildcard src/G4fixes/*.cc)
 G4debug_sources := $(wildcard src/G4debug/*.cc)
 HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
 
-ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA
+ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer
 
 DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
@@ -73,7 +73,7 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
-INTYLIBS += -fPIC -I$(HDDS_HOME) -I/usr/local/xerces/include
+INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
 INTYLIBS += -lboost_python $(shell python-config --libs)
