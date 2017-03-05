@@ -27,6 +27,7 @@
 // related to the GENBEAM control.in flag.
 
 int GlueXPhotonBeamGenerator::fGenerateNotSimulate = 0;
+int GlueXPhotonBeamGenerator::fBeamBackgroundTagOnly = 0;
 
 double GlueXPhotonBeamGenerator::fBeamBucketPeriod = 4. * ns;
 double GlueXPhotonBeamGenerator::fBeamStartZ = -24 * m;
@@ -71,8 +72,20 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
       }
       GlueXUserEventInformation::fWriteNoHitEvents = 1;
    }
-
-   prepareImportanceSamplingPDFs();
+   std::map<int, int> bgratepars;
+   std::map<int, int> bggatepars;
+   std::map<int, int> bgtagonlypars;
+   if (user_opts->Find("BEAM", beampars) &&
+       user_opts->Find("BGRATE", bgratepars) &&
+       user_opts->Find("BGGATE", bggatepars))
+   {
+      if (user_opts->Find("BGTAGONLY", bgtagonlypars)) {
+         fBeamBackgroundTagOnly = bgtagonlypars[1];
+      }
+      else {
+         fBeamBackgroundTagOnly = 0;
+      }
+   }
 
    // These cutoffs should be set empirically, as low as possible
    // for good efficiency, but not too low so as to avoid excessive
@@ -80,6 +93,8 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
 
    fCoherentPDFx.Pcut = .003;
    fIncoherentPDFlogx.Pcut = .003;
+
+   prepareImportanceSamplingPDFs();
 }
 
 GlueXPhotonBeamGenerator::~GlueXPhotonBeamGenerator()
@@ -103,6 +118,11 @@ void GlueXPhotonBeamGenerator::prepareImportanceSamplingPDFs()
       xarr[i] = xmin + (i + 0.5) * dx;
       yarr[i] = fCobrems->Rate_dNcdxdp(xarr[i], M_PI/4);
       yarr[i] = (yarr[i] > 0)? yarr[i] : 0;
+      for (int j=1; j < 10; ++j) {
+         double mfactor = 1 - j / 10.;
+         if (i > j && yarr[i] < yarr[i-j] * mfactor)
+            yarr[i] = yarr[i-j] * mfactor;
+      }
    }
    fCobrems->applyBeamCrystalConvolution(Ndim, xarr, yarr);
    sum = 0;
@@ -116,6 +136,7 @@ void GlueXPhotonBeamGenerator::prepareImportanceSamplingPDFs()
       fCoherentPDFx.density[i] /= sum * dx;
       fCoherentPDFx.integral[i] /= sum;
    }
+   fCoherentPDFx.Pcut = 4*M_PI * sum * dx;
 
    // Compute approximate PDF for dNi/dlogx
    double logxmin = log(xmin);
@@ -387,7 +408,27 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       }
    }
 
-   // Put the radiator back the way your found it
+#if VERBOSE_COBREMS_SPLITTING
+   if (fIncoherentPDFlogx.Npassed / 100 * 100 == fIncoherentPDFlogx.Npassed) {
+      G4cout << "coherent rate is "
+             << fCoherentPDFx.Psum / (fCoherentPDFx.Ntested + 1e-99)
+             << ", efficiency is "
+             << fCoherentPDFx.Npassed / (fCoherentPDFx.Ntested + 1e-99)
+             << G4endl
+             << "incoherent rate is "
+             << fIncoherentPDFlogx.Psum / (fIncoherentPDFlogx.Ntested + 1e-99)
+             << ", efficiency is "
+             << fIncoherentPDFlogx.Npassed / (fIncoherentPDFlogx.Ntested + 1e-99)
+             << G4endl
+             << "counts are "
+             << fCoherentPDFx.Npassed << " / " << fIncoherentPDFlogx.Npassed
+             << " = "
+             << fCoherentPDFx.Npassed / (fIncoherentPDFlogx.Npassed + 1e-99)
+             << G4endl;
+   }
+#endif
+
+   // Put the radiator back the way you found it
    fCobrems->setTargetOrientation(targetThetax,
                                   targetThetay,
                                   targetThetaz);
@@ -426,20 +467,25 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    int bg = 1;
    double tvtx;
    if (t0 == 0) {
-      event_info = new GlueXUserEventInformation();
-      anEvent->SetUserInformation(event_info);
       tvtx = (vtx[2] - targetCenterZ) / fBeamVelocity;
       tvtx -= GenerateTriggerTime(anEvent);
+      event_info = new GlueXUserEventInformation();
+      anEvent->SetUserInformation(event_info);
       if (fGenerateNotSimulate == 0) {
          event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
       }
       bg = 0;
    }
    else {
-      event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
-      assert (event_info != 0);
       tvtx = fBeamBucketPeriod * floor(t0 / fBeamBucketPeriod + 0.5);
       tvtx += (vtx[2] - targetCenterZ) / fBeamVelocity;
+      if (fBeamBackgroundTagOnly) {
+         double ttag = tvtx + (targetCenterZ - vtx[2]) / fBeamVelocity;
+         fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
+         return;
+      }
+      event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
+      assert (event_info != 0);
    }
 
    // Generate new primary for the beam photon
@@ -478,26 +524,6 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       double ttag = tvtx + (targetCenterZ - vtx[2]) / fBeamVelocity;
       fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
    }
-
-#if VERBOSE_COBREMS_SPLITTING
-   if (fIncoherentPDFlogx.Npassed / 100 * 100 == fIncoherentPDFlogx.Npassed) {
-      G4cout << "coherent rate is "
-             << fCoherentPDFx.Psum / (fCoherentPDFx.Ntested + 1e-99)
-             << ", efficiency is "
-             << fCoherentPDFx.Npassed / (fCoherentPDFx.Ntested + 1e-99)
-             << G4endl
-             << "incoherent rate is "
-             << fIncoherentPDFlogx.Psum / (fIncoherentPDFlogx.Ntested + 1e-99)
-             << ", efficiency is "
-             << fIncoherentPDFlogx.Npassed / (fIncoherentPDFlogx.Ntested + 1e-99)
-             << G4endl
-             << "counts are "
-             << fCoherentPDFx.Npassed << " / " << fIncoherentPDFlogx.Npassed
-             << " = "
-             << fCoherentPDFx.Npassed / (fIncoherentPDFlogx.Npassed + 1e-99)
-             << G4endl;
-   }
-#endif
 }
 
 double GlueXPhotonBeamGenerator::GenerateTriggerTime(const G4Event *event)
