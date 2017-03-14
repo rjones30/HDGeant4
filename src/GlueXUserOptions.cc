@@ -103,7 +103,7 @@ int GlueXUserOptions::ReadControl_in(const char *ctrlin)
          continue;
       }
       else {
-         std::string key(askey(cards.substr(strt, stop - strt)));
+         std::string key(askey(cards.substr(strt, stop)));
          if (key == "c" || key == "C") {
             continue;
          }
