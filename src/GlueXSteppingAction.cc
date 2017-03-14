@@ -20,7 +20,7 @@
 #include <exception>
 #include <map>
 
-#define BACKGROUND_PROFILING 1
+//#define BACKGROUND_PROFILING 1
 #if BACKGROUND_PROFILING
 #include <TFile.h>
 #include <TTree.h>
