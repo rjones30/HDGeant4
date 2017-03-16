@@ -91,8 +91,9 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
    // for good efficiency, but not too low so as to avoid excessive
    // warnings about Pcut violations.
 
-   fCoherentPDFx.Pcut = .003;
-   fIncoherentPDFlogx.Pcut = .003;
+   double raddz = fCobrems->getTargetThickness() * m;
+   fCoherentPDFx.Pcut = .003 * (raddz / 20e-6);
+   fIncoherentPDFlogx.Pcut = .003 * (raddz / 20e-6);
 
    prepareImportanceSamplingPDFs();
 }
