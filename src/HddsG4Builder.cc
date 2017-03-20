@@ -152,11 +152,11 @@ int HddsG4Builder::createMaterial(DOMElement* el)
          DOMElement* specEl = (DOMElement*)specL->item(i);
          XString valS;
          valS = specEl->getAttribute(X("E"));
-         Ephot.push_back(atof(S(valS)));
+         Ephot.push_back(atof(S(valS))*eV);
          valS = specEl->getAttribute(X("refindex"));
          rindex.push_back(atof(S(valS)));
          valS = specEl->getAttribute(X("abslen"));
-         abslen.push_back(atof(S(valS)));
+         abslen.push_back(atof(S(valS))*cm);
          valS = specEl->getAttribute(X("smooth"));
          smooth.push_back(atof(S(valS)));
          valS = specEl->getAttribute(X("reflect"));
@@ -451,13 +451,64 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
    G4MaterialPropertiesTable *mpt = fMaterials[imate]->GetMaterialPropertiesTable();
    if (mpt)
    {
-      G4OpticalSurface *surface = new G4OpticalSurface(S(nameS));
-      surface->SetType(dielectric_metal);
-      surface->SetFinish(ground);
-      surface->SetModel(glisur);
-      double polish = mpt->GetProperty("POLISH")->GetMaxValue();
-      surface->SetPolish(polish);
-      new G4LogicalSkinSurface(S(nameS),fLogicalVolumes[newvol],surface);
+      G4MaterialPropertyVector *poli_vector = mpt->GetProperty("POLISH");
+      G4MaterialPropertyVector *refl_vector = mpt->GetProperty("REFLECTIVITY");
+      G4MaterialPropertyVector *refi_vector = mpt->GetProperty("RINDEX");
+      G4MaterialPropertyVector *absl_vector = mpt->GetProperty("ABSLENGTH");
+      G4MaterialPropertyVector *effi_vector = mpt->GetProperty("EFFICIENCY");
+      if (refi_vector == 0) {
+         if (refl_vector == 0) {
+            G4cerr << APP_NAME << " error: material " << mate->GetName()
+                   << " needs to have either refindex defined (dielectrics)"
+                   << " or else reflect (metals) but it has neither!"
+                   << G4endl;
+            exit(1);
+         }
+         if (absl_vector != 0) {
+            G4cerr << APP_NAME << " error: material " << mate->GetName()
+                   << " has abslen defined but no refindex; defining abslen"
+                   << " requires that refindex also be specified!"
+                   << G4endl;
+            exit(1);
+         }
+         if (poli_vector != 0 || effi_vector != 0) {
+            G4OpticalSurface *surface = new G4OpticalSurface(S(nameS));
+            surface->SetType(dielectric_metal);
+            surface->SetModel(glisur);
+            if (poli_vector != 0) {
+               double polish = poli_vector->GetMaxValue();
+               surface->SetPolish(polish);
+               surface->SetFinish(ground);
+            }
+            else {
+               surface->SetFinish(polished);
+            }
+            new G4LogicalSkinSurface(S(nameS),fLogicalVolumes[newvol],surface);
+         }
+      }
+      else if (refl_vector == 0) {
+         if (poli_vector != 0) {
+            G4OpticalSurface *surface = new G4OpticalSurface(S(nameS));
+            surface->SetType(dielectric_dielectric);
+            surface->SetModel(glisur);
+            if (poli_vector != 0) {
+               double polish = poli_vector->GetMaxValue();
+               surface->SetPolish(polish);
+               surface->SetFinish(ground);
+            }
+            else {
+               surface->SetFinish(polished);
+            }
+            new G4LogicalSkinSurface(S(nameS),fLogicalVolumes[newvol],surface);
+         }
+      }
+      else {
+         G4cerr << APP_NAME << " error: material " << mate->GetName()
+                << " has optical properties, but neither refindex nor reflect"
+                << " data are provided, you need either one or the other!"
+                << G4endl;
+         exit(1);
+      }
    }
 
 #ifdef LINUX_CPUTIME_PROFILING
