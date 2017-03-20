@@ -142,7 +142,7 @@ int main(int argc,char** argv)
    // Physics process initialization
    GlueXPhysicsList *physicslist = new GlueXPhysicsList();
    runManager.SetUserInitialization(physicslist);
-    
+
    // User actions initialization
    GlueXUserActionInitialization *userinit;
    userinit = new GlueXUserActionInitialization(physicslist);
@@ -191,7 +191,7 @@ int main(int argc,char** argv)
    }
 
    double nsim = GlueXPrimaryGeneratorAction::GetInstance()->getEventCount();
-   nsim += 1e-99;
+   double norm = (nsim == 0)? 1e9 : nsim;
    runtimer.Stop();
    double realrun = runtimer.GetRealElapsed();
    double sysrun = runtimer.GetSystemElapsed();
@@ -201,8 +201,8 @@ int main(int argc,char** argv)
    double syssim = simtimer.GetSystemElapsed();
    double usersim = simtimer.GetUserElapsed();
    char perevent[200];
-   snprintf(perevent, 200, "%18f%18f%18f", realsim/nsim, syssim/nsim,
-                                                         usersim/nsim);
+   snprintf(perevent, 200, "%18f%18f%18f", realsim/norm, syssim/norm,
+                                                         usersim/norm);
    char totalused[200];
    snprintf(totalused, 200, "%18f%18f%18f", realrun, sysrun, userrun);
    
