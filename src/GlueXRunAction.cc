@@ -31,6 +31,9 @@ void GlueXRunAction::BeginOfRunAction(const G4Run*)
 
    fPhysicsList->SelectActiveProcesses(1);
    //fPhysicsList->ListActiveProcesses();
+
+   // Reorder processes to user-defined order
+   fPhysicsList->DoProcessReordering();
 }
 
 void GlueXRunAction::EndOfRunAction(const G4Run* evt)
