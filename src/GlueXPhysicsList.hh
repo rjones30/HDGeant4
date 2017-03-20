@@ -28,7 +28,7 @@ class GlueXPhysicsList: public G4VModularPhysicsList
 {
  public:
    GlueXPhysicsList(const GlueXDetectorConstruction *geometry=0, 
-                    G4int verbosity=1);
+                    G4int verbosity=0);
    virtual ~GlueXPhysicsList();
 
    virtual void ConstructProcess();
@@ -47,6 +47,9 @@ class GlueXPhysicsList: public G4VModularPhysicsList
    virtual void DoHadronicInteractions(G4int flag);
    virtual void DoCerenkovRadiation(G4int flag);
    virtual void DoOpticalAbsorption(G4int flag);
+
+   virtual void DoProcessReordering();
+   virtual void CheckProcessOrdering();
 
  protected:
    GlueXUserOptions *fOptions;

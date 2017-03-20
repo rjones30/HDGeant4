@@ -72,6 +72,12 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
    defaultCutValue = 0.7*CLHEP::mm;  
    SetVerboseLevel(verbosity);
 
+   // Parallel world transportation
+   for (int para=1; para <= geometry->GetParallelWorldCount(); ++para) {
+      G4String name = geometry->GetParallelWorldName(para);
+      RegisterPhysics(new G4ParallelWorldPhysics(name, true));
+   }
+
    // EM Physics
    RegisterPhysics( new G4EmStandardPhysics_option1(verbosity) );
 
@@ -122,12 +128,6 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
    }
    else {
       fOpticalPhysics = 0;
-   }
-
-   // Parallel world transportation
-   for (int para=1; para <= geometry->GetParallelWorldCount(); ++para) {
-      G4String name = geometry->GetParallelWorldName(para);
-      RegisterPhysics(new G4ParallelWorldPhysics(name, true));
    }
 }
 
@@ -601,4 +601,35 @@ void GlueXPhysicsList::SelectActiveProcesses(G4int verbosity)
          }
       }
    }
+}
+
+void GlueXPhysicsList::CheckProcessOrdering()
+{
+   std::cout << "Complete list of PostStepDoIt processes for G4OpticalPhoton,"
+             << " in order of execution:" << std::endl;
+   G4ProcessManager *mgr = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
+   G4ProcessVector *procs = mgr->GetPostStepProcessVector(typeDoIt);
+   for (int j=0; j < procs->size(); ++j) {
+      std::cout << j << ": " << (*procs)[j]->GetProcessName() << std::endl;
+   }
+}
+
+void GlueXPhysicsList::DoProcessReordering()
+{
+   // Special process ordering needed for optical photons
+   G4ProcessManager *mgr = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
+   G4ProcessVector *procs = mgr->GetPostStepProcessVector(typeDoIt);
+   G4VProcess *paraWorld=0;
+   for (int j=0; j < procs->size(); ++j) {
+      std::string procname((*procs)[j]->GetProcessName());
+      if (procname.substr(0, 15) == "Parallel World ") {
+         paraWorld = (*procs)[j];
+      }
+   }
+   if (paraWorld == 0) {
+      G4cerr << "Parallel World process not found, cannot continue!"
+             << G4endl;
+      exit(1);
+   }
+   mgr->SetProcessOrderingToSecond(paraWorld, idxPostStep);
 }
