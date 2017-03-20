@@ -86,7 +86,7 @@ GlueXSteppingAction::~GlueXSteppingAction()
 }
 
 void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
-{ 
+{
    G4Track *track = (G4Track*)step->GetTrack();
    const G4Event *event = G4RunManager::GetRunManager()
                                       ->GetCurrentEvent();
