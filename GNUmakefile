@@ -90,7 +90,7 @@ hdds:  $(G4TMPDIR)/libhdds.so
 CXXFLAGS = -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 $(G4TMPDIR)/libcobrems.so: src/CobremsGeneration.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,$@ \
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic \
 	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
 hdgeant4_objects := $(patsubst src/%.cc, $(G4TMPDIR)/%.o, $(hdgeant4_sources))
@@ -127,7 +127,7 @@ else
 endif
 
 $(G4TMPDIR)/libhdds.so: $(patsubst $(HDDS_HOME)/%.cpp, $(HDDSDIR)/%.o, $(HDDS_sources))
-	@$(CXX) -Wl,-soname,$@ -shared -o $@ $^
+	@$(CXX) -shared -o $@ $^
 
 exe:
 	@mkdir -p $(G4LIBDIR)/$@
