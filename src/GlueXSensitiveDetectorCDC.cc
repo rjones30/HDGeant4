@@ -24,7 +24,7 @@
 
 #include <JANA/JApplication.h>
 
-#include <malloc.h>
+#include <stdlib.h>
 
 const double fC = 1e-15 * coulomb;
 const double GlueXSensitiveDetectorCDC::ELECTRON_CHARGE = 1.6022e-4*fC;
