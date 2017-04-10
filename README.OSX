@@ -1,0 +1,112 @@
+
+
+Builing Geant4
+-----------------------
+Detailed instructions on how I built Geant4 for OS X are given at the bottom
+of this file. Note that for HDGeant4 you must set your G4ROOT environment variable.
+In my original build, I set a variable named simply G4. Just set G4ROOT to what
+I set G4 to in those instructions:
+
+> setenv G4ROOT $G4
+
+
+Install boost-python via homebrew
+----------------------------------
+If you don't already have homebrew installed, do it like this:
+(n.b. this command is for bash so if you are using csh or tcsh, just run bash
+and then run this from there. Homebrew will still be available for your (t)csh.
+
+> bash
+$ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+Install boost-python like this:
+
+$ brew install boost-python
+
+
+The files will all be linked in /usr/local/include and /usr/local/lib. You can
+exit your bash shell now if you started it just for installing this.
+
+
+Building HDGeant4
+-----------------------
+A special makefile was made to build for OSX. Run it with something like the following
+where the -j8 argument says to use 8 threads (adjust this to suit your hardware)
+
+make -f GNUmakefile.OSX -j8
+
+
+====================================================================================
+
+Build Geant4 on Mac OS X
+-----------------------------
+
+The following are instructions for how I build Geant4 on Mac OSX 10.11
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+
+Apr 10, 2017
+
+
+Here is how I built Geant4 10.03.p01 on OS X 10.11
+
+
+
+0.) Make sure a recent version of cmake is in your path. Using the 
+installer for OS X, it can be found here:
+
+> setenv PATH /Applications/CMake.app/Contents/bin/cmake:$PATH
+
+The compiler that comes with XCode 8 will work. As will clang3.8.0
+that I installed myself. Just make sure c++ points to the right place
+and that BMS_OSNAME is set correctly.
+
+
+
+1.) Unpack the source and create a build directory next to it as
+    suggested by the build instructions.
+
+> tar xzf geant4.10.03.p01.tar.gz 
+> mkdir geant4.10.03.p01.${BMS_OSNAME}-build
+> cd geant4.10.03.p01.${BMS_OSNAME}-build
+
+
+2.) Run cmake with appropriate flags to turn on GDML, OpenGL, and
+    raytracer. The GDML is so it can read geometry converted from
+	HDDS to GDML using the ROOT TGeoManager->Export() utility.
+	Note that GDML requires xerces and that it be given explicitly.
+
+> cmake -DCMAKE_INSTALL_PREFIX=/usr/local/geant4/geant4.10.03.p01.$BMS_OSNAME \
+		-DGEANT4_USE_GDML=ON \
+		-DXERCESC_ROOT_DIR=$XERCESCROOT \
+		-DGEANT4_USE_OPENGL_X11=ON \
+		-DGEANT4_USE_RAYTRACER_X11=ON \
+		-DGEANT4_BUILD_MULTITHREADED=ON \
+		-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+		../geant4.10.03.p01
+
+
+
+3.) Run make (multi-threaded) followed by make install
+
+> make -j8
+> make install
+
+4.) Make sure the "data" directory containing all of the physics
+    process data files exists parallel to the installation directory.
+	 The directory: geant4.10.03.p01.$BMS_OSNAME/share/Geant4-10.2.2
+    will automatically be created. The data link, however, must be 
+	 created by hand:
+	 
+> cd ../geant4.10.03.p01.${BMS_OSNAME}/share/Geant4-10.3.1
+> ln -s ../../../data
+
+
+5.) Set up your environment to use this.
+
+setenv G4 /usr/local/geant4/geant4.10.03.p01.Darwin_macosx10.11-x86_64-llvm8.0.0
+source $G4/bin/geant4.csh $G4/bin
+source $G4/share/Geant4-10.*/geant4make/geant4make.csh $G4/share/Geant4-10.*/geant4make/
+
