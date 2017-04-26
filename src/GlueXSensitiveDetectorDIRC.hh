@@ -3,6 +3,8 @@
 //
 // author: richard.t.jones at uconn.edu
 // version: november 28, 2016
+//          may 7, 2017 R. Dzhygadlo - added adjustments for
+//                      GlueXHitDIRCBar GlueXHitDIRCMcp    
 //
 // In the context of the Geant4 event-level multithreading model,
 // this class is "thread-local", ie. has thread-local state. Its
@@ -16,6 +18,8 @@
 
 #include "GlueXHitDIRCflash.hh"
 #include "GlueXHitDIRCpoint.hh"
+#include "GlueXHitDIRCMcp.hh"
+#include "GlueXHitDIRCBar.hh"
 
 class G4Step;
 class G4HCofThisEvent;
@@ -35,19 +39,17 @@ class GlueXSensitiveDetectorDIRC : public G4VSensitiveDetector
    int GetIdent(std::string div, const G4VTouchable *touch);
 
  private:
-   GlueXHitsMapDIRCflash* fFlashesMap;
-   GlueXHitsMapDIRCpoint* fPointsMap;
-
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
-
-   static int MAX_HITS;
-   // put all other detector response parameters here
-   // these are just placeholders, not presently used
-   static double TWO_HIT_TIME_RESOL;
-   static double THRESH_PE;
-
-   static int instanceCount;
-   static G4Mutex fMutex;
+  std::vector<GlueXHitDIRCBar> fHitsBar;
+  std::vector<GlueXHitDIRCMcp> fHitsMcp;
+  
+  static std::map<G4LogicalVolume*, int> fVolumeTable;
+  
+  static int MAX_HITS;
+  // put all other detector response parameters here
+  static double TWO_HIT_TIME_RESOL;
+  
+  static int instanceCount;
+  static G4Mutex fMutex;
 };
 
 #endif
