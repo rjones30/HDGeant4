@@ -210,8 +210,6 @@ void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
   // Collect and output the BarHits
   for(unsigned int h=0; h<fHitsBar.size(); h++){
     hddm_s::DircTruthBarHitList bhit = dirc.addDircTruthBarHits(1);
-    std::cout<<"fHitsBar[h].bar  "<<fHitsBar[h].bar <<std::endl;
-    
     bhit(0).setE(fHitsBar[h].E_GeV);
     bhit(0).setT(fHitsBar[h].t_ns);
     bhit(0).setX(fHitsBar[h].x_cm);
