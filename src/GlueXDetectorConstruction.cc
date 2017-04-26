@@ -351,7 +351,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
          }
          iter->second->SetSensitiveDetector(ftofHandler);
       }
-      else if (volname == "RDCD") {
+      else if (volname == "QZBL" || volname == "PIXV") {
          if (dircHandler == 0) {
             dircHandler = new GlueXSensitiveDetectorDIRC("dirc");
             SDman->AddNewDetector(dircHandler);
