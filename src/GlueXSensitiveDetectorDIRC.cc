@@ -142,23 +142,23 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
     return true;
   }
 
-  // MCP's pixel volume
+  // PMT's pixel volume
   if (touch->GetVolume()->GetName() == "PIXV"){
-    if ((int)fHitsMcp.size() < MAX_HITS){
+    if ((int)fHitsPmt.size() < MAX_HITS){
 
-      GlueXHitDIRCMcp mcphit;
-      mcphit.E_GeV = Ein/GeV;
-      mcphit.t_ns = t/ns;
-      mcphit.x_cm = x[0]/cm;
-      mcphit.y_cm = x[1]/cm;
-      mcphit.z_cm = x[2]/cm;
+      GlueXHitDIRCPmt pmthit;
+      pmthit.E_GeV = Ein/GeV;
+      pmthit.t_ns = t/ns;
+      pmthit.x_cm = x[0]/cm;
+      pmthit.y_cm = x[1]/cm;
+      pmthit.z_cm = x[2]/cm;
       
       G4double box = touch_hist->GetReplicaNumber(3);   // [1,2]
-      G4double mcp = touch_hist->GetReplicaNumber(1)-1; // [0,101]
+      G4double pmt = touch_hist->GetReplicaNumber(1)-1; // [0,101]
       G4double pix = touch_hist->GetReplicaNumber(0)-1; // [0,63]
 
-      mcphit.ch = box*mcp*64+pix;      
-      fHitsMcp.push_back(mcphit);
+      pmthit.ch = box*pmt*64+pix;      
+      fHitsPmt.push_back(pmthit);
     }else {
       G4cerr << "GlueXSensitiveDetectorDIRC::ProcessHits error: "
              << "max hit count " << MAX_HITS << " exceeded, truncating!"
@@ -170,7 +170,7 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
 
 void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
 {
-  if (fHitsBar.size() == 0 || fHitsMcp.size() == 0)
+  if (fHitsBar.size() == 0 || fHitsPmt.size() == 0)
     return;
   
   if (verboseLevel > 1) { 
@@ -183,10 +183,10 @@ void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
     
     G4cout << G4endl
 	   << "--------> Hits Collection: in this event there are "
-	   << fHitsMcp.size() << " MCP hits: "
+	   << fHitsPmt.size() << " PMT hits: "
 	   << G4endl;
-    for(unsigned int h=0; h<fHitsMcp.size(); h++)
-      fHitsMcp[h].Print();
+    for(unsigned int h=0; h<fHitsPmt.size(); h++)
+      fHitsPmt[h].Print();
   }
 
   // pack hits into ouptut hddm record
@@ -224,19 +224,19 @@ void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
   }
 
   // Collect and output the DircTruthPoints
-  for(unsigned int h=0; h<fHitsMcp.size(); h++){
-    hddm_s::DircTruthMcpHitList mhit = dirc.addDircTruthMcpHits(1);
-    mhit(0).setE(fHitsMcp[h].E_GeV);
-    mhit(0).setT(fHitsMcp[h].t_ns);
-    mhit(0).setX(fHitsMcp[h].x_cm);
-    mhit(0).setY(fHitsMcp[h].y_cm);
-    mhit(0).setZ(fHitsMcp[h].z_cm);
-    mhit(0).setCh(fHitsMcp[h].ch);
-    mhit(0).setKey_bar(fHitsMcp[h].key_bar);
+  for(unsigned int h=0; h<fHitsPmt.size(); h++){
+    hddm_s::DircTruthPmtHitList mhit = dirc.addDircTruthPmtHits(1);
+    mhit(0).setE(fHitsPmt[h].E_GeV);
+    mhit(0).setT(fHitsPmt[h].t_ns);
+    mhit(0).setX(fHitsPmt[h].x_cm);
+    mhit(0).setY(fHitsPmt[h].y_cm);
+    mhit(0).setZ(fHitsPmt[h].z_cm);
+    mhit(0).setCh(fHitsPmt[h].ch);
+    mhit(0).setKey_bar(fHitsPmt[h].key_bar);
   }
 
   fHitsBar.clear();
-  fHitsMcp.clear();
+  fHitsPmt.clear();
 }
 
 int GlueXSensitiveDetectorDIRC::GetIdent(std::string div, 

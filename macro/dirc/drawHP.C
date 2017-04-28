@@ -11,11 +11,11 @@ void drawHP(TString infile="drc.root"){
     
     for(Int_t h=0; h<glx_event->GetHitSize(); h++){
       hit = glx_event->GetHit(h);
-      Int_t mcp = hit.GetMcpId();
+      Int_t pmt = hit.GetPmtId();
       Int_t pix = hit.GetPixelId();
       TVector3 gpos = hit.GetPosition();
       Double_t time = hit.GetLeadTime();
-      if(mcp<102) glx_hdigi[mcp]->Fill(pix%8, 7-pix/8);
+      if(pmt<102) glx_hdigi[pmt]->Fill(pix%8, 7-pix/8);
     }
   }
   glx_drawDigi("m,p,v\n",0);

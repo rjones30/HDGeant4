@@ -50,14 +50,14 @@ DrcEvent* glx_event(0);
 #endif
 
 const Int_t  glx_nrow(6),glx_ncol(17);
-const Int_t  glx_nmcp(glx_nrow*glx_ncol);
+const Int_t  glx_npmt(glx_nrow*glx_ncol);
 
 TChain*  glx_ch(0);
 Int_t    glx_entries(0), glx_momentum(0),glx_pdg(0),glx_test1(0),glx_test2(0);
 Double_t glx_theta(0),glx_phi(0);
 TString  glx_savepath(""), glx_info("");
-TH2F*    glx_hdigi[glx_nmcp];
-TPad*    glx_hpads[glx_nmcp];
+TH2F*    glx_hdigi[glx_npmt];
+TPad*    glx_hpads[glx_npmt];
 TPad*    glx_hpglobal;
 TCanvas* glx_cdigi;
 
@@ -167,8 +167,8 @@ TString glx_drawDigi(TString digidata="", Int_t layoutId = 0, Double_t maxz = 0,
 }
 void glx_initDigi(Int_t type=0){
   if(type == 0){
-    for(Int_t m=0; m<glx_nmcp;m++){	
-      glx_hdigi[m] = new TH2F( Form("mcp%d", m),Form("mcp%d", m),8,0.,8.,8,0.,8.);
+    for(Int_t m=0; m<glx_npmt;m++){	
+      glx_hdigi[m] = new TH2F( Form("pmt%d", m),Form("pmt%d", m),8,0.,8.,8,0.,8.);
       glx_hdigi[m]->SetStats(0);
       glx_hdigi[m]->SetTitle(0);
       glx_hdigi[m]->GetXaxis()->SetNdivisions(10);
@@ -184,7 +184,7 @@ void glx_initDigi(Int_t type=0){
 }
 
 void glx_resetDigi(){
-    for(Int_t m=0; m<glx_nmcp;m++){	
+    for(Int_t m=0; m<glx_npmt;m++){	
       glx_hdigi[m]->Reset("M");
     }
 }

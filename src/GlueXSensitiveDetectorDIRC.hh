@@ -4,7 +4,7 @@
 // author: richard.t.jones at uconn.edu
 // version: november 28, 2016
 //          may 7, 2017 R. Dzhygadlo - added adjustments for
-//                      GlueXHitDIRCBar GlueXHitDIRCMcp    
+//                      GlueXHitDIRCBar GlueXHitDIRCPmt    
 //
 // In the context of the Geant4 event-level multithreading model,
 // this class is "thread-local", ie. has thread-local state. Its
@@ -18,7 +18,7 @@
 
 #include "GlueXHitDIRCflash.hh"
 #include "GlueXHitDIRCpoint.hh"
-#include "GlueXHitDIRCMcp.hh"
+#include "GlueXHitDIRCPmt.hh"
 #include "GlueXHitDIRCBar.hh"
 
 class G4Step;
@@ -40,7 +40,7 @@ class GlueXSensitiveDetectorDIRC : public G4VSensitiveDetector
 
  private:
   std::vector<GlueXHitDIRCBar> fHitsBar;
-  std::vector<GlueXHitDIRCMcp> fHitsMcp;
+  std::vector<GlueXHitDIRCPmt> fHitsPmt;
   
   static std::map<G4LogicalVolume*, int> fVolumeTable;
   
