@@ -1,0 +1,18 @@
+Example of the workflow:
+
+Set particle generator/source by using control.in file
+
+#run simulation:
+hdgeant4 run.mac
+
+# convert .hddm output to root format:
+hd_root -o drc.root --plugin=pid_dirc out.hddm
+
+# plot DIRC's hit pattern:
+root loadlib.C drawHP.C'("drc.root")'
+
+
+For a GUI with 3D visualization one need to have OpenGl and Qt libraries installed.
+Also -DG4UI_USE_EXECUTIVE flag needs to be added in GNUmakefile
+
+
