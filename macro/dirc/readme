@@ -1,6 +1,8 @@
 Example of the workflow:
 
-Set particle generator/source by using control.in file
+Use dirc_rd branch for HDDS (https://github.com/JeffersonLab/hdds).
+
+Set particle generator/source by using control.in file.
 
 #run simulation:
 hdgeant4 run.mac
