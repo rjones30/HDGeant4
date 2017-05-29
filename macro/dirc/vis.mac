@@ -27,9 +27,9 @@
 
 /vis/scene/create
 #/vis/scene/add/volume SHLD ! 2
-/vis/scene/add/volume LASS ! 1
+#/vis/scene/add/volume LASS ! 1
 /vis/scene/add/volume DCMV
-/vis/scene/add/volume FCAL ! 2
+#/vis/scene/add/volume FCAL ! 2
 #/vis/scene/add/volume MAG3 ! 2
 
 /vis/sceneHandler/attach
