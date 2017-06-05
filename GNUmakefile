@@ -70,13 +70,17 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            $(ROOTLIBS) \
            -lpthread -ldl
 
+ifdef ETROOT
+DANALIBS += -L$(ETROOT)/lib -let -let_remote
+endif
+
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -lboost_python $(shell python-config --libs)
+INTYLIBS += -lboost_python $(shell python-config --ldflags)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
