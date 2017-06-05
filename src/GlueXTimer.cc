@@ -48,7 +48,11 @@ GlueXTimer::~GlueXTimer()
 void GlueXTimer::Reset() {
    int thread = G4Threading::G4GetThreadId() + 1;
    if (fIsRunning[thread]) {
+#ifndef CLOCK_THREAD_CPUTIME_ID
+      int err = -1;
+#else
       int err = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &fClock[thread]);
+#endif
       assert(err == 0);
       fTimeLastGo[thread] = fClock[thread].tv_sec + fClock[thread].tv_nsec*1e-9;
    }
@@ -63,7 +67,11 @@ void GlueXTimer::Start() {
              << G4endl;
    }
    else {
+#ifndef CLOCK_THREAD_CPUTIME_ID
+      int err = -1;
+#else
       int err = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &fClock[thread]);
+#endif
       assert(err == 0);
       fTimeLastGo[thread] = fClock[thread].tv_sec + fClock[thread].tv_nsec*1e-9;
       fRunningTotal[thread] = 0;
@@ -75,7 +83,11 @@ void GlueXTimer::Start() {
 void GlueXTimer::Stop() {
    int thread = G4Threading::G4GetThreadId() + 1;
    if (fIsRunning[thread]) {
+#ifndef CLOCK_THREAD_CPUTIME_ID
+      int err = -1;
+#else
       int err = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &fClock[thread]);
+#endif
       assert(err == 0);
       double now = fClock[thread].tv_sec + fClock[thread].tv_nsec*1e-9;
       fRunningTotal[thread] += now - fTimeLastGo[thread];
@@ -95,7 +107,11 @@ void GlueXTimer::Stop() {
 void GlueXTimer::Suspend() {
    int thread = G4Threading::G4GetThreadId() + 1;
    if (fIsRunning[thread]) {
+#ifndef CLOCK_THREAD_CPUTIME_ID
+      int err = -1;
+#else
       int err = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &fClock[thread]);
+#endif
       assert(err == 0);
       double now = fClock[thread].tv_sec + fClock[thread].tv_nsec*1e-9;
       fRunningTotal[thread] += now - fTimeLastGo[thread];
@@ -111,7 +127,11 @@ void GlueXTimer::Suspend() {
 void GlueXTimer::Resume() {
    int thread = G4Threading::G4GetThreadId() + 1;
    if (fIsStarted[thread] && !fIsRunning[thread]) {
+#ifndef CLOCK_THREAD_CPUTIME_ID
+      int err = -1;
+#else
       int err = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &fClock[thread]);
+#endif
       assert(err == 0);
       fTimeLastGo[thread] = fClock[thread].tv_sec + fClock[thread].tv_nsec*1e-9;
       fIsRunning[thread] = 1;
