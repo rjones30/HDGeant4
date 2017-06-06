@@ -28,7 +28,7 @@ CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
 CPPFLAGS += -I/usr/include/Qt
 CPPFLAGS += $(shell python-config --includes)
-CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
+CPPFLAGS += -Wno-unused-parameter
 CPPFLAGS += -DUSE_SSE2 -std=c++11
 #CPPFLAGS += -I/usr/include/Qt
 #CPPFLAGS += -DLINUX_CPUTIME_PROFILING=1
@@ -63,24 +63,20 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
            -lTRIGGER -lDAQ -lTTAB -lEVENTSTORE -lKINFITTER \
            -lxstream -lbz2 -lz \
-           -L/usr/lib64/mysql -lmysqlclient\
+           $(shell mysql_config --libs) \
            -L$(JANA_HOME)/lib -lJANA \
            -L$(CCDB_HOME)/lib -lccdb \
            -L$(EVIOROOT)/lib -levioxx -levio \
            $(ROOTLIBS) \
            -lpthread -ldl
 
-ifdef ETROOT
-DANALIBS += -L$(ETROOT)/lib -let -let_remote
-endif
-
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
 
-INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
+INTYLIBS +=  $(DANALIBS)
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -lboost_python $(shell python-config --ldflags)
+INTYLIBS += -lboost_python $(shell python-config --libs)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
@@ -91,10 +87,11 @@ include $(G4INSTALL)/config/binmake.gmk
 cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
 
-CXXFLAGS = -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -O3 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 $(G4TMPDIR)/libcobrems.so: src/CobremsGeneration.cc
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libcobrems.so \
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS)  \
+	-flat_namespace -undefined suppress \
 	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
 hdgeant4_objects := $(patsubst src/%.cc, $(G4TMPDIR)/%.o, $(hdgeant4_sources))
@@ -131,7 +128,7 @@ else
 endif
 
 $(G4TMPDIR)/libhdds.so: $(patsubst $(HDDS_HOME)/%.cpp, $(HDDSDIR)/%.o, $(HDDS_sources))
-	@$(CXX) -Wl,-soname,libhdds.so -shared -o $@ $^
+	@$(CXX) -flat_namespace -undefined suppress -shared -o $@ $^
 
 exe:
 	@mkdir -p $(G4LIBDIR)/$@

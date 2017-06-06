@@ -69,6 +69,14 @@ cGENBEAM 'postconv'
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'test4.hddm'
 
+c Uncomment the following line to turn off geometry optimization. Generally
+c you do NOT want to turn this off. Doing so may result in a significantly
+c faster startup, but slower event processing. Faster startup is useful
+c when running interactively to inspect the geometry or visualize a few
+c events. It may also be useful when developing HDGeant4 itself. Otherwise
+c leave geometry optimization on (the default).
+c GEOMOPT 0
+
 c The following are used to automatically invoke the mcsmear program
 c to do the final stage digitization of hits after the simulation
 c stage is complete. This simply invokes the mcsmear program passing

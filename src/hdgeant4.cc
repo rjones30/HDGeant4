@@ -128,6 +128,13 @@ int main(int argc,char** argv)
    G4RunManager runManager;
 #endif
 
+	// Let user turn off geometry optimization for faster startup
+	// (and slower running)
+	std::map<int, int> geomopt;
+	if ( opts.Find("GEOMOPT", geomopt) ) {
+         if( geomopt[1] == 0 ) runManager.SetGeometryToBeOptimized( false );
+	}
+
    // Geometry initialization
    GlueXDetectorConstruction *geometry = new GlueXDetectorConstruction();
    int Npara = geometry->GetParallelWorldCount();
