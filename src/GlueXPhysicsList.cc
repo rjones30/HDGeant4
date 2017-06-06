@@ -184,9 +184,9 @@ void GlueXPhysicsList::ConstructProcess()
 #endif
 
    // create the special cuts processes and register them
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *mgr = particle->GetProcessManager();
       if (mgr == 0) {
@@ -341,9 +341,9 @@ void GlueXPhysicsList::SetCuts()
 
 void GlueXPhysicsList::ListActiveProcesses()
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4cout << particleName << ": ApplyCuts is " 
              << ((particle->GetApplyCutsFlag())? "on" : "off")
@@ -367,9 +367,9 @@ void GlueXPhysicsList::ListActiveProcesses()
 
 void GlueXPhysicsList::DoMultipleScattering(G4int flag)
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
@@ -383,9 +383,9 @@ void GlueXPhysicsList::DoMultipleScattering(G4int flag)
 
 void GlueXPhysicsList::DoBremsstrahlung(G4int flag)
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
@@ -399,9 +399,9 @@ void GlueXPhysicsList::DoBremsstrahlung(G4int flag)
 
 void GlueXPhysicsList::DoComptonScattering(G4int flag)
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
@@ -415,9 +415,9 @@ void GlueXPhysicsList::DoComptonScattering(G4int flag)
 
 void GlueXPhysicsList::DoIonizationEnergyLoss(G4int flag)
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
@@ -431,9 +431,9 @@ void GlueXPhysicsList::DoIonizationEnergyLoss(G4int flag)
 
 void GlueXPhysicsList::DoPairConversion(G4int flag)
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
@@ -447,9 +447,9 @@ void GlueXPhysicsList::DoPairConversion(G4int flag)
 
 void GlueXPhysicsList::DoParticleDecay(G4int flag)
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
@@ -463,9 +463,9 @@ void GlueXPhysicsList::DoParticleDecay(G4int flag)
 
 void GlueXPhysicsList::DoHadronicInteractions(G4int flag)
 {
-   theParticleIterator->reset();
-   while ( (*theParticleIterator)() ) {
-      G4ParticleDefinition* particle = theParticleIterator->value();
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();

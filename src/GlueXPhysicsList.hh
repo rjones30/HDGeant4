@@ -58,6 +58,17 @@ class GlueXPhysicsList: public G4VModularPhysicsList
    static G4ThreadLocal GlueXBeamConversionProcess *fBeamConversion;
 #endif
    G4OpticalPhysics *fOpticalPhysics;
+
+#ifndef G4VUSERPHYSICSLIST_HAS_GETPARTICLEITERATOR
+   // This member function gets introduced into base class
+   // G4VUserPhysicsList in release Geant4.10.03, but until
+   // we abandon ability to build under previous releases,
+   // we need to have this member function defined.
+   G4ParticleTable::G4PTblDicIterator* GetParticleIterator() const
+   {
+      return theParticleIterator;
+   }
+#endif
 };
 
 #endif

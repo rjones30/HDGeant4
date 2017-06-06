@@ -24,7 +24,7 @@
 
 #include <JANA/JApplication.h>
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <math.h>
 
 const double fC = 1e-15 * coulomb;

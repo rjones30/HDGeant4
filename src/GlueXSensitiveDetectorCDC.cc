@@ -24,7 +24,7 @@
 
 #include <JANA/JApplication.h>
 
-#include <malloc.h>
+#include <stdlib.h>
 
 const double fC = 1e-15 * coulomb;
 const double GlueXSensitiveDetectorCDC::ELECTRON_CHARGE = 1.6022e-4*fC;
@@ -653,7 +653,7 @@ void GlueXSensitiveDetectorCDC::add_cluster(hit_vector_t &hits,
       polint(&fDrift_distance[index],
              &fDrift_time[index], 4, dradius_cm, &my_t_ns, &my_t_err);
    }
-   double tdrift_ns = my_t_ns / (1 - fBscale_par1 - fBscale_par2 * BmagT);
+   double tdrift_ns = my_t_ns / (fBscale_par1 + fBscale_par2 * BmagT);
 
    // Longitudinal diffusion 
 
