@@ -71,6 +71,8 @@ G4ClassificationOfNewTrack GlueXStackingAction::ClassifyNewTrack(
    if (nosecondaries && aTrack->GetParentID() != 0)
       return fKill;
 
+
+   
    return fUrgent;
 }
 

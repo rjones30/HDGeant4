@@ -113,12 +113,11 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          fGunParticle.pdgType = 999999;
          fGunParticle.partDef = fParticleTable->FindParticle("chargedgeantino");
       }
-      //<<Maria
       else if (kinepars[1] == 1050) {
          fGunParticle.geantType = 0;
          fGunParticle.pdgType = 999999;
          fGunParticle.partDef = fParticleTable->FindParticle("opticalphoton");
-      }//>>Maria            
+      }            
       else {
          if (kinepars[1] > 100)
             fGunParticle.geantType = kinepars[1] - 100;

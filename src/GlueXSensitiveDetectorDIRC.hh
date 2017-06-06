@@ -37,7 +37,7 @@ class GlueXSensitiveDetectorDIRC : public G4VSensitiveDetector
    virtual void EndOfEvent(G4HCofThisEvent* hitCollection);
 
    int GetIdent(std::string div, const G4VTouchable *touch);
-
+  
  private:
   std::vector<GlueXHitDIRCBar> fHitsBar;
   std::vector<GlueXHitDIRCPmt> fHitsPmt;

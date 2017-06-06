@@ -138,6 +138,7 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
       barhit.bar = touch_hist->GetReplicaNumber(0)/4; // each bar is glued from 4 pieces
       barhit.track = itrack;
       fHitsBar.push_back(barhit);
+
     }
     return true;
   }
@@ -157,7 +158,8 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
       G4double pmt = touch_hist->GetReplicaNumber(1)-1; // [0,101]
       G4double pix = touch_hist->GetReplicaNumber(0)-1; // [0,63]
 
-      pmthit.ch = box*pmt*64+pix;      
+      pmthit.ch = box*pmt*64+pix;
+      pmthit.key_bar = fHitsBar.size()-1;
       fHitsPmt.push_back(pmthit);
     }else {
       G4cerr << "GlueXSensitiveDetectorDIRC::ProcessHits error: "
