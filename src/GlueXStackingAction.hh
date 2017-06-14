@@ -12,6 +12,8 @@
 
 #include "G4UserStackingAction.hh"
 #include "G4ClassificationOfNewTrack.hh"
+#include "TGraph.h"
+#include "TRandom.h"
 
 class G4StackManager;
 class G4Track;
@@ -29,6 +31,10 @@ class GlueXStackingAction : public G4UserStackingAction
 
  protected:
    int nosecondaries;
+
+ private:
+  TRandom *fRand;
+  TGraph* fDetEff;
 };
 
 #endif
