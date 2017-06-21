@@ -273,7 +273,7 @@ double GlueXSensitiveDetectorDIRC::GetDetectionEfficiency(double energy)
 {
    if (fDetEff == 0)
       InitializeDetEff();
-   double wavelength = hbarc * twopi / energy;
+   double wavelength = CLHEP::hbarc * CLHEP::twopi / energy;
    return fDetEff->Eval(wavelength / nm);
 }
 

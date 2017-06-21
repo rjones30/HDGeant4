@@ -7,6 +7,7 @@
 #include "GlueXStackingAction.hh"
 #include "GlueXUserOptions.hh"
 #include "GlueXUserTrackInformation.hh"
+#include "GlueXSensitiveDetectorDIRC.hh"
 
 #include "G4Track.hh"
 #include "G4ios.hh"
@@ -78,7 +79,7 @@ G4ClassificationOfNewTrack GlueXStackingAction::ClassifyNewTrack(
       if (ParticleName == "opticalphoton") {
          Double_t Ephoton = aTrack->GetMomentum().mag();
          Double_t ra = G4UniformRand();
-         if (ra > GlueXSensitiveDetector::GetDetectionEfficiency(Ephoton))
+         if (ra > GlueXSensitiveDetectorDIRC::GetDetectionEfficiency(Ephoton))
 	        return fKill;
        }
    }
