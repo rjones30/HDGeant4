@@ -68,10 +68,8 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          origin.setVy(y/cm);
          origin.setVz(z/cm);
       }
-      if (t == 0) {
-         t = GetParticleTime();
-         origin.setT(t/ns);
-      }
+      t += GetParticleTime();
+      origin.setT(t/ns);
       G4ThreeVector pos(x, y, z);
       G4PrimaryVertex* vertex = new G4PrimaryVertex(pos, t);
       hddm_s::ProductList &products = it_vertex->getProducts();
