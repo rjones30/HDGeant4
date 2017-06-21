@@ -7,10 +7,12 @@
 #include "GlueXStackingAction.hh"
 #include "GlueXUserOptions.hh"
 #include "GlueXUserTrackInformation.hh"
+#include "GlueXSensitiveDetectorDIRC.hh"
 
 #include "G4Track.hh"
 #include "G4ios.hh"
 #include "G4ParticleTable.hh"
+#include "TMath.h"
 
 GlueXStackingAction::GlueXStackingAction()
 {
@@ -71,6 +73,17 @@ G4ClassificationOfNewTrack GlueXStackingAction::ClassifyNewTrack(
    if (nosecondaries && aTrack->GetParentID() != 0)
       return fKill;
 
+   // apply detection efficiency for the DIRC at production stage:
+   G4String ParticleName = aTrack->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();
+   if (aTrack->GetParentID() > 0) { // particle is secondary
+      if (ParticleName == "opticalphoton") {
+         Double_t Ephoton = aTrack->GetMomentum().mag();
+         Double_t ra = G4UniformRand();
+         if (ra > GlueXSensitiveDetectorDIRC::GetDetectionEfficiency(Ephoton))
+	        return fKill;
+       }
+   }
+   
    return fUrgent;
 }
 

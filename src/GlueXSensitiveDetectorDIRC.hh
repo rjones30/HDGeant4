@@ -21,6 +21,8 @@
 #include "GlueXHitDIRCPmt.hh"
 #include "GlueXHitDIRCBar.hh"
 
+#include <TGraph.h>
+
 class G4Step;
 class G4HCofThisEvent;
 
@@ -38,6 +40,8 @@ class GlueXSensitiveDetectorDIRC : public G4VSensitiveDetector
 
    int GetIdent(std::string div, const G4VTouchable *touch);
 
+   static double GetDetectionEfficiency(double energy_GeV);
+  
  private:
   std::vector<GlueXHitDIRCBar> fHitsBar;
   std::vector<GlueXHitDIRCPmt> fHitsPmt;
@@ -50,6 +54,9 @@ class GlueXSensitiveDetectorDIRC : public G4VSensitiveDetector
   
   static int instanceCount;
   static G4Mutex fMutex;
+
+  static TGraph *fDetEff;
+  static void InitializeDetEff();
 };
 
 #endif
