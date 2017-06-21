@@ -85,8 +85,8 @@ int main(int argc,char** argv)
       else {
          G4cerr << "Warning - "
                 << "no run number specified in control.in, "
-                << "default value of 9000 assumed." << G4endl;
-         run_number = 9000;
+                << "default value of 0 assumed." << G4endl;
+         run_number = 0;
       }
    }
 
