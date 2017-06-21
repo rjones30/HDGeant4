@@ -42,7 +42,9 @@ GlueXUserEventInformation::~GlueXUserEventInformation()
       }
       if (fKeepEvent) {
          hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
-         pev(0).setRunNo(HddmOutput::getRunNo());
+         int runno = HddmOutput::getRunNo();
+         if (runno > 0)
+            pev(0).setRunNo(runno);
          if (pev(0).getEventNo() == 0) {
             pev(0).setEventNo(HddmOutput::incrementEventNo());
          }
