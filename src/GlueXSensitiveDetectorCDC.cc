@@ -117,10 +117,14 @@ GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(const G4String& name)
             fDrift_distance[k] = 0.01 * k; // 100 micron increments;
             fDrift_time[k] = values[k]["t"] * 1000; // from us to ns
          }
-         std::map<string, float> cdc_drift_parms;
-         jcalib->Get("CDC/cdc_drift_parms", cdc_drift_parms);
-         fBscale_par1 = cdc_drift_parms.at("bscale_par1");
-         fBscale_par2 = cdc_drift_parms.at("bscale_par2");
+
+         // The /CDC/drift_parameters consists of 2 rows and 10 columns
+         // The B-field scale parameters B1 and B2 are in columns 9 and 10
+         // They should be the same for both rows, so we get them from the first
+         std::vector< std::vector<float> > cdc_drift_parms;
+         jcalib->Get("/CDC/drift_parameters", cdc_drift_parms);
+         fBscale_par1 = cdc_drift_parms.at(0).at(9);
+         fBscale_par2 = cdc_drift_parms.at(0).at(10);
       }
       else {
          int nvalues = CDC_DRIFT_TABLE_LEN;
@@ -130,7 +134,7 @@ GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(const G4String& name)
             fDrift_distance[k] = 0.01 * k; // 100 micron increments;
             fDrift_time[k] = values[k]["t"] * 1000; // from us to ns
          }
-         fBscale_par1 = 0;
+         fBscale_par1 = 1.;
          fBscale_par2 = 0;
       }
       G4cout << "CDC: ALL parameters loaded from ccdb" << G4endl;
