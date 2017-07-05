@@ -181,13 +181,13 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    }
 
    if (user_opts->Find("BEAM", beampars)) {
-      double beamE0 = beampars[1];
-      double beamEpeak = beampars[2];
-      double beamEmin = (beampars[3] > 0)? beampars[3] : 0.120;
-      double radColDist = (beampars[4] > 0)? beampars[4] : 76.;
-      double colDiam = (beampars[5] > 0)? beampars[5] : 0.0034;
-      double beamEmit = (beampars[6] > 0)? beampars[6] : 2.5e-9;
-      double radThick = (beampars[7] > 0)? beampars[7] : 20e-6;
+      double beamE0 = beampars[1] * GeV;
+      double beamEpeak = beampars[2] * GeV;
+      double beamEmin = ((beampars[3] > 0)? beampars[3] : 0.120) * GeV;
+      double radColDist = ((beampars[4] > 0)? beampars[4] : 76.) * m;
+      double colDiam = ((beampars[5] > 0)? beampars[5] : 0.0034) * m;
+      double beamEmit = ((beampars[6] > 0)? beampars[6] : 2.5e-9) * m;
+      double radThick = ((beampars[7] > 0)? beampars[7] : 20e-6) * m;
 
       if (beamE0 == 0 || beamEpeak == 0) {
          G4cerr << "GlueXPrimaryGeneratorAction error: "
@@ -204,12 +204,12 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       //  time   : s
       //  current: microAmps
  
-      fCobremsGeneration = new CobremsGeneration(beamE0, beamEpeak);
-      fCobremsGeneration->setPhotonEnergyMin(beamEmin);
-      fCobremsGeneration->setCollimatorDistance(radColDist);
-      fCobremsGeneration->setCollimatorDiameter(colDiam);
-      fCobremsGeneration->setBeamEmittance(beamEmit);
-      fCobremsGeneration->setTargetThickness(radThick);
+      fCobremsGeneration = new CobremsGeneration(beamE0/GeV, beamEpeak/GeV);
+      fCobremsGeneration->setPhotonEnergyMin(beamEmin/GeV);
+      fCobremsGeneration->setCollimatorDistance(radColDist/m);
+      fCobremsGeneration->setCollimatorDiameter(colDiam/m);
+      fCobremsGeneration->setBeamEmittance(beamEmit/(m*radian));
+      fCobremsGeneration->setTargetThickness(radThick/m);
       fPhotonBeamGenerator = new GlueXPhotonBeamGenerator(fCobremsGeneration);
 
       std::map<int, double> bgratepars;

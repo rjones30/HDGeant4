@@ -92,8 +92,8 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
    // warnings about Pcut violations.
 
    double raddz = fCobrems->getTargetThickness() * m;
-   fCoherentPDFx.Pcut = .003 * (raddz / 20e-6);
-   fIncoherentPDFlogx.Pcut = .003 * (raddz / 20e-6);
+   fCoherentPDFx.Pcut = .003 * (raddz / (20e-6 * m));
+   fIncoherentPDFlogx.Pcut = .003 * (raddz / (20e-6 * m));
 
    prepareImportanceSamplingPDFs();
 }
@@ -158,6 +158,7 @@ void GlueXPhotonBeamGenerator::prepareImportanceSamplingPDFs()
       fIncoherentPDFlogx.density[i] /= sum * dlogx;
       fIncoherentPDFlogx.integral[i] /= sum;
    }
+   fIncoherentPDFlogx.Pcut = 2 * sum * dlogx;
  
    // Compute approximate PDF for dNi/dy
    fIncoherentPDFtheta02 = 1.8;
@@ -292,7 +293,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    double thetax = thxBeam + thxMS - targetThetax - thxMosaic;
    double thetay = thyBeam + thyMS - targetThetay - thyMosaic;
    double thetaz = -targetThetaz;
-   fCobrems->setTargetOrientation(thetax, thetay, thetaz);
+   fCobrems->setTargetOrientation(thetax/radian, thetay/radian, thetaz/radian);
 
    // Generate with importance sampling
    double x = 0;
@@ -430,9 +431,9 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
 #endif
 
    // Put the radiator back the way you found it
-   fCobrems->setTargetOrientation(targetThetax,
-                                  targetThetay,
-                                  targetThetaz);
+   fCobrems->setTargetOrientation(targetThetax/radian,
+                                  targetThetay/radian,
+                                  targetThetaz/radian);
 
    // Define the particle kinematics and polarization in lab coordinates
    G4ParticleDefinition *part = GlueXPrimaryGeneratorAction::GetParticle("gamma");
