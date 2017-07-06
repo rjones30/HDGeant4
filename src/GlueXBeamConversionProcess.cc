@@ -12,11 +12,10 @@
 #include "GlueXUserOptions.hh"
 #include "GlueXPathFinder.hh"
 
-// Jack up this threshold to 20GeV to disable this feature
-// and let your application run without Dirac++ support, or
-// otherwise just remove the PTAR target from the beamline
-// in the hdds geometry.
-#define FORCED_PTAR_PAIR_CONVERSION_THRESHOLD 3*GeV
+// If you set this flag to 1 then all beam photons that reach
+// the TPOL converter target will convert to e+e- pairs inside,
+// otherwise the standard pair conversion probabilities apply.
+#define FORCED_PTAR_PAIR_CONVERSION 0
 
 #include <G4SystemOfUnits.hh>
 #include "G4Positron.hh"
@@ -50,8 +49,8 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
       exit(-1);
    }
 
-   fStopBeamBeforeConversion = 0;
-   fStopBeamAfterConversion = 0;
+   fStopBeamBeforeConverter = 0;
+   fStopBeamAfterConverter = 0;
 
    std::map<int,std::string> infile;
    std::map<int,double> beampars;
@@ -66,7 +65,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
           genbeampars[1] == "Postcol" ||
           genbeampars[1] == "PostCol" ))
       {
-         fStopBeamBeforeConversion = 1;
+         fStopBeamBeforeConverter = 1;
       }
       else if (genbeampars.find(1) != genbeampars.end() &&
               (genbeampars[1] == "POSTCONV" ||
@@ -74,7 +73,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "Postconv" ||
                genbeampars[1] == "PostConv" ))
       {
-         fStopBeamAfterConversion = 1;
+         fStopBeamAfterConverter = 1;
       }
    }
 
@@ -91,8 +90,8 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(
                             GlueXBeamConversionProcess &src)
  : G4VDiscreteProcess(src)
 {
-   fStopBeamBeforeConversion = src.fStopBeamBeforeConversion;
-   fStopBeamAfterConversion = src.fStopBeamAfterConversion;
+   fStopBeamBeforeConverter = src.fStopBeamBeforeConverter;
+   fStopBeamAfterConverter = src.fStopBeamAfterConverter;
    fPaircohPDF.Pcut = src.fPaircohPDF.Pcut;
    fTripletPDF.Pcut = src.fTripletPDF.Pcut;
 }
@@ -120,15 +119,15 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
                                      G4double previousStepSize,
                                      G4ForceCondition *condition)
 {
-#if DISABLE_FOR_DEBUGGING
    G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
-   if (pvol && pvol->GetName() == "PTAR" && track.GetTrackID() == 1 &&
-       track.GetKineticEnergy() > FORCED_PTAR_PAIR_CONVERSION_THRESHOLD)
+   if (track.GetTrackID() == 1 && pvol && pvol->GetName() == "PTAR" &&
+       (FORCED_PTAR_PAIR_CONVERSION || 
+        fStopBeamBeforeConverter ||
+        fStopBeamAfterConverter ))
    {
       *condition = Forced;
       return 100*cm;
    }
-#endif
    *condition = NotForced;
    return 1e99;
 }
@@ -141,7 +140,7 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
    GlueXUserEventInformation *eventinfo;
    const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
    eventinfo = (GlueXUserEventInformation*)event->GetUserInformation();
-   if (fStopBeamBeforeConversion) {
+   if (fStopBeamBeforeConverter) {
       double tvtx = step.GetPreStepPoint()->GetGlobalTime();
       G4ThreeVector vtx = step.GetPreStepPoint()->GetPosition();
       G4ThreeVector mom = step.GetPreStepPoint()->GetMomentum();
@@ -154,7 +153,7 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       eventinfo->AddPrimaryVertex(*vertex);
       eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
    }
-   else if (fStopBeamAfterConversion) {
+   else if (fStopBeamAfterConverter) {
       double tvtx = step.GetPreStepPoint()->GetGlobalTime();
       G4ThreeVector vtx = step.GetPreStepPoint()->GetPosition();
       G4ThreeVector mom = step.GetPreStepPoint()->GetMomentum();
@@ -629,7 +628,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
          trackinfo->SetGlueXTrackID(event_info->AssignNextGlueXTrackID());
       }
       (*iter)->SetUserInformation(trackinfo);
-      if (fStopBeamAfterConversion == 0) {
+      if (fStopBeamAfterConverter == 0) {
          pParticleChange->AddSecondary(*iter);
       }
    }
