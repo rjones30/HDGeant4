@@ -112,13 +112,15 @@ c PLOG 1
 c TLOG 1
 c
 c   particle  momentum  theta  phi  delta_momentum delta_theta delta_phi
-KINE   114      4.0       5.  -90.      0.            0.        0.
+cKINE   1050  0.000000003   90.  0.      0.            0.        0.
+KINE     114      4.      5.  -90.      0.            0.        0.
 
 c The SCAP card determines the vertex position for the particle gun.  It
 c supports the following three arguments, all of which default to 0.
 c
 c    vertex_x vertex_y vertex_z
-SCAP    0.       0.      65.
+cSCAP    0.      -44.4      595.5
+SCAP    0.      0.      65.
 
 c The TGTWIDTH card is used to determine an extended volume from
 c which the particle gun will generate vertexes. The vertex position
@@ -131,7 +133,7 @@ c by SCAP. Note that this only affects the particle gun. Events read
 c from a file contain their own vertex information.
 c
 c            vertex_extent_r  vertex_extent_z
-TGTWIDTH           0.5              15
+TGTWIDTH           0.0              0.
 
 c If you specify a non-zero value for vertex_x and/or vertex_y above then
 c all tracks will emerge from the given point.  If you leave them at zero,

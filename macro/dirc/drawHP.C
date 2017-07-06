@@ -1,5 +1,5 @@
 #define glx__sim
-#include "../../../sim-recon/src/plugins/Analysis/pid_dirc/DrcEvent.h"
+#include "../../../../sim-recon/master/src/plugins/Analysis/pid_dirc/DrcEvent.h"
 #include "glxtools.C"
 
 void drawHP(TString infile="drc.root"){
