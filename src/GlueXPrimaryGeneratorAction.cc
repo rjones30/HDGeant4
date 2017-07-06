@@ -418,7 +418,6 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
       t -= GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
       fPrimaryGenerator->SetParticleTime(t);
       fPrimaryGenerator->GeneratePrimaryVertex(anEvent);
-      GlueXPhotonBeamGenerator::GenerateRFsync(anEvent);
       GlueXUserEventInformation *eventinfo;
       eventinfo = (GlueXUserEventInformation*)anEvent->GetUserInformation();
       if (eventinfo) {
