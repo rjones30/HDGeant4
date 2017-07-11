@@ -46,6 +46,8 @@ void usage()
    exit(9);
 }
 
+void OpenGLXpreload();
+
 int main(int argc,char** argv)
 {
    // Initialize the jana framework
@@ -70,6 +72,13 @@ int main(int argc,char** argv)
       else {
          usage();
       }
+   }
+
+   // Initialize the graphics subsystem, if requested
+   if (use_visualization) {
+#ifdef G4VIS_USE
+      OpenGLXpreload();
+#endif
    }
 
    // Read user options from file control.in
