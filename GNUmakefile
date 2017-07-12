@@ -35,7 +35,7 @@ CPPFLAGS += -DUSE_SSE2 -std=c++11
 #CPPFLAGS += -DCHECK_OVERLAPS_MM=1e-4
 CPPFLAGS += -DBYPASS_DRAWING_CLIPPED_VOLUMES
 CPPFLAGS += -DLAYERED_GEOMETRY_PICKING_EXTENSIONS
-#CPPFLAGS += -DG4UI_USE_EXECUTIVE
+CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
 CPPFLAGS += -DG4MULTITHREADED
@@ -83,7 +83,7 @@ INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -lboost_python $(shell python-config --ldflags)
+INTYLIBS += -lboost_python -L$(shell python-config --prefix)/lib $(shell python-config --ldflags)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
