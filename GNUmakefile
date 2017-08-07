@@ -38,7 +38,7 @@ CPPFLAGS += -DLAYERED_GEOMETRY_PICKING_EXTENSIONS
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
-CPPFLAGS += -DG4MULTITHREADED
+#CPPFLAGS += -DG4MULTITHREADED
 #CPPFLAGS += -DFORCE_PARTICLE_TYPE_CHARGED_GEANTINO
 #CPPFLAGS += -DBP_DEBUG
 #CPPFLAGS += -DMOD_SPONCE
@@ -83,7 +83,7 @@ INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -lboost_python $(shell python-config --ldflags)
+INTYLIBS += -lboost_python -L$(shell python-config --prefix)/lib $(shell python-config --ldflags)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
 .PHONY: all
@@ -94,7 +94,7 @@ include $(G4INSTALL)/config/binmake.gmk
 cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
 
-CXXFLAGS = -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -g -O0 -fPIC -ftls-model=global-dynamic -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 $(G4TMPDIR)/libcobrems.so: src/CobremsGeneration.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libcobrems.so \

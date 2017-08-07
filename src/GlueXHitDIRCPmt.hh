@@ -29,7 +29,6 @@ public:
   G4double z_cm;       // z coordinate where hit was created
   G4int    ch;         // PMT channel of the hit
   G4int    key_bar;    // key of the corresponding bar hit
-    
 };
 
 typedef G4THitsMap<GlueXHitDIRCPmt> GlueXHitsMapDIRCPmt;

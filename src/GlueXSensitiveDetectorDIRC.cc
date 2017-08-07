@@ -138,7 +138,7 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
       barhit.pz_GeV = pin[2]/GeV;
       barhit.pdg = g3type;
       barhit.bar = touch_hist->GetReplicaNumber(0)/4; // each bar is glued from 4 pieces
-      barhit.track = itrack;
+      barhit.track = itrack; // track id of the charged particle
       fHitsBar.push_back(barhit);
 
     }
