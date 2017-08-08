@@ -798,6 +798,30 @@ double CobremsGeneration::Polarization(double x, double theta2)
                          4 * theta2 * (1 - x));
 }
 
+double CobremsGeneration::AbremsPolarization(double x, double theta2, double phi)
+{
+   // Returns the degree of linear polarization in an ordinary atomic
+   // bremsstrahlung beam at photon energy k = x*fBeamEnergy and production
+   // angles theta,phi. The formula is a parameterization of the linear
+   // polarization evaluated using the Dirac++ QED Monte Carlo generator.
+   // The argument theta2 is the production polar angle theta^2 expressed
+   // in units of (me/fBeamEnergy)^2.
+
+   double Acoeff[3][4] = {{0.93000, 0.64250, 0.66598, 1.62506},
+                          {0.73000, 1.05648, 0.84643, 1.97061},
+                          {0.87610, 0.57510, 0.74918, 1.52849}};
+   double a[3];
+   for (int n=0; n < 3; ++n) {
+      double A = pow(Acoeff[n][0], 2) +
+                 pow(Acoeff[n][1], 2) * pow(x, 2) +
+                 pow(Acoeff[n][2], 2) * pow(x, 4) +
+                 pow(Acoeff[n][3], 2) * pow(x, 16);
+      a[n] = A*A;
+   }
+   double ppol = theta2 / (a[0] + a[1] * theta2 + a[2] * theta2*theta2);
+   return ppol * cos(2 * phi);
+}
+
 double CobremsGeneration::Acceptance(double theta2, double phi,
                                     double xshift_m, double yshift_m)
 {
