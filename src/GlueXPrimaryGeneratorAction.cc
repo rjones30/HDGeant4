@@ -189,7 +189,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       double beamEmit = ((beampars[6] > 0)? beampars[6] : 2.5e-9) * m;
       double radThick = ((beampars[7] > 0)? beampars[7] : 20e-6) * m;
 
-      if (beamE0 == 0 || beamEpeak == 0) {
+      if (beamE0 == 0) {
          G4cerr << "GlueXPrimaryGeneratorAction error: "
                 << "BEAM card specified in control.in but required values "
                 << "Emax and/or Epeak are missing, cannot continue."
