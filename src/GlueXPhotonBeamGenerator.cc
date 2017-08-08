@@ -305,7 +305,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    double Sincoherent = fIncoherentPDFlogx.Npassed *
                        (fIncoherentPDFlogx.Ntested /
                        (fIncoherentPDFlogx.Psum + 1e-99));
-   if (Scoherent < Sincoherent) {
+   if (targetThetax != 0 && Scoherent < Sincoherent) {
       while (true) {                             // try coherent generation
          ++fCoherentPDFx.Ntested;
 
@@ -405,7 +405,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
          ++fIncoherentPDFlogx.Npassed;
 
          phi = 2*M_PI * G4UniformRand();
-         polarization = 0;
+         polarization = fCobrems->AbremsPolarization(x, theta2, phi);
          break;
       }
    }

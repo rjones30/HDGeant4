@@ -148,6 +148,7 @@ class CobremsGeneration {
    double Rate_para(double x, double theta2, double phi);
    double Rate_ortho(double x, double theta2, double phi);
    double Polarization(double x, double theta2);
+   double AbremsPolarization(double x, double theta2, double phi);
    double Acceptance(double theta2, double phi, 
                      double xshift_m, double yshift_m);
    double Acceptance(double theta2);
