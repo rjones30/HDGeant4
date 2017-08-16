@@ -336,6 +336,12 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    e3.AllPol();
    const G4Track *track = step.GetTrack();
    double kin = track->GetKineticEnergy()/GeV;
+
+   // If we are below pair production threshold, do nothing
+   const double mTarget = 12 * 0.932; // GeV/c^2
+   if (kin < 2 * mElectron + (kin * kin) / (2 * mTarget))
+      return;
+
    G4ThreeVector mom(track->GetMomentum());
    TThreeVectorReal mom0(mom[0]/GeV, mom[1]/GeV, mom[2]/GeV);
    gIn.SetMom(mom0);
