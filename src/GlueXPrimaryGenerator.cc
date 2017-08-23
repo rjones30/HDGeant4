@@ -14,6 +14,7 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4RunManager.hh"
 
 #include <HDDM/hddm_s.hpp>
 
@@ -27,12 +28,10 @@ GlueXPrimaryGenerator::~GlueXPrimaryGenerator()
 void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
 {
    hddm_s::HDDM *hddmevent = new hddm_s::HDDM;
-   try {
-      *fHDDMistream >> *hddmevent;
-   }
-   catch(std::exception e) {
-      G4cout << e.what() << G4endl;
+   if (! (*fHDDMistream >> *hddmevent)) {
       event->SetEventAborted();
+      G4cout << "End of file on hddm input, ending the run here." << std::endl;
+      G4RunManager::GetRunManager()->AbortRun();
       return;
    }
 

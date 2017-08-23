@@ -424,6 +424,9 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
          double E = eventinfo->GetBeamPhotonEnergy();
          GlueXPhotonBeamGenerator::GenerateTaggerHit(anEvent, E, t);
       }
+      else {
+         return;
+      }
    }
    ++fEventCount;
 
