@@ -64,7 +64,7 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
-           -lTRIGGER -lDAQ -lTTAB -lEVENTSTORE -lKINFITTER \
+           -lTRIGGER -lDAQ -lTTAB -lEVENTSTORE -lKINFITTER -lTAC\
            -lxstream -lbz2 -lz \
            -L/usr/lib64/mysql -lmysqlclient\
            -L$(JANA_HOME)/lib -lJANA \
