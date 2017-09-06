@@ -60,6 +60,7 @@ class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
    static double getBeamVelocity() {
       return fBeamVelocity;
    }
+   static double getRFreferencePlaneZ(int runno=0);
    static double getBeamBucketPeriod(int runno=0);
    static void setBeamBucketPeriod(double period) {
       fBeamBucketPeriod = period;
