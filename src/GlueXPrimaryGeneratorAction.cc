@@ -35,6 +35,7 @@ double GlueXPrimaryGeneratorAction::fBeamBackgroundRate = 0;
 double GlueXPrimaryGeneratorAction::fBeamBackgroundGateStart = 0;
 double GlueXPrimaryGeneratorAction::fBeamBackgroundGateStop = 0;
 double GlueXPrimaryGeneratorAction::fL1triggerTimeSigma = 10 * ns;
+double GlueXPrimaryGeneratorAction::fRFreferencePlaneZ = 65 * cm;
 double GlueXPrimaryGeneratorAction::fTargetCenterZ = 65 * cm;
 double GlueXPrimaryGeneratorAction::fTargetLength = 29.9746 * cm;
 
@@ -414,7 +415,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
       }
       z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
       fPrimaryGenerator->SetParticlePosition(G4ThreeVector(x,y,z));
-      t = (z - fTargetCenterZ) / beamVelocity;
+      t = (z - fRFreferencePlaneZ) / beamVelocity;
       t -= GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
       fPrimaryGenerator->SetParticleTime(t);
       fPrimaryGenerator->GeneratePrimaryVertex(anEvent);
