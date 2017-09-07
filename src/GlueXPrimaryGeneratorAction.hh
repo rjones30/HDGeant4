@@ -95,6 +95,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static double fBeamBackgroundGateStart;
    static double fBeamBackgroundGateStop;
    static double fL1triggerTimeSigma;
+   static double fRFreferencePlaneZ;
 
    static int fEventCount;
 
@@ -127,6 +128,12 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    }
    static double getL1triggerTimeSigma() {
       return fL1triggerTimeSigma;
+   }
+   static void setRFreferencePlaneZ(double refZ) {
+      fRFreferencePlaneZ = refZ;
+   }
+   static double getRFreferencePlaneZ() {
+      return fRFreferencePlaneZ;
    }
    int getEventCount() const {
       return fEventCount;
