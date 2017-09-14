@@ -145,7 +145,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(const G4Event *event,
    G4VUserEventInformation* info = event->GetUserInformation();
    hddm_s::HDDM *record = ((GlueXUserEventInformation*)info)->getOutputRecord();
    if (record == 0) {
-      G4cerr << "GlueXPseudoDetectorTAG::addTaggerHit error - "
+      G4cerr << "GlueXPseudoDetectorTAG::addTaggerPhoton error - "
              << "hits seen but no output hddm record to save them into, "
              << "cannot continue!" << G4endl;
       exit(1);
