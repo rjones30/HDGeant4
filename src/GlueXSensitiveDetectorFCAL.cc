@@ -188,40 +188,86 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
          block = new GlueXHitFCALblock(column, row);
          fBlocksMap->add(key, block);
       }
-      double dist = 0.5 * LENGTH_OF_BLOCK - xlocal[2];
-      double dEcorr = dEsum * exp(-dist / ATTENUATION_LENGTH);
-      double tcorr = t + dist / C_EFFECTIVE;
 
-      // Add the hit to the hits vector, maintaining strict time ordering
+      // Handle hits in the lead glass
+ 
+      if (touch->GetVolume()->GetName() == "LGBL") {
+         double dist = 0.5 * LENGTH_OF_BLOCK - xlocal[2];
+         double dEcorr = dEsum * exp(-dist / ATTENUATION_LENGTH);
+         double tcorr = t + dist / C_EFFECTIVE;
 
-      int merge_hit = 0;
-      std::vector<GlueXHitFCALblock::hitinfo_t>::iterator hiter;
-      for (hiter = block->hits.begin(); hiter != block->hits.end(); ++hiter) {
-         if (fabs(hiter->t_ns*ns - tcorr) < TWO_HIT_TIME_RESOL) {
-            merge_hit = 1;
-            break;
+         // Add the hit to the hits vector, maintaining strict time ordering
+
+         int merge_hit = 0;
+         std::vector<GlueXHitFCALblock::hitinfo_t>::iterator hiter;
+         for (hiter = block->hits.begin(); hiter != block->hits.end(); ++hiter) {
+            if (fabs(hiter->t_ns*ns - tcorr) < TWO_HIT_TIME_RESOL) {
+               merge_hit = 1;
+               break;
+            }
+            else if (hiter->t_ns*ns > tcorr) {
+               break;
+            }
          }
-         else if (hiter->t_ns*ns > tcorr) {
-            break;
+         if (merge_hit) {
+            // Use the time from the earlier hit but add the energy deposition
+            hiter->E_GeV += dEcorr/GeV;
+            if (hiter->t_ns*ns > tcorr) {
+               hiter->t_ns = tcorr/ns;
+            }
          }
-      }
-      if (merge_hit) {
-         // Use the time from the earlier hit but add the energy deposition
-         hiter->E_GeV += dEcorr/GeV;
-         if (hiter->t_ns*ns > tcorr) {
+         else if ((int)block->hits.size() < MAX_HITS) {
+            // create new hit 
+            hiter = block->hits.insert(hiter, GlueXHitFCALblock::hitinfo_t());
+            hiter->E_GeV = dEcorr/GeV;
             hiter->t_ns = tcorr/ns;
+            hiter->dE_lightguide_GeV = 0;
+            hiter->t_lightguide_ns = 0;
+         }
+         else {
+            G4cerr << "GlueXSensitiveDetectorFCAL::ProcessHits error: "
+                << "max hit count " << MAX_HITS << " exceeded, truncating!"
+                << G4endl;
          }
       }
-      else if ((int)block->hits.size() < MAX_HITS) {
-         // create new hit 
-         hiter = block->hits.insert(hiter, GlueXHitFCALblock::hitinfo_t());
-         hiter->E_GeV = dEcorr/GeV;
-         hiter->t_ns = tcorr/ns;
-      }
-      else {
-         G4cerr << "GlueXSensitiveDetectorFCAL::ProcessHits error: "
-             << "max hit count " << MAX_HITS << " exceeded, truncating!"
-             << G4endl;
+
+      // If not in the lead glass, it should be in the light guide
+
+      else if (touch->GetVolume()->GetName() == "LGLG") {
+
+         // Add the hit to the hits vector, maintaining strict time ordering
+
+         int merge_hit = 0;
+         std::vector<GlueXHitFCALblock::hitinfo_t>::iterator hiter;
+         for (hiter = block->hits.begin(); hiter != block->hits.end(); ++hiter) {
+            if (fabs(hiter->t_ns*ns - t) < TWO_HIT_TIME_RESOL) {
+               merge_hit = 1;
+               break;
+            }
+            else if (hiter->t_ns*ns > t) {
+               break;
+            }
+         }
+         if (merge_hit) {
+            // Use the time from the earlier hit but add the energy deposition
+            hiter->dE_lightguide_GeV += dEsum/GeV;
+            if (hiter->t_lightguide_ns*ns > t || hiter->t_lightguide_ns == 0) {
+               hiter->t_lightguide_ns = t/ns;
+            }
+         }
+         else if ((int)block->hits.size() < MAX_HITS) {
+            // create new hit 
+            hiter = block->hits.insert(hiter, GlueXHitFCALblock::hitinfo_t());
+            hiter->dE_lightguide_GeV = dEsum/GeV;
+            hiter->t_lightguide_ns = t/ns;
+            hiter->E_GeV = 0;
+            hiter->t_ns = t/ns;
+         }
+         else {
+            G4cerr << "GlueXSensitiveDetectorFCAL::ProcessHits error: "
+                << "max hit count " << MAX_HITS << " exceeded, truncating!"
+                << G4endl;
+         }
       }
    }
    return true;
@@ -298,6 +344,12 @@ void GlueXSensitiveDetectorFCAL::EndOfEvent(G4HCofThisEvent*)
             hddm_s::FcalTruthHitList thit = block(0).addFcalTruthHits(1);
             thit(0).setE(hits[ih].E_GeV);
             thit(0).setT(hits[ih].t_ns);
+            if (hits[ih].dE_lightguide_GeV > 0) {
+               hddm_s::FcalTruthLightGuideList lghit = 
+                       thit(0).addFcalTruthLightGuides(1);
+               lghit(0).setDE(hits[ih].dE_lightguide_GeV);
+               lghit(0).setT(hits[ih].t_lightguide_ns);
+            }
          }
       }
    }
