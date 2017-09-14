@@ -323,7 +323,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
          }
          iter->second->SetSensitiveDetector(bcalHandler);
       }
-      else if (volname == "LGBL") {
+      else if (volname == "LGBL" || volname == "LGLG") {
          if (fcalHandler == 0) {
             fcalHandler = new GlueXSensitiveDetectorFCAL("fcal");
             SDman->AddNewDetector(fcalHandler);
