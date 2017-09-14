@@ -403,7 +403,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
    if (fPrimaryGenerator != 0) {
       double beamDiameter = GlueXPhotonBeamGenerator::getBeamDiameter();
       double beamVelocity = GlueXPhotonBeamGenerator::getBeamVelocity();
-      double x, y, z, t;
+      double x, y;
       while (true) {
          x = G4UniformRand() - 0.5;
          y = G4UniformRand() - 0.5;
@@ -413,17 +413,17 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
             break;
          }
       }
-      z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
+      double z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
       fPrimaryGenerator->SetParticlePosition(G4ThreeVector(x,y,z));
-      t = (z - fRFreferencePlaneZ) / beamVelocity;
-      t -= GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
-      fPrimaryGenerator->SetParticleTime(t);
+      double ttag = GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
+      double trel = (z - fRFreferencePlaneZ) / beamVelocity;
+      fPrimaryGenerator->SetParticleTime(trel + ttag);
       fPrimaryGenerator->GeneratePrimaryVertex(anEvent);
       GlueXUserEventInformation *eventinfo;
       eventinfo = (GlueXUserEventInformation*)anEvent->GetUserInformation();
       if (eventinfo) {
          double E = eventinfo->GetBeamPhotonEnergy();
-         GlueXPhotonBeamGenerator::GenerateTaggerHit(anEvent, E, t);
+         GlueXPhotonBeamGenerator::GenerateTaggerHit(anEvent, E, ttag);
       }
       else {
          return;
