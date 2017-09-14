@@ -25,7 +25,9 @@ int GlueXHitFCALblock::operator==(const GlueXHitFCALblock &right) const
 
    for (int ih=0; ih < (int)hits.size(); ++ih) {
       if (hits[ih].E_GeV != right.hits[ih].E_GeV ||
-          hits[ih].t_ns != right.hits[ih].t_ns)
+          hits[ih].t_ns != right.hits[ih].t_ns ||
+          hits[ih].dE_lightguide_GeV != right.hits[ih].dE_lightguide_GeV ||
+          hits[ih].t_lightguide_ns != right.hits[ih].t_lightguide_ns)
       {
          return 0;
       }
@@ -67,6 +69,10 @@ void GlueXHitFCALblock::Print() const
    for (hiter = hits.begin(); hiter != hits.end(); ++hiter) {
       G4cout << "   E = " << hiter->E_GeV << " GeV" << G4endl
              << "   t = " << hiter->t_ns << " ns" << G4endl
+             << "   E(lightguide) = " 
+             << hiter->dE_lightguide_GeV << " GeV" << G4endl
+             << "   t(lightguide) = " 
+             << hiter->t_lightguide_ns << " ns" << G4endl
              << G4endl;
    }
 }

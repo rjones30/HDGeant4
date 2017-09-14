@@ -37,6 +37,8 @@ class GlueXHitFCALblock : public G4VHit
    struct hitinfo_t {
       G4double E_GeV;      // energy deposition (GeV)
       G4double t_ns;       // pulse leading-edge time (ns)
+      G4double dE_lightguide_GeV;  // light guide energy deposition (GeV)
+      G4double t_lightguide_ns;    // light guide pulse leading-edge time (ns)
    };
    std::vector<hitinfo_t> hits;
 
