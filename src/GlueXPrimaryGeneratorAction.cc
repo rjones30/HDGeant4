@@ -415,8 +415,8 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
       }
       double z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
       fPrimaryGenerator->SetParticlePosition(G4ThreeVector(x,y,z));
-      double trel = (z - fRFreferencePlaneZ) / beamVelocity;
       double ttag = GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
+      double trel = (z - fRFreferencePlaneZ) / beamVelocity;
       fPrimaryGenerator->SetParticleTime(trel + ttag);
       fPrimaryGenerator->GeneratePrimaryVertex(anEvent);
       GlueXUserEventInformation *eventinfo;
