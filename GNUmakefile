@@ -113,7 +113,8 @@ sharedlib: $(G4TMPDIR)/libhdgeant4.so
 $(G4TMPDIR)/libhdgeant4.so: $(hdgeant4_objects)
 
 $(G4TMPDIR)/libG4fixes.so: $(G4FIXESDIR)/G4fixes.o $(G4fixes_objects) $(G4debug_objects)
-	@$(CXX) -Wl,-soname,libG4fixes.so -shared -o $@ $^
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libcobrems.so \
+	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
 $(G4FIXESDIR)/G4fixes.o: src/G4fixes.cc
 	@mkdir -p $(G4FIXESDIR)
