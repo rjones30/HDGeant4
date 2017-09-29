@@ -132,7 +132,6 @@ else
 	@echo Compiling $*.cc ...
 	@$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $^
 endif
-	@echo bang
 
 $(G4debug_objects): $(G4FIXESDIR)/%.o: src/G4debug/%.cc
 	@mkdir -p $(G4FIXESDIR)
