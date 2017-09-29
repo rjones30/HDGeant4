@@ -39,12 +39,12 @@ eElim0 = 10.68
 eElim1 = 11.7
 
 # initialize the built-in generator to defaults
-generator = CobremsGenerator(E0, Epeak)
+generator = CobremsGeneration(E0, Epeak)
 
 def usage():
    """
    Print a brief summary of the internal configuration variables
-   that regulate the behavior of the CobremsGenerator and exit.
+   that regulate the behavior of the CobremsGeneration and exit.
    """
    print """
    Usage: cobrems.init(key=value, ...)
