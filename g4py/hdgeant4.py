@@ -71,7 +71,7 @@ def init():
   global runact
   global eventact
   global stepact
-  runact = GlueXRunAction()
+  runact = GlueXRunAction(plist)
   eventact = GlueXEventAction()
   stepact = GlueXSteppingAction()
   gRunManager.SetUserAction(runact)
