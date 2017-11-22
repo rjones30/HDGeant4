@@ -21,6 +21,7 @@
 #include <G4ThreeVector.hh>
 #include <GlueXMagneticField.hh>
 #include <HddsG4Builder.hh>
+#include <HddsGeometryXML.hh>
 
 class G4Box;
 class G4LogicalVolume;
@@ -70,6 +71,9 @@ class GlueXDetectorConstruction : public G4VUserDetectorConstruction
 
      static G4Mutex fMutex;
      static std::list<GlueXDetectorConstruction*> fInstance;
+
+  protected:
+     HddsGeometryXML *fGeometryXML;
 };
 
 class GlueXParallelWorld : public G4VUserParallelWorld
