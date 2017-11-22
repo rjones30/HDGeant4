@@ -7,6 +7,7 @@
 #include "GlueXDetectorConstruction.hh"
 #include "GlueXDetectorMessenger.hh"
 #include "GlueXMagneticField.hh"
+#include "HddmOutput.hh"
 
 #include "GlueXSensitiveDetectorCDC.hh"
 #include "GlueXSensitiveDetectorFDC.hh"
@@ -73,7 +74,8 @@ std::list<GlueXDetectorConstruction*> GlueXDetectorConstruction::fInstance;
 GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
 : fMaxStep(0),
   fUniformField(0),
-  fpMagneticField(0)
+  fpMagneticField(0),
+  fGeometryXML(0)
 {
    G4AutoLock barrier(&fMutex);
    fInstance.push_back(this);
@@ -99,51 +101,58 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
       return;
    }
 
-   XString xmlFile;
+   DOMDocument* document;
    if (hddsFile.size() > 0)
    {
-      xmlFile = hddsFile.c_str();
+      int size=100;
+      char *saved_cwd = new char[size];
+      while (getcwd(saved_cwd, size) == 0)
+      {
+         delete [] saved_cwd;
+         saved_cwd = new char[size *= 2];
+      }
+      XString xmlFile = hddsFile.c_str();
+      char *dirpath = new char[hddsFile.size() + 2];
+      chdir(dirname(strcpy(dirpath, hddsFile.c_str())));
+      document = buildDOMDocument(xmlFile,false);
+      chdir(saved_cwd);
+      delete [] saved_cwd;
+      delete [] dirpath;
    }
    else if (getenv("JANA_GEOMETRY_URL"))
    {
-      hddsFile = getenv("JANA_GEOMETRY_URL");
-      if (hddsFile.index("xmlfile://") == 0)
+#ifndef FORCE_HDDS_FILES_PARSING
+      std::string url = getenv("JANA_GEOMETRY_URL");
+      int run = HddmOutput::getRunNo();
+      fGeometryXML = new HddsGeometryXML(url, run);
+      document = fGeometryXML->getDocument();
+#else
+      int size=100;
+      char *saved_cwd = new char[size];
+      while (getcwd(saved_cwd, size) == 0)
       {
-         hddsFile.remove(0,10);
-         xmlFile = hddsFile.c_str();
+         delete [] saved_cwd;
+         saved_cwd = new char[size *= 2];
       }
-      else
-      {
-         G4cerr << APP_NAME << " - unsupported protocol for JANA_GEOMETRY_URL"
-                << G4endl << getenv("JANA_GEOMETRY_URL") << G4endl;
-         return;
-      }
+      XString hddsdir = getenv("HDDS_HOME");
+      chdir(hddsdir.c_str());
+      XString xmlFile = "main_HDDS.xml";
+      document = buildDOMDocument(xmlFile,false);
+      chdir(saved_cwd);
+      delete [] saved_cwd;
+#endif
    }
    else {
       G4cerr << APP_NAME << " - no hdds geometry file specified!"
              << G4endl;
       return;
    }
-   
-   int size=100;
-   char *saved_cwd = new char[size];
-   while (getcwd(saved_cwd, size) == 0)
-   {
-      delete [] saved_cwd;
-      saved_cwd = new char[size *= 2];
-   }
-   char *dirpath = new char[hddsFile.size() + 2];
-   chdir(dirname(strcpy(dirpath, hddsFile.c_str())));
-   DOMDocument* document = buildDOMDocument(xmlFile,false);
    if (document == 0)
    {
       G4cerr << APP_NAME << " - error parsing HDDS document, "
              << "cannot continue" << G4endl;
       return;
    }
-   chdir(saved_cwd);
-   delete [] saved_cwd;
-   delete [] dirpath;
 
    DOMNode* docEl;
    try {
@@ -162,7 +171,14 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
       return;
    }
 
-   fHddsBuilder.translate(rootEl);
+   try {
+      fHddsBuilder.translate(rootEl);
+   }
+   catch (const DOMException &e) {
+      G4cerr << APP_NAME << " - error scanning HDDS document, "
+             << XString(e.getMessage()) << G4endl;
+      exit(1);
+   }
 
    XMLPlatformUtils::Terminate();
 }
