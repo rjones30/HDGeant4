@@ -87,6 +87,8 @@ INTYLIBS += -L$(G4TMPDIR) -lhdds
 INTYLIBS += -lboost_python -L$(shell python-config --prefix)/lib $(shell python-config --ldflags)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 
+EXTRALIBS += -lG4fixes
+
 .PHONY: all
 all: hdds cobrems g4fixes sharedlib exe lib bin g4py
 
@@ -113,7 +115,7 @@ sharedlib: $(G4TMPDIR)/libhdgeant4.so
 $(G4TMPDIR)/libhdgeant4.so: $(hdgeant4_objects)
 
 $(G4TMPDIR)/libG4fixes.so: $(G4FIXESDIR)/G4fixes.o $(G4fixes_objects) $(G4debug_objects)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libcobrems.so \
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libG4fixes.so \
 	-shared -o $@ $^ $(G4shared_libs) -lboost_python
 
 $(G4FIXESDIR)/G4fixes.o: src/G4fixes.cc
