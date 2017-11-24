@@ -367,8 +367,8 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    }
    if (fGunParticle.deltaTheta > 0) {
       if (fGunParticle.plogOption) {
-         double thetamin = thetap - fGunParticle.deltaMom / 2;
-         double thetamax = thetap + fGunParticle.deltaMom / 2;
+         double thetamin = thetap - fGunParticle.deltaTheta / 2;
+         double thetamax = thetap + fGunParticle.deltaTheta / 2;
          thetamin = (thetamin > 0)? thetamin : 1e-6*degree;
          thetap = thetamin * pow(thetamax/thetamin, G4UniformRand());
       }
