@@ -34,6 +34,8 @@
 #include "G4HadronPhysicsQGSP_FTFP_BERT.hh"
 #include "G4OpticalProcessIndex.hh"
 
+#include "MyPrimaryPionZapper.hh"
+
 #if USING_DIRACXX
 G4ThreadLocal GlueXBeamConversionProcess *GlueXPhysicsList::fBeamConversion = 0;
 #endif
@@ -287,6 +289,27 @@ void GlueXPhysicsList::ConstructProcess()
    cuts_table = G4ProductionCutsTable::GetProductionCutsTable();
    double highE = cuts_table->GetHighEdgeEnergy();
    cuts_table->SetEnergyRange(lowE, highE);
+
+   // force early decays of primary pions in BCAL
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
+      G4String particleName = particle->GetParticleName();
+      G4ProcessManager *mgr = particle->GetProcessManager();
+      if (particleName == "pi+" || particleName == "pi-") {
+         G4ProcessVector *procs = mgr->GetPostStepProcessVector();
+         for (int i=0; i < procs->size(); ++i) {
+            G4VProcess *proc = (*procs)[i];
+            G4String processName = proc->GetProcessName();
+            if (processName == "Decay") {
+               mgr->RemoveProcess(proc);
+               MyPrimaryPionZapper *zapper = new MyPrimaryPionZapper();
+               zapper->RegisterProcess(proc);
+               mgr->AddProcess(zapper, 0, -1, 0);
+            }
+         }
+      }
+   }
 }
 
 void GlueXPhysicsList::SetCuts()
