@@ -533,7 +533,14 @@ double CobremsGeneration::Rate_dNcdx(double x)
    // Returns the coherent bremsstrahlung probability density differential
    // in x (scaled photon energy) at photon energy k = x*fBeamEnergy.
 
-   return 2 * dpi * Rate_dNcdxdp(x, dpi/4);
+   double rate = 0;
+   int npoints = 2;
+   for (int n=0; n < npoints; ++n) {
+      double phi = (n + 0.5) * (dpi/2) / npoints;
+      rate += Rate_dNcdxdp(x, phi);
+   }
+   rate *= 2*dpi / npoints;
+   return rate;
 }
 
 double CobremsGeneration::Rate_dNcdx(double x, 
@@ -551,7 +558,13 @@ double CobremsGeneration::Rate_dNcdx(double x,
    fCollimatorDiameter = (diameter_m > 0)? diameter_m : (diameter_m < 0)?
                          -2 * distance_m * diameter_m * me / fBeamEnergy :
                          fCollimatorDiameter;
-   double rate = 2 * dpi * Rate_dNcdxdp(x, dpi/4);
+   double rate = 0;
+   int npoints = 2;
+   for (int n=0; n < npoints; ++n) {
+      double phi = (n + 0.5) * (dpi/2) / npoints;
+      rate += Rate_dNcdxdp(x, phi);
+   }
+   rate *= 2*dpi / npoints;
    fCollimatorDistance = dist;
    fCollimatorDiameter = diam;
    return rate;
@@ -645,7 +658,7 @@ double CobremsGeneration::Rate_dNcdxdp(double x, double phi)
                    ((1 + pow(1 - x, 2)) - 8 * (theta2 / pow(1 + theta2, 2) * 
                                               (1 - x) * pow(cos(phi), 2))) *
                    ((fCollimatedFlag)? Acceptance(theta2) : 1) *
-                   ((fPolarizedFlag)? Polarization(x, theta2) : 1);
+                   ((fPolarizedFlag)? Polarization(x, theta2, phi) : 1);
             fQ2theta2.push_back(theta2);
             fQ2weight.push_back(sum);
          }
@@ -770,7 +783,7 @@ double CobremsGeneration::Rate_para(double x, double theta2, double phi)
 
    return 0.5 * pow((2 - x) * (1 + theta2), 2) -
           8 * theta2 * (1 - x) * pow(cos(phi), 2) -
-          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi), 2) * pow(sin(phi), 2);
+          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi) * sin(phi), 2);
 }
 
 double CobremsGeneration::Rate_ortho(double x, double theta2, double phi)
@@ -782,7 +795,7 @@ double CobremsGeneration::Rate_ortho(double x, double theta2, double phi)
    // expressed in units of (me/fBeamEnergy)^2.
 
    return 0.5 * pow(x * (1 + theta2), 2) +
-          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi), 2) * pow(sin(phi), 2);
+          8 * pow(theta2, 2) * (1 - x) * pow(cos(phi) * sin(phi), 2);
 }
 
 double CobremsGeneration::Polarization(double x, double theta2)
@@ -796,6 +809,18 @@ double CobremsGeneration::Polarization(double x, double theta2)
 
    return 2 * (1 - x) / (pow(1 + theta2, 2) * (pow(1 - x + 1e-99, 2) + 1) - 
                          4 * theta2 * (1 - x));
+}
+
+double CobremsGeneration::Polarization(double x, double theta2, double phi)
+{
+   // Returns the degree of linear polarization in a coherent bremsstrahlung
+   // beam at photon energy k = x*fBeamEnergy and production angles theta, phi.
+   // The argument theta2 is the production polar angle theta^2 expressed
+   // in units of (me/fBeamEnergy)^2.
+
+   double Rpara = Rate_para(x, theta2, phi);
+   double Rperp = Rate_ortho(x, theta2, phi);
+   return (Rpara - Rperp) / (Rpara + Rperp);
 }
 
 double CobremsGeneration::AbremsPolarization(double x, double theta2, double phi)
@@ -1075,6 +1100,8 @@ double (CobremsGeneration::*Rate_dNcdx_1)(double) = &CobremsGeneration::Rate_dNc
 double (CobremsGeneration::*Rate_dNcdx_3)(double, double, double) = &CobremsGeneration::Rate_dNcdx;
 double (CobremsGeneration::*Acceptance_1)(double) = &CobremsGeneration::Acceptance;
 double (CobremsGeneration::*Acceptance_4)(double, double, double, double) = &CobremsGeneration::Acceptance;
+double (CobremsGeneration::*Polarization_2)(double, double) = &CobremsGeneration::Polarization;
+double (CobremsGeneration::*Polarization_3)(double, double, double) = &CobremsGeneration::Polarization;
 
 BOOST_PYTHON_MODULE(libcobrems)
 {
@@ -1143,7 +1170,8 @@ BOOST_PYTHON_MODULE(libcobrems)
       .def("Rate_dNidxdt2", &CobremsGeneration::Rate_dNidxdt2)
       .def("Rate_para", &CobremsGeneration::Rate_para)
       .def("Rate_ortho", &CobremsGeneration::Rate_ortho)
-      .def("Polarization", &CobremsGeneration::Polarization)
+      .def("Polarization", Polarization_2)
+      .def("Polarization", Polarization_3)
       .def("Acceptance", Acceptance_1)
       .def("Acceptance", Acceptance_4)
       .def("Sigma2MS", &CobremsGeneration::Sigma2MS)
