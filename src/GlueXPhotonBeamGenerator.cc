@@ -351,7 +351,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
          double uq = freq * G4UniformRand();
          int j = ImportanceSampler::search(uq, fCobrems->fQ2weight);
          theta2 = fCobrems->fQ2theta2[j];
-         polarization = fCobrems->Polarization(x, theta2);
+         polarization = fCobrems->Polarization(x, theta2, phi);
          break;
       }
    }
