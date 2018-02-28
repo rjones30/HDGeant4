@@ -300,6 +300,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    double phi = 0;
    double theta2 = 0;
    double polarization = 0;
+   double polarization_phi = 0;
    double Scoherent = fCoherentPDFx.Npassed * 
                      (fCoherentPDFx.Ntested / (fCoherentPDFx.Psum + 1e-99));
    double Sincoherent = fIncoherentPDFlogx.Npassed *
@@ -352,6 +353,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
          int j = ImportanceSampler::search(uq, fCobrems->fQ2weight);
          theta2 = fCobrems->fQ2theta2[j];
          polarization = fCobrems->Polarization(x, theta2, phi);
+         polarization_phi = M_PI / 2;
          break;
       }
    }
@@ -406,6 +408,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
 
          phi = 2*M_PI * G4UniformRand();
          polarization = fCobrems->AbremsPolarization(x, theta2, phi);
+         polarization_phi = phi - M_PI / 2;
          break;
       }
    }
@@ -460,7 +463,13 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    coly += BEAM_BOX_SIZE * (G4UniformRand() - 0.5);
 #endif
    G4ThreeVector vtx(colx, coly, fBeamStartZ);
-   G4ThreeVector pol(0, polarization, -polarization * py / pz);
+   G4ThreeVector pol(polarization * cos(polarization_phi),
+                     polarization * sin(polarization_phi),
+                     -(px * polarization * cos(polarization_phi) +
+                       py * polarization * sin(polarization_phi)) / pz);
+   // use upper half-space to define the polarization plane
+   if (pol[2] < 0)
+      pol = -pol;
    G4ThreeVector mom(px, py, pz);
 
    // If beam photon is primary particle, use it to initialize event info
@@ -499,9 +508,23 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       anEvent->AddPrimaryVertex(vertex);
    }
 
+   // Include information about the radiating electron, but do not track it
+   G4ParticleDefinition *ve = GlueXPrimaryGeneratorAction::GetParticle("electron");
+   double vpx = Ebeam * thxBeam;
+   double vpy = Ebeam * thyBeam;
+   double vpz = sqrt(Ebeam*Ebeam - vpx*vpx - vpy*vpy);
+   G4PrimaryParticle *velectron = new G4PrimaryParticle(ve, vpx, vpy, vpz);
+   double colvx = radx + colDist * thxBeam;
+   double colvy = rady + colDist * thyBeam;
+   G4ThreeVector vvtx(colvx, colvy, fBeamStartZ);
+   G4PrimaryVertex *vvertex = new G4PrimaryVertex(vvtx, tvtx);
+   vvertex->SetPrimary(velectron);
+   event_info->AddPrimaryVertex(*vvertex);
+   delete vvertex;
+
    // If running in event generation only mode, default is not to
    // save the event to the output file. This will be set back to
-   // true if // the beam particle makes it to the reference plane.
+   // true if the beam particle makes it to the reference plane.
    if (fGenerateNotSimulate == -1) {
       event_info->SetKeepEvent(0);
    }
