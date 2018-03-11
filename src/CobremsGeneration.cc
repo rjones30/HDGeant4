@@ -98,9 +98,9 @@ void CobremsGeneration::updateTargetOrientation()
    resetTargetOrientation();
    RotateTarget(0, dpi/2, 0);      // point (1,0,0) along beam
    RotateTarget(0, 0, dpi/4);      // point (0,1,1) vertically
-   RotateTarget(-fTargetThetax, 0, 0);
-   RotateTarget(0, -fTargetThetay, 0);
    RotateTarget(0, 0, -fTargetThetaz);
+   RotateTarget(0, -fTargetThetay, 0);
+   RotateTarget(-fTargetThetax, 0, 0);
 }
 
 void CobremsGeneration::setTargetCrystal(std::string crystal)
@@ -310,23 +310,14 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
                  pow(fBeamEmittance / fCollimatorSpotrms, 2);
    double varMS = Sigma2MS(fTargetThickness);
 
-   // Here we have to guess which characteristic angle alph inside the crystal
-   // is dominantly responsible for the coherent photons in each bin in x.
-   // I just use the smallest of the two angles, but this does not work when
-   // both angles are small, and you have to be more clever -- BEWARE!!!
-   double alph = (fabs(fTargetThetax) < fabs(fTargetThetay))?
-                  fabs(fTargetThetax) : fabs(fTargetThetay);
-   if (alph == 0) {
-      alph = (fabs(fTargetThetax) > fabs(fTargetThetay))?
-              fabs(fTargetThetax) : fabs(fTargetThetay);
-   }
-
-   // In any case, fine-tuning below the mosaic spread limit makes no sense.
-   else {
-      alph = (alph > fTargetCrystal.mosaic_spread)?
-              alph : fTargetCrystal.mosaic_spread;
-   }
-
+   // Here we have to guess which reciprocal lattice vector is dominantly
+   // for the coherent photons in each bin in x. For simplicity, I assume
+   // it is a (2,2,0) vector. Higher order vectors exhibit more smearing
+   // but this is a good approximation if the primary peaks in the spectrum
+   // come from (2,2,0) vectors.
+   double a = fTargetCrystal.lattice_constant;
+   double qabs = sqrt(8.0) * hbarc * 2*dpi / a;
+   double xfact = 2 * fBeamEnergy * qabs / (me*me);
    double *norm = new double[nbins];
    double *result = new double[nbins];
    for (int j=0; j < nbins; ++j) {
@@ -335,7 +326,7 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
       for (int i=0; i < nbins; ++i) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
-         double dalph = dx * alph / (x * (1 - x) + 1e-99);
+         double dalph = dx / xfact / pow(1 - x + 1e-99, 2);
          double term;
          if (varMS / var0 > 1e-4) {
             term = dalph / varMS *
@@ -349,7 +340,6 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
          else {
             term = exp(-dalph*dalph / (2 * var0)) / sqrt(2 * dpi * var0);
          }
-         term *= alph / x;
          norm[j] += term;
       }
    }
@@ -358,7 +348,7 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
       for (int j=0; j < nbins; ++j) {
          double dx = (x1 - x0) * (j - i) / nbins;
          double x = x0 + (x1 - x0) * (j + 0.5) / nbins;
-         double dalph = dx * alph / (x * (1 - x) + 1e-99);
+         double dalph = dx / xfact / pow(1 - x + 1e-99, 2);
          double term;
          if (varMS / var0 > 1e-4) {
             term = dalph / varMS *
@@ -372,7 +362,6 @@ void CobremsGeneration::applyBeamCrystalConvolution(int nbins, double *xvalues,
          else {
             term = exp(-dalph*dalph / (2 * var0)) / sqrt(2 * dpi * var0);
          }
-         term *= alph / x;
          result[i] += term * yvalues[j] / norm[j];
       }
    }
