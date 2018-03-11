@@ -98,9 +98,9 @@ void CobremsGeneration::updateTargetOrientation()
    resetTargetOrientation();
    RotateTarget(0, dpi/2, 0);      // point (1,0,0) along beam
    RotateTarget(0, 0, dpi/4);      // point (0,1,1) vertically
-   RotateTarget(-fTargetThetax, 0, 0);
-   RotateTarget(0, -fTargetThetay, 0);
    RotateTarget(0, 0, -fTargetThetaz);
+   RotateTarget(0, -fTargetThetay, 0);
+   RotateTarget(-fTargetThetax, 0, 0);
 }
 
 void CobremsGeneration::setTargetCrystal(std::string crystal)
