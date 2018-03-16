@@ -91,7 +91,7 @@ INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4share
 EXTRALIBS += -lG4fixes
 
 .PHONY: all
-all: hdds cobrems g4fixes sharedlib exe lib bin g4py
+all: hdds cobrems g4fixes sharedlib exe lib bin g4py utils
 
 include $(G4INSTALL)/config/binmake.gmk
 
@@ -177,7 +177,10 @@ $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so: $(G4LIBDIR)/libG4fixes.so
 	@rm -f $@
 	@cd g4py/G4fixes && ln -s ../../tmp/*/hdgeant4/libG4fixes.so .
 
-utils: $(G4BINDIR)/beamtree
+utils: $(G4BINDIR)/beamtree $(G4BINDIR)/genBH
 
 $(G4BINDIR)/beamtree: src/utils/beamtree.cc
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
+
+$(G4BINDIR)/genBH: src/utils/genBH.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
