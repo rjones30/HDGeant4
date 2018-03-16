@@ -43,6 +43,7 @@ class GlueXUserEventInformation: public G4VUserEventInformation
                                                int parentID, int mech);
    void AddMCtrajectoryPoint(const G4Step &step, int save_option);
 
+   int GetRunNo();
    double GetBeamPhotonEnergy();
    int GetGlueXTrackID(int g4ID);
    int GetGlueXTrackID(const G4Track *track);
