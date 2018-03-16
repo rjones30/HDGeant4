@@ -91,7 +91,7 @@ INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4share
 EXTRALIBS += -lG4fixes
 
 .PHONY: all
-all: hdds cobrems g4fixes sharedlib exe lib bin g4py utils
+all: hdds cobrems g4fixes sharedlib exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
 
