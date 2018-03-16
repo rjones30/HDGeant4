@@ -24,8 +24,6 @@ class GlueXPrimaryGenerator: public G4VPrimaryGenerator
 
    virtual void GeneratePrimaryVertex(G4Event *event);
 
-   double GetBeamEnergy(G4Event *event);
-
  protected:
    hddm_s::istream *fHDDMistream;
 
