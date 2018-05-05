@@ -165,8 +165,9 @@ int main(int argc,char** argv)
    runManager.SetUserInitialization(userinit);
 
    // Initialize G4 kernel
+   std::cout << "Initializing the Geant4 kernel..." << std::endl;
    runManager.Initialize();
-
+   
    // Initialize graphics (option -v)
    G4VisManager* visManager = 0;
    if (use_visualization) {
