@@ -66,7 +66,7 @@ DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
            -lTRIGGER -lDAQ -lTTAB -lEVENTSTORE -lKINFITTER -lTAC \
-           -L$(SQLITECPP_HOME)/lib -lSQLiteCpp -lsqlite3 \
+           -L$(SQLITECPP_HOME)/lib -lSQLiteCpp -L$(SQLITE_HOME)/lib -Wl,-rpath=$(SQLITE_HOME)/lib -lsqlite3 \
            -lxstream -lbz2 -lz \
            -L/usr/lib64/mysql -lmysqlclient\
            -L$(JANA_HOME)/lib -lJANA \
