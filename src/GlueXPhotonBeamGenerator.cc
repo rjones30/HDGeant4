@@ -116,6 +116,7 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
                              &GlueXPhotonBeamGenerator::disableFixedPolarization,
        "Tell the photon beam generator not to force a fixed polarization\n"
        " on beam photons created by the simulation.");
+   std::cout << "GlueXPhotonBeamGenerator initialization complete." << std::endl;
 }
 
 GlueXPhotonBeamGenerator::~GlueXPhotonBeamGenerator()
