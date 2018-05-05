@@ -13,6 +13,7 @@
 #define GlueXPhotonBeamGenerator_H
 
 #include <G4VPrimaryGenerator.hh>
+#include <G4GenericMessenger.hh>
 #include <CobremsGeneration.hh>
 #include <ImportanceSampler.hh>
 #include <GlueXPseudoDetectorTAG.hh>
@@ -50,6 +51,12 @@ class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
 
    void prepareImportanceSamplingPDFs();
 
+   static int fForceFixedPolarization;
+   static double fFixedPolarization;
+   static double fFixedPolarization_phi;
+
+   G4GenericMessenger *fMessenger;
+
  public:
    static void setBeamDiameter(double D) {
       fBeamDiameter = D;
@@ -70,6 +77,14 @@ class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
    }
    static double getBeamStartZ() {
       return fBeamStartZ;
+   }
+   void enableFixedPolarization(double polar, double phi_deg) {
+      fFixedPolarization = polar;
+      fFixedPolarization_phi = phi_deg * M_PI/180;
+      fForceFixedPolarization = true;
+   }
+   void disableFixedPolarization() {
+      fForceFixedPolarization = false;
    }
 
  private:
