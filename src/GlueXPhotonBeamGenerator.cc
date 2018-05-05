@@ -39,6 +39,10 @@ ImportanceSampler GlueXPhotonBeamGenerator::fIncoherentPDFlogx;
 ImportanceSampler GlueXPhotonBeamGenerator::fIncoherentPDFy;
 double GlueXPhotonBeamGenerator::fIncoherentPDFtheta02;
 
+int GlueXPhotonBeamGenerator::fForceFixedPolarization = false;
+double GlueXPhotonBeamGenerator::fFixedPolarization = 0;
+double GlueXPhotonBeamGenerator::fFixedPolarization_phi = 0;
+
 GlueXPseudoDetectorTAG *GlueXPhotonBeamGenerator::fTagger = 0;
 
 GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
@@ -96,10 +100,28 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
    fIncoherentPDFlogx.Pcut = .003 * (raddz / (20e-6 * m));
 
    prepareImportanceSamplingPDFs();
+
+   // Create interface for interactive commands
+
+   fMessenger = new G4GenericMessenger(this, "/PhotonBeam/",
+                                       "Photon beam generator control");
+   fMessenger->DeclareMethod("enableFixedPolarization", 
+                             &GlueXPhotonBeamGenerator::enableFixedPolarization,
+       "Tell the photon beam generator to force a fixed polarization\n"
+       " on all beam photons created by the simulation.\n"
+       " Arguments are:\n"
+       "      polarization: value in the range [0,1]\n"
+       "      phi: azimuthal angle (degrees) [0, 180]");
+   fMessenger->DeclareMethod("disableFixedPolarization",
+                             &GlueXPhotonBeamGenerator::disableFixedPolarization,
+       "Tell the photon beam generator not to force a fixed polarization\n"
+       " on beam photons created by the simulation.");
 }
 
 GlueXPhotonBeamGenerator::~GlueXPhotonBeamGenerator()
-{}
+{
+   delete fMessenger; 
+}
 
 void GlueXPhotonBeamGenerator::prepareImportanceSamplingPDFs()
 {
@@ -463,6 +485,10 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    coly += BEAM_BOX_SIZE * (G4UniformRand() - 0.5);
 #endif
    G4ThreeVector vtx(colx, coly, fBeamStartZ);
+   if (fForceFixedPolarization) {
+      polarization = fFixedPolarization;
+      polarization_phi = fFixedPolarization_phi;
+   }
    G4ThreeVector pol(polarization * cos(polarization_phi),
                      polarization * sin(polarization_phi),
                      -(px * polarization * cos(polarization_phi) +
