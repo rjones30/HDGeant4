@@ -42,11 +42,11 @@ class PairConversionGeneration {
    PairConversionGeneration();
    ~PairConversionGeneration();
 
-   double FFatomic(double qRecoil);
-   double DiffXS_pair(const TPhoton &gIn, 
-                      const TLepton &pOut, const TLepton &eOut);
-   double DiffXS_triplet(const TPhoton &gIn, const TLepton &pOut,
-                         const TLepton &eOut2, const TLepton &eOut3);
+   LDouble_t FFatomic(LDouble_t qRecoil);
+   LDouble_t DiffXS_pair(const TPhoton &gIn, 
+                         const TLepton &pOut, const TLepton &eOut);
+   LDouble_t DiffXS_triplet(const TPhoton &gIn, const TLepton &pOut,
+                            const TLepton &eOut2, const TLepton &eOut3);
 
    const TThreeVectorReal &GetPolarization();
    unsigned int GetConverterZ();

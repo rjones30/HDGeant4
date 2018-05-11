@@ -62,21 +62,24 @@ PairConversionGeneration::PairConversionGeneration()
 PairConversionGeneration::~PairConversionGeneration()
 {}
 
-double PairConversionGeneration::FFatomic(double qRecoil)
+LDouble_t PairConversionGeneration::FFatomic(LDouble_t qRecoil)
 {
    // return the atomic form factor of the pair converter
    // normalized to unity at zero momentum transfer qRecoil (GeV/c).
+   // Lengths are in Angstroms in this function.
 
 #if H_DIPOLE_FORM_FACTOR
 
-   double a0Bohr = 0.529177 / 1.97327e-6;
-   double ff = 1 / pow(1 + pow(a0Bohr * qRecoil, 2) / 4, 2);
+   LDouble_t a0Bohr = 0.529177 / 1.97327e-6;
+   LDouble_t ff = 1 / pow(1 + pow(a0Bohr * qRecoil, 2), 2);
 
 #else
 
    // parameterization for 4Be given by online database at
    // http://lampx.tugraz.at/~hadley/ss1/crystaldiffraction
    //                    /atomicformfactors/formfactors.php
+
+   int Z=4;
 
    LDouble_t acoeff[] = {1.5919, 1.1278, 0.5391, 0.7029};
    LDouble_t bcoeff[] = {43.6427, 1.8623, 103.483, 0.5420};
@@ -87,16 +90,16 @@ double PairConversionGeneration::FFatomic(double qRecoil)
    for (int i=0; i < 4; ++i) {
       ff += acoeff[i] * exp(-bcoeff[i] * pow(q_invA / (4 * M_PI), 2));
    }
-   ff /= 4;
+   ff /= Z;
 
 #endif
 
    return ff;
 }
 
-double PairConversionGeneration::DiffXS_pair(const TPhoton &gIn, 
-                                             const TLepton &pOut,
-                                             const TLepton &eOut)
+LDouble_t PairConversionGeneration::DiffXS_pair(const TPhoton &gIn, 
+                                                const TLepton &pOut,
+                                                const TLepton &eOut)
 {
    // Calculates the e+e- pair production cross section for a
    // gamma ray off an atom at a particular recoil momentum vector q.
@@ -120,27 +123,26 @@ double PairConversionGeneration::DiffXS_pair(const TPhoton &gIn,
    e2.AllPol();
 
    // Multiply the basic cross section by the converter atomic form factor
-   double result = TCrossSection::PairProduction(g0, e2, p1);
+   LDouble_t result = TCrossSection::PairProduction(g0, e2, p1);
    TFourVectorReal qR(gIn.Mom() - eOut.Mom() - pOut.Mom());
-   double Q2 = fabs(qR.InvariantSqr());
-   result *= sqr(fConverterZ * (1 - FFatomic(sqrt(Q2))));
+   result *= sqr(fConverterZ * (1 - FFatomic(qR.Length())));
    return result * 1e-6;
 
    // The unpolarized Bethe-Heitler cross section is given here for comparison
-   double kin = gIn.Mom()[0];
-   double Epos = pOut.Mom()[0];
-   double Eele = eOut.Mom()[0];
-   double delta = 136 * mElectron / pow(fConverterZ, 0.33333) *
-                  kin / (Eele * Epos);
-   double aCoul = sqr(alphaQED * fConverterZ);
-   double fCoul = aCoul * (1 / (1 + aCoul) + 0.20206 - 0.0369 * aCoul +
-                           0.0083 * pow(aCoul, 2) - 0.002 * pow(aCoul, 3));
-   double xsi = log(1440 / pow(fConverterZ, 0.66667)) / 
-                (log(183 / pow(fConverterZ, 0.33333) - fCoul));
-   double FofZ = (8./3.) * log(fConverterZ) + ((kin < 0.05)? 0 : 8 * fCoul);
-   double Phi1 = 20.867 - 3.242 * delta + 0.625 * sqr(delta);
-   double Phi2 = 20.209 - 1.930 * delta - 0.086 * sqr(delta);
-   double Phi0 = 21.12 - 4.184 * log(delta + 0.952);
+   LDouble_t kin = gIn.Mom()[0];
+   LDouble_t Epos = pOut.Mom()[0];
+   LDouble_t Eele = eOut.Mom()[0];
+   LDouble_t delta = 136 * mElectron / pow(fConverterZ, 0.33333) *
+                     kin / (Eele * Epos);
+   LDouble_t aCoul = sqr(alphaQED * fConverterZ);
+   LDouble_t fCoul = aCoul * (1 / (1 + aCoul) + 0.20206 - 0.0369 * aCoul +
+                              0.0083 * pow(aCoul, 2) - 0.002 * pow(aCoul, 3));
+   LDouble_t xsi = log(1440 / pow(fConverterZ, 0.66667)) / 
+                   (log(183 / pow(fConverterZ, 0.33333) - fCoul));
+   LDouble_t FofZ = (8./3.) * log(fConverterZ) + ((kin < 0.05)? 0 : 8 * fCoul);
+   LDouble_t Phi1 = 20.867 - 3.242 * delta + 0.625 * sqr(delta);
+   LDouble_t Phi2 = 20.209 - 1.930 * delta - 0.086 * sqr(delta);
+   LDouble_t Phi0 = 21.12 - 4.184 * log(delta + 0.952);
    if (delta > 1) {
       Phi1 = Phi2 = Phi0;
    }
@@ -153,10 +155,10 @@ double PairConversionGeneration::DiffXS_pair(const TPhoton &gIn,
    return result * 1e-6;
 }
 
-double PairConversionGeneration::DiffXS_triplet(const TPhoton &gIn,
-                                                const TLepton &pOut,
-                                                const TLepton &eOut2,
-                                                const TLepton &eOut3)
+LDouble_t PairConversionGeneration::DiffXS_triplet(const TPhoton &gIn,
+                                                   const TLepton &pOut,
+                                                   const TLepton &eOut2,
+                                                   const TLepton &eOut3)
 {
    // Calculates the e+e- pair production rate on a free electron target,
    // including incident photon polarization effects, for a given set of
@@ -164,8 +166,9 @@ double PairConversionGeneration::DiffXS_triplet(const TPhoton &gIn,
    // energy kin, the mass of the e+e- pair M, the recoil momentum vector
    // qR, the azimuthal angle of the plane containing the e+e- pair phi+,
    // and the energy of the pair positron E+. The returned value is the
-   // differential cross section measured in barns/GeV^4, differential 
-   // in (d^3 qR dphi+ dE+) = (M / 2 kin) (dM dqR^2 dphiR dphi+ dE+).
+   // differential cross section measured in barns/GeV^4 per atom, with
+   // fConverterZ electrons per atom, differential in
+   //    (d^3 qR dphi+ dE+) = (M / 2 kin) (dM dqR^2 dphiR dphi+ dE+).
 
    TPhoton g0(gIn);
    TLepton e0(zeroVector, mElectron);
@@ -185,10 +188,8 @@ double PairConversionGeneration::DiffXS_triplet(const TPhoton &gIn,
    e3.AllPol();
 
    // Correct the basic cross section by the converter atomic form factor
-   double result = TCrossSection::TripletProduction(g0, e0, p1, e2, e3);
-   TFourVectorReal qR(e3.Mom() - e0.Mom());
-   double Q2 = fabs(qR.InvariantSqr());
-   result *= fConverterZ * (1 - sqr(FFatomic(sqrt(Q2))));
+   LDouble_t result = TCrossSection::TripletProduction(g0, e0, p1, e2, e3);
+   result *= fConverterZ * (1 - sqr(FFatomic(e3.Mom().Length())));
    return result * 1e-6;
 }
 
