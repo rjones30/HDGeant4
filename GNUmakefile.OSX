@@ -23,7 +23,7 @@ endif
 
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
 CPPFLAGS += -I./src/G4debug
-CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
+CPPFLAGS += -I$(HALLD_RECON_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
 CPPFLAGS += -I/usr/include/Qt
@@ -60,7 +60,7 @@ HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/
 
 ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer
 
-DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
+DANALIBS = -L$(HALLD_RECON_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
