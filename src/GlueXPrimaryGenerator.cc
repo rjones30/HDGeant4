@@ -28,11 +28,13 @@ GlueXPrimaryGenerator::~GlueXPrimaryGenerator()
 void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
 {
    hddm_s::HDDM *hddmevent = new hddm_s::HDDM;
-   if (! (*fHDDMistream >> *hddmevent)) {
-      event->SetEventAborted();
-      G4cout << "End of file on hddm input, ending the run here." << std::endl;
-      G4RunManager::GetRunManager()->AbortRun();
-      return;
+   while (hddmevent->getPhysicsEvents().size() == 0) {
+      if (! (*fHDDMistream >> *hddmevent)) {
+         event->SetEventAborted();
+         G4cout << "End of file on hddm input, ending the run here." << std::endl;
+         G4RunManager::GetRunManager()->AbortRun();
+         return;
+      }
    }
 
    // Store generated event info so it can be written to output file
