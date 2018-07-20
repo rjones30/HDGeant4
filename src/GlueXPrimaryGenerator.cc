@@ -49,25 +49,33 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
       return;
    }
    hddm_s::VertexList::iterator it_vertex;
+   it_vertex = vertices.begin();
+   event->SetEventID(it_vertex->getEventNo());
+   G4ThreeVector vtx(GetParticlePosition());
+   hddm_s::Origin &origin = it_vertex->getOrigin();
+   double x = origin.getVx() * cm;
+   double y = origin.getVy() * cm;
+   double z = origin.getVz() * cm;
+   if (x != 0 || y != 0 || z != 0) {
+      vtx[0] = 0;
+      vtx[1] = 0;
+      vtx[2] = 0;
+   }
    for (it_vertex = vertices.begin();
         it_vertex != vertices.end(); ++it_vertex)
    {
-      event->SetEventID(it_vertex->getEventNo());
       hddm_s::Origin &origin = it_vertex->getOrigin();
       double x = origin.getVx() * cm;
       double y = origin.getVy() * cm;
       double z = origin.getVz() * cm;
       double t = origin.getT() * ns;
-      if (x == 0 && y == 0 && z == 0) {
-         G4ThreeVector vtx(GetParticlePosition());
-         x = vtx[0];
-         y = vtx[1];
-         z = vtx[2];
-         origin.setVx(x/cm);
-         origin.setVy(y/cm);
-         origin.setVz(z/cm);
-      }
+      x += vtx[0];
+      y += vtx[1];
+      z += vtx[2];
       t += GetParticleTime();
+      origin.setVx(x/cm);
+      origin.setVy(y/cm);
+      origin.setVz(z/cm);
       origin.setT(t/ns);
       G4ThreeVector pos(x, y, z);
       G4PrimaryVertex* vertex = new G4PrimaryVertex(pos, t);
