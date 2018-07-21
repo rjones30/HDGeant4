@@ -86,8 +86,8 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
       fPairsGeneration = new PairConversionGeneration();
 #endif
 
-   fPaircohPDF.Pcut = 30;
-   fTripletPDF.Pcut = 10;
+   fPaircohPDF.Pcut = 60;
+   fTripletPDF.Pcut = 15;
 }
 
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(
@@ -590,6 +590,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
          // returned as d(sigma)/(dE+ dphi+ d^3qR)
          p1.SetMom(q1.Rotate(rockaxis, rockangle));
          e2.SetMom(q2.Rotate(rockaxis, rockangle));
+         e3.SetMom(TThreeVectorReal(0,0,0));
          LDouble_t diffXS = fPairsGeneration->DiffXS_pair(gIn, p1, e2);
    
          // Use keep/discard algorithm
