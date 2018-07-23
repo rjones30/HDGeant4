@@ -54,11 +54,21 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
    it_vertex = vertices.begin();
    event->SetEventID(it_vertex->getEventNo());
    G4ThreeVector vtx(GetParticlePosition());
+   double tvtx(GetParticleTime());
    hddm_s::Origin &origin = it_vertex->getOrigin();
    double x = origin.getVx() * cm;
    double y = origin.getVy() * cm;
    double z = origin.getVz() * cm;
-   if (x != 0 || y != 0 || z != 0) {
+   double t = origin.getT() * ns;
+   if (x == 0 && y == 0 && z == 0) {
+      tvtx = (t == 0)? tvtx : 0;
+   }
+   else {
+      double beamVelocity = GlueXPhotonBeamGenerator::getBeamVelocity();
+      if (t == 0)
+         tvtx += (z - vtx[2]) / beamVelocity;
+      else
+         tvtx = 0;
       vtx[0] = 0;
       vtx[1] = 0;
       vtx[2] = 0;
@@ -74,7 +84,7 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
       x += vtx[0];
       y += vtx[1];
       z += vtx[2];
-      t += GetParticleTime();
+      t += tvtx;
       origin.setVx(x/cm);
       origin.setVy(y/cm);
       origin.setVz(z/cm);
