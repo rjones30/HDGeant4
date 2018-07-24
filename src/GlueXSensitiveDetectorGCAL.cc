@@ -37,8 +37,6 @@ double GlueXSensitiveDetectorGCAL::THRESH_MEV = 30.;
 int GlueXSensitiveDetectorGCAL::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorGCAL::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorGCAL::fVolumeTable;
-
 GlueXSensitiveDetectorGCAL::GlueXSensitiveDetectorGCAL(const G4String& name)
  : G4VSensitiveDetector(name),
    fBlockHitsMap(0), fPointsMap(0)
@@ -75,12 +73,14 @@ GlueXSensitiveDetectorGCAL::GlueXSensitiveDetectorGCAL(
  : G4VSensitiveDetector(src),
    fBlockHitsMap(src.fBlockHitsMap), fPointsMap(src.fPointsMap)
 {
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
 GlueXSensitiveDetectorGCAL &GlueXSensitiveDetectorGCAL::operator=(const
                                          GlueXSensitiveDetectorGCAL &src)
 {
+   G4AutoLock barrier(&fMutex);
    *(G4VSensitiveDetector*)this = src;
    fBlockHitsMap = src.fBlockHitsMap;
    fPointsMap = src.fPointsMap;
@@ -89,6 +89,7 @@ GlueXSensitiveDetectorGCAL &GlueXSensitiveDetectorGCAL::operator=(const
 
 GlueXSensitiveDetectorGCAL::~GlueXSensitiveDetectorGCAL() 
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -104,7 +105,7 @@ void GlueXSensitiveDetectorGCAL::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorGCAL::ProcessHits(G4Step* step, 
-                                              G4TouchableHistory* unused)
+                                               G4TouchableHistory* ROhist)
 {
    double dEsum = step->GetTotalEnergyDeposit();
    if (dEsum == 0)
@@ -301,7 +302,7 @@ void GlueXSensitiveDetectorGCAL::EndOfEvent(G4HCofThisEvent*)
 }
 
 int GlueXSensitiveDetectorGCAL::GetIdent(std::string div, 
-                                        const G4VTouchable *touch)
+                                         const G4VTouchable *touch)
 {
    const HddsG4Builder* bldr = GlueXDetectorConstruction::GetBuilder();
    std::map<std::string, std::vector<int> >::const_iterator iter;
@@ -317,10 +318,9 @@ int GlueXSensitiveDetectorGCAL::GetIdent(std::string div,
       }
       identifiers = &Refsys::fIdentifierTable[volId];
       if ((iter = identifiers->find(div)) != identifiers->end()) {
-         if (dynamic_cast<G4PVPlacement*>(pvol))
-            return iter->second[pvol->GetCopyNo() - 1];
-         else
-            return iter->second[pvol->GetCopyNo()];
+         int copyNum = touch->GetCopyNumber(depth);
+         copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+         return iter->second[copyNum];
       }
    }
    return -1;

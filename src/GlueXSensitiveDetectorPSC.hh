@@ -38,7 +38,7 @@ class GlueXSensitiveDetectorPSC : public G4VSensitiveDetector
    GlueXHitsMapPSCpaddle* fCounterHitsMap;
    GlueXHitsMapPSCpoint* fPointsMap;
 
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
+   std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static int MAX_HITS;
    static int NUM_MODULES_PER_ARM;

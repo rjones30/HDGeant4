@@ -61,7 +61,7 @@ class GlueXSensitiveDetectorFDC : public G4VSensitiveDetector
    GlueXHitsMapFDCcathode* fCathodesMap;
    GlueXHitsMapFDCpoint* fPointsMap;
 
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
+   std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static const double ELECTRON_CHARGE;
    static double DRIFT_SPEED;
