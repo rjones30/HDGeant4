@@ -31,7 +31,7 @@ class GlueXSensitiveDetectorCDC : public G4VSensitiveDetector
    virtual ~GlueXSensitiveDetectorCDC();
   
    virtual void Initialize(G4HCofThisEvent* hitCollection);
-   virtual G4bool ProcessHits(G4Step* step, G4TouchableHistory* unused);
+   virtual G4bool ProcessHits(G4Step* step, G4TouchableHistory* ROhist);
    virtual void EndOfEvent(G4HCofThisEvent* hitCollection);
 
    int GetIdent(std::string div, const G4VTouchable *touch);
@@ -47,7 +47,7 @@ class GlueXSensitiveDetectorCDC : public G4VSensitiveDetector
    GlueXHitsMapCDCstraw* fStrawsMap;
    GlueXHitsMapCDCpoint* fPointsMap;
 
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
+   std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static const double ELECTRON_CHARGE;
    static double DRIFT_SPEED;
