@@ -32,8 +32,6 @@ double GlueXSensitiveDetectorDIRC::TWO_HIT_TIME_RESOL = 50*ns;
 int GlueXSensitiveDetectorDIRC::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorDIRC::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorDIRC::fVolumeTable;
-
 TGraph *GlueXSensitiveDetectorDIRC::fDetEff = 0;
 
 GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const G4String& name)
@@ -45,7 +43,7 @@ GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const G4String& name)
   // the drift-time properties of hits in the DIRC, you must delete all old
   // objects of this class and create new ones.
 
-  G4AutoLock tuberier(&fMutex);
+  G4AutoLock barrier(&fMutex);
   if (instanceCount++ == 0) {
     extern int run_number;
     extern jana::JApplication *japp;
@@ -66,18 +64,21 @@ GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const G4String& name)
     GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const GlueXSensitiveDetectorDIRC &src)
       : G4VSensitiveDetector(src)
 {
+  G4AutoLock barrier(&fMutex);
   ++instanceCount;
 }
 
 GlueXSensitiveDetectorDIRC &GlueXSensitiveDetectorDIRC::operator=(const
 								  GlueXSensitiveDetectorDIRC &src)
 {
+  G4AutoLock barrier(&fMutex);
   *(G4VSensitiveDetector*)this = src;
   return *this;
 }
 
 GlueXSensitiveDetectorDIRC::~GlueXSensitiveDetectorDIRC() 
 {
+  G4AutoLock barrier(&fMutex);
   --instanceCount;
 }
 
@@ -86,7 +87,7 @@ void GlueXSensitiveDetectorDIRC::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step, 
-                                               G4TouchableHistory* unused)
+                                               G4TouchableHistory* ROhist)
 {
   
   const G4ThreeVector &pin = step->GetPreStepPoint()->GetMomentum();
@@ -260,10 +261,9 @@ int GlueXSensitiveDetectorDIRC::GetIdent(std::string div,
     }
     identifiers = &Refsys::fIdentifierTable[volId];
     if ((iter = identifiers->find(div)) != identifiers->end()) {
-      if (dynamic_cast<G4PVPlacement*>(pvol))
-	return iter->second[pvol->GetCopyNo() - 1];
-      else
-	return iter->second[pvol->GetCopyNo()];
+      int copyNum = touch->GetCopyNumber(depth);
+      copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+      return iter->second[copyNum];
     }
   }
   return -1;
@@ -279,6 +279,7 @@ double GlueXSensitiveDetectorDIRC::GetDetectionEfficiency(double energy)
 
 void GlueXSensitiveDetectorDIRC::InitializeDetEff()
 {
+  G4AutoLock barrier(&fMutex);
    // quantum efficiency for H12700
    // defined for wavelength in the range [0, 1000] nm
    double fEfficiency[1000] = {0.000000, 0.000000, 0.000000, 0.000000, 0.000000,

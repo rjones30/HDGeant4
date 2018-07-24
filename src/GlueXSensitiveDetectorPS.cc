@@ -35,8 +35,6 @@ int GlueXSensitiveDetectorPS::NUM_COLUMNS_PER_ARM = 145;
 int GlueXSensitiveDetectorPS::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorPS::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorPS::fVolumeTable;
-
 GlueXSensitiveDetectorPS::GlueXSensitiveDetectorPS(const G4String& name)
  : G4VSensitiveDetector(name),
    fTileHitsMap(0), fPointsMap(0)
@@ -73,12 +71,14 @@ GlueXSensitiveDetectorPS::GlueXSensitiveDetectorPS(
  : G4VSensitiveDetector(src),
    fTileHitsMap(src.fTileHitsMap), fPointsMap(src.fPointsMap)
 {
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
 GlueXSensitiveDetectorPS &GlueXSensitiveDetectorPS::operator=(const
                                          GlueXSensitiveDetectorPS &src)
 {
+   G4AutoLock barrier(&fMutex);
    *(G4VSensitiveDetector*)this = src;
    fTileHitsMap = src.fTileHitsMap;
    fPointsMap = src.fPointsMap;
@@ -87,6 +87,7 @@ GlueXSensitiveDetectorPS &GlueXSensitiveDetectorPS::operator=(const
 
 GlueXSensitiveDetectorPS::~GlueXSensitiveDetectorPS() 
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -102,7 +103,7 @@ void GlueXSensitiveDetectorPS::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step, 
-                                              G4TouchableHistory* unused)
+                                             G4TouchableHistory* ROhist)
 {
    double dEsum = step->GetTotalEnergyDeposit();
    if (dEsum == 0)
@@ -332,10 +333,9 @@ int GlueXSensitiveDetectorPS::GetIdent(std::string div,
       }
       identifiers = &Refsys::fIdentifierTable[volId];
       if ((iter = identifiers->find(div)) != identifiers->end()) {
-         if (dynamic_cast<G4PVPlacement*>(pvol))
-            return iter->second[pvol->GetCopyNo() - 1];
-         else
-            return iter->second[pvol->GetCopyNo()];
+         int copyNum = touch->GetCopyNumber(depth);
+         copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+         return iter->second[copyNum];
       }
    }
    return -1;

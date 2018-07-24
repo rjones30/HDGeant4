@@ -38,7 +38,7 @@ class GlueXSensitiveDetectorGCAL : public G4VSensitiveDetector
    GlueXHitsMapGCALblock* fBlockHitsMap;
    GlueXHitsMapGCALpoint* fPointsMap;
 
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
+   std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static int MAX_HITS;
    static double ATTENUATION_LENGTH;
