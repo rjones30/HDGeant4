@@ -197,6 +197,16 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
          double dEcorr = dEsum * exp(-dist / ATTENUATION_LENGTH);
          double tcorr = t + dist / C_EFFECTIVE;
 
+         // Apply effective response corrections, depending on particle type
+         int pmass = track->GetDynamicParticle()->GetMass();
+         if (pmass < 1 * MeV) { // must be one of e+,e-,gamma
+            dEcorr *= 0.985;
+         }
+         else {
+            double gamma = Ein / pmass; // nothing massless here
+            dEcorr *= (gamma > 1.25)? 1.35 : 0;
+         }
+
          // Add the hit to the hits vector, maintaining strict time ordering
 
          int merge_hit = 0;
@@ -211,11 +221,10 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
             }
          }
          if (merge_hit) {
-            // Use the time from the earlier hit but add the energy deposition
+            // Merge the time with the existing hit, add the energy deposition
+            hiter->t_ns = hiter->t_ns * hiter->E_GeV + dEcorr/GeV * tcorr/ns;
             hiter->E_GeV += dEcorr/GeV;
-            if (hiter->t_ns*ns > tcorr) {
-               hiter->t_ns = tcorr/ns;
-            }
+            hiter->t_ns /= hiter->E_GeV;
          }
          else if ((int)block->hits.size() < MAX_HITS) {
             // create new hit 
