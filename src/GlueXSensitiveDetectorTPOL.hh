@@ -38,7 +38,7 @@ class GlueXSensitiveDetectorTPOL : public G4VSensitiveDetector
    GlueXHitsMapTPOLwedge* fHitsMap;
    GlueXHitsMapTPOLpoint* fPointsMap;
 
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
+   std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static int MAX_HITS;
    static double TWO_HIT_TIME_RESOL;

@@ -36,8 +36,6 @@ double GlueXSensitiveDetectorUPV::THRESH_MEV = 5.;
 int GlueXSensitiveDetectorUPV::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorUPV::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorUPV::fVolumeTable;
-
 GlueXSensitiveDetectorUPV::GlueXSensitiveDetectorUPV(const G4String& name)
  : G4VSensitiveDetector(name),
    fBarHitsMap(0), fPointsMap(0)
@@ -74,12 +72,14 @@ GlueXSensitiveDetectorUPV::GlueXSensitiveDetectorUPV(
  : G4VSensitiveDetector(src),
    fBarHitsMap(src.fBarHitsMap), fPointsMap(src.fPointsMap)
 {
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
 GlueXSensitiveDetectorUPV &GlueXSensitiveDetectorUPV::operator=(const
                                          GlueXSensitiveDetectorUPV &src)
 {
+   G4AutoLock barrier(&fMutex);
    *(G4VSensitiveDetector*)this = src;
    fBarHitsMap = src.fBarHitsMap;
    fPointsMap = src.fPointsMap;
@@ -88,6 +88,7 @@ GlueXSensitiveDetectorUPV &GlueXSensitiveDetectorUPV::operator=(const
 
 GlueXSensitiveDetectorUPV::~GlueXSensitiveDetectorUPV() 
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -103,7 +104,7 @@ void GlueXSensitiveDetectorUPV::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorUPV::ProcessHits(G4Step* step, 
-                                              G4TouchableHistory* unused)
+                                              G4TouchableHistory* ROhist)
 {
    double dEsum = step->GetTotalEnergyDeposit();
    if (dEsum == 0)
@@ -386,10 +387,9 @@ int GlueXSensitiveDetectorUPV::GetIdent(std::string div,
       }
       identifiers = &Refsys::fIdentifierTable[volId];
       if ((iter = identifiers->find(div)) != identifiers->end()) {
-         if (dynamic_cast<G4PVPlacement*>(pvol))
-            return iter->second[pvol->GetCopyNo() - 1];
-         else
-            return iter->second[pvol->GetCopyNo()];
+         int copyNum = touch->GetCopyNumber(depth);
+         copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+         return iter->second[copyNum];
       }
    }
    return -1;

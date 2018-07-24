@@ -71,8 +71,6 @@ double GlueXSensitiveDetectorCDC::fBscale_par2;
 
 G4Mutex GlueXSensitiveDetectorCDC::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorCDC::fVolumeTable;
-
 GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(const G4String& name)
  : G4VSensitiveDetector(name),
    fStrawsMap(0), fPointsMap(0)
@@ -155,12 +153,14 @@ GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(
  : G4VSensitiveDetector(src),
    fStrawsMap(src.fStrawsMap), fPointsMap(src.fPointsMap)
 {
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
 GlueXSensitiveDetectorCDC &GlueXSensitiveDetectorCDC::operator=(const
                                          GlueXSensitiveDetectorCDC &src)
 {
+   G4AutoLock barrier(&fMutex);
    *(G4VSensitiveDetector*)this = src;
    fStrawsMap = src.fStrawsMap;
    fPointsMap = src.fPointsMap;
@@ -169,6 +169,7 @@ GlueXSensitiveDetectorCDC &GlueXSensitiveDetectorCDC::operator=(const
 
 GlueXSensitiveDetectorCDC::~GlueXSensitiveDetectorCDC() 
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -184,7 +185,7 @@ void GlueXSensitiveDetectorCDC::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorCDC::ProcessHits(G4Step* step, 
-                                              G4TouchableHistory* unused)
+                                              G4TouchableHistory* ROhist)
 {
    double dEsum = step->GetTotalEnergyDeposit();
    if (dEsum == 0)
@@ -807,10 +808,9 @@ int GlueXSensitiveDetectorCDC::GetIdent(std::string div,
       }
       identifiers = &Refsys::fIdentifierTable[volId];
       if ((iter = identifiers->find(div)) != identifiers->end()) {
-         if (dynamic_cast<G4PVPlacement*>(pvol))
-            return iter->second[pvol->GetCopyNo() - 1];
-         else
-            return iter->second[pvol->GetCopyNo()];
+         int copyNum = touch->GetCopyNumber(depth);
+         copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+         return iter->second[copyNum];
       }
    }
    return -1;

@@ -38,7 +38,7 @@ class GlueXSensitiveDetectorFMWPC : public G4VSensitiveDetector
    GlueXHitsMapFMWPCwire* fWireHitsMap;
    GlueXHitsMapFMWPCpoint* fPointsMap;
 
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
+   std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static int MAX_HITS;
    static double TWO_HIT_TIME_RESOL;
