@@ -295,7 +295,7 @@ void GlueXSensitiveDetectorTPOL::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the wedgeTruthPoints
+   // Collect and output the tpolTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
       hddm_s::TpolTruthPointList point = polarimeter.addTpolTruthPoints(1);
       point(0).setE(piter->second->E_GeV);

@@ -796,7 +796,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the strawTruthPoints
+   // Collect and output the fdcTruthPoints
 
    int last_chamber = -1;
    hddm_s::FdcTruthPoint *last_point = 0;
