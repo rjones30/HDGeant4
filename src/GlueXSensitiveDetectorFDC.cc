@@ -64,8 +64,8 @@ double GlueXSensitiveDetectorFDC::ACTIVE_AREA_OUTER_RADIUS = 48.5*cm;
 double GlueXSensitiveDetectorFDC::ANODE_CATHODE_SPACING = 0.5*cm;
 double GlueXSensitiveDetectorFDC::WIRE_SPACING = 1.0*cm;
 double GlueXSensitiveDetectorFDC::STRIP_SPACING = 0.5*cm;
-double GlueXSensitiveDetectorFDC::U_OF_WIRE_ZERO = -47.5*cm; //-(WIRES_PER_PLANE-1)*WIRE_SPACING/2
-double GlueXSensitiveDetectorFDC::U_OF_STRIP_ZERO = -47.75*cm; //-(STRIPS_PER_PLANE-1)*STRIP_SPACING/2
+double GlueXSensitiveDetectorFDC::U_OF_WIRE_ONE = -47.5*cm; //-(WIRES_PER_PLANE-1)*WIRE_SPACING/2
+double GlueXSensitiveDetectorFDC::U_OF_STRIP_ONE = -47.75*cm; //-(STRIPS_PER_PLANE-1)*STRIP_SPACING/2
 double GlueXSensitiveDetectorFDC::CATHODE_ROT_ANGLE = 1.309; // radians (75 degrees)
 double GlueXSensitiveDetectorFDC::STRIP_GAP = 0.1*cm;
 double GlueXSensitiveDetectorFDC::STRIP_NODES = 3;
@@ -126,8 +126,8 @@ GlueXSensitiveDetectorFDC::GlueXSensitiveDetectorFDC(const G4String& name)
       THRESH_KEV = fdc_parms.at("FDC_THRESH_KEV");
       THRESH_STRIPS = fdc_parms.at("FDC_THRESH_STRIPS");
       DIFFUSION_COEFF = fdc_parms.at("FDC_DIFFUSION_COEFF")*cm*cm/s;
-      U_OF_WIRE_ZERO = -(WIRES_PER_PLANE -1) * WIRE_SPACING / 2;
-      U_OF_STRIP_ZERO = -(STRIPS_PER_PLANE -1) * STRIP_SPACING / 2;
+      U_OF_WIRE_ONE = -(WIRES_PER_PLANE -1) * WIRE_SPACING / 2;
+      U_OF_STRIP_ONE = -(STRIPS_PER_PLANE -1) * STRIP_SPACING / 2;
 
       G4cout << "FDC: ALL parameters loaded from ccdb" << G4endl;
 
@@ -245,8 +245,8 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
    if (xlocal.perp() < wire_dead_zone_radius[packNo])
       return false;
 
-   int wire = ceil((xlocal[0] - U_OF_WIRE_ZERO) / WIRE_SPACING + 0.5);
-   double xwire = U_OF_WIRE_ZERO + (wire - 1) * WIRE_SPACING;
+   int wire = ceil((xlocal[0] - U_OF_WIRE_ONE) / WIRE_SPACING + 0.5);
+   double xwire = U_OF_WIRE_ONE + (wire - 1) * WIRE_SPACING;
    double uwire = xinlocal[2];
    double vwire = xinlocal[0] - xwire;
    double dradius = fabs(vwire * cosalpha - uwire * sinalpha);
@@ -292,39 +292,24 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
    if (dEsum > 0) {
       double u0 = xinlocal[0];
       double u1 = xoutlocal[0];
-      int wire1 = ceil((u0 - U_OF_WIRE_ZERO) / WIRE_SPACING + 0.5);
-      int wire2 = ceil((u1 - U_OF_WIRE_ZERO) / WIRE_SPACING + 0.5);
+      int wire1 = ceil((u0 - U_OF_WIRE_ONE) / WIRE_SPACING + 0.5);
+      int wire2 = ceil((u1 - U_OF_WIRE_ONE) / WIRE_SPACING + 0.5);
 
-      // Check that wire numbers are not out of range
-      if ((wire1 > WIRES_PER_PLANE && wire2 == WIRES_PER_PLANE) ||
-          (wire2 > WIRES_PER_PLANE && wire1 == WIRES_PER_PLANE) ) 
-      {
-         wire1 = wire2 = WIRES_PER_PLANE;  
-      }
-      if ((wire1 == 0 && wire2 == 1) || (wire1 == 1 && wire2 == 0))
-      {
-         wire1 = wire2 = 1;
-      }
-
-      // Make sure at least one wire number is valid
+      // Check that wire numbers are not out of range,
+      // making sure at least one wire number is valid
       if (wire1 > WIRES_PER_PLANE && wire2 > WIRES_PER_PLANE)
          return false;
-      else if (wire1 <= 0 && wire2 <= 0)
+      else if (wire1 < 1 && wire2 < 1)
          return false;
-      if (wire1 > WIRES_PER_PLANE)
-         wire1 = wire2;
-      else if (wire2 > WIRES_PER_PLANE)
-         wire2 = wire1;
-      if (wire1 == 0)
-         wire1 = wire2;
-      else if (wire2 == 0)
-         wire2 = wire1;
+      wire1 = (wire1 > WIRES_PER_PLANE)? WIRES_PER_PLANE :
+              (wire1 < 1)? 1 : wire1;
+      wire2 = (wire2 > WIRES_PER_PLANE)? WIRES_PER_PLANE :
+              (wire2 < 1)? 1 : wire2;
       int dwire = (wire1 < wire2)? 1 : -1;
 
-      // deal with the y-position for tracks crossing two cells
-      int sign = 1;
-      for (int wire = wire1; wire - dwire != wire2; wire += dwire) {
-         double xwire = U_OF_WIRE_ZERO + (wire - 1) * WIRE_SPACING;
+      // deal with the case of tracks crossing two cells
+      for (int wire = wire1; wire != wire2 + dwire; wire += dwire) {
+         double xwire = U_OF_WIRE_ONE + (wire - 1) * WIRE_SPACING;
          G4ThreeVector x0;
          G4ThreeVector x1;
          double dE;
@@ -383,7 +368,7 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
             hiter->dE_keV += dEsum/keV;
             hiter->t1_ns = tout/ns;
             hiter->x1_g = xout;
-            hiter->x1_l = xoutlocal;
+            hiter->x1_l = x1;
          }
          else if ((int)anode->hits.size() < MAX_HITS) {
             // create new hit
@@ -403,9 +388,6 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
                    << "max hit count " << MAX_HITS << " exceeded, truncating!"
                    << G4endl;
          }
-
-         // deal with the y-position for tracks crossing two cells
-         sign *= -1;
       }
    }
    return true;
@@ -501,9 +483,9 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
          // On average for each primary ion pair produced there are n_s_per_p 
          // secondary ion pairs produced. 
     
-         double xwire = U_OF_WIRE_ZERO + (wireNo - 1) * WIRE_SPACING;
+         double xwire = U_OF_WIRE_ONE + (wireNo - 1) * WIRE_SPACING;
          double dE = splits[0].dE_keV*keV;
-         if (dE > THRESH_KEV*keV) {
+         if (dE > THRESH_KEV*keV*0) {
             // Average number of primary ion pairs
             double n_p_mean = dE / W_EFF_PER_ION / (1 + N_SECOND_PER_PRIMARY);
             // number of primary ion pairs
@@ -933,9 +915,10 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(
    for (int plane=1; plane < 4; plane += 2) {
       double theta = (plane == 1)?  M_PI-CATHODE_ROT_ANGLE : CATHODE_ROT_ANGLE;
       double cathode_u = -xwire * cos(theta) - yavalanche * sin(theta);
-      int strip1 = ceil((cathode_u - U_OF_STRIP_ZERO) / STRIP_SPACING + 0.5);
-      double cathode_u1 = (strip1 - 1) * STRIP_SPACING + U_OF_STRIP_ZERO;
+      int strip1 = ceil((cathode_u - U_OF_STRIP_ONE) / STRIP_SPACING + 0.5);
+      double cathode_u1 = (strip1 - 1) * STRIP_SPACING + U_OF_STRIP_ONE;
       double delta_u = cathode_u - cathode_u1;
+float qsum[3]={0,0,0};
       for (int node = -STRIP_NODES; node <= STRIP_NODES; node++) {
          // Induce charge on the strips according to the Mathieson 
          // function tuned to results from FDC prototype
@@ -1008,11 +991,10 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(
       phi = acos((B[0] * wire_dir[0] + B[1] * wire_dir[1]) / BrhoT);
   
    // useful combinations of dx and dz
-   G4ThreeVector xyz(xlocal);
-   double dx = xyz[0] - xwire;
+   double dx = xlocal[0] - xwire;
    double dx2 = dx * dx;
    double dx4 = dx2 * dx2;
-   double dz = xyz[2];
+   double dz = xlocal[2];
    double dz2 = dz * dz;
    double dz4 = dz2 * dz2;
 
@@ -1021,16 +1003,16 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(
    // due to the Lorentz force.
    double cm2 = cm * cm;
    double cm4 = cm2 * cm2;
-   xyz[1] += (-0.125 * B[2] * (1 - 0.048 * BrhoT)) * dx +
-             (-0.180 - 0.0129 * B[2]) * BrhoT * cos(phi) * xyz[2] +
-             (-0.000176 * dx * dx2 / (dz2 + 1e-30));
+   xlocal[1] += (-0.125 * B[2] * (1 - 0.048 * BrhoT)) * dx +
+                (-0.180 - 0.0129 * B[2]) * BrhoT * cos(phi) * xlocal[2] +
+                (-0.000176 * dx * dx2 / (dz2 + 1e-30));
    // Add transverse diffusion
-   xyz[1] += G4RandGauss::shoot() *
-             (0.01*cm * pow((dx2 + dz2)/cm2, 0.125) + 0.0061*cm * dx2/cm2);
+   xlocal[1] += G4RandGauss::shoot() *
+                (0.01*cm * pow((dx2 + dz2)/cm2, 0.125) + 0.0061*cm * dx2/cm2);
 
    // Do not use this cluster if the Lorentz force would deflect 
    // the electrons outside the active region of the detector
-   if (sqrt(xyz[1] * xyz[1] + xwire * xwire) > ACTIVE_AREA_OUTER_RADIUS) 
+   if (sqrt(xlocal[1] * xlocal[1] + xwire * xwire) > ACTIVE_AREA_OUTER_RADIUS) 
       return 0;
 
    // Model the drift time and longitudinal diffusion as a function of 
