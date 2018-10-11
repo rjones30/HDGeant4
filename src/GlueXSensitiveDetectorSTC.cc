@@ -398,7 +398,7 @@ void GlueXSensitiveDetectorSTC::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the paddleTruthPoints
+   // Collect and output the stcTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
       hddm_s::StcTruthPointList point = startCntr.addStcTruthPoints(1);
       point(0).setE(piter->second->E_GeV);

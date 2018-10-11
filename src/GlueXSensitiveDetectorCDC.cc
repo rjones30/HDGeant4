@@ -423,7 +423,7 @@ void GlueXSensitiveDetectorCDC::EndOfEvent(G4HCofThisEvent*)
       hitview.addCentralDCs();
    hddm_s::CentralDC &centralDC = hitview.getCentralDC();
 
-   // Collect and output the strawTruthHits
+   // Collect and output the cdcTruthHits
 
    for (siter = straws->begin(); siter != straws->end(); ++siter) {
 
@@ -563,7 +563,7 @@ void GlueXSensitiveDetectorCDC::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the strawTruthPoints
+   // Collect and output the cdcTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
       hddm_s::CdcTruthPointList point = centralDC.addCdcTruthPoints(1);
       point(0).setDEdx(piter->second->dEdx_GeV_cm);

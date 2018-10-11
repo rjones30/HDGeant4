@@ -427,7 +427,7 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
       hitview.addForwardTOFs();
    hddm_s::ForwardTOF &forwardTOF = hitview.getForwardTOF();
 
-   // Collect and output the tofTruthHits
+   // Collect and output the ftofTruthHits
    for (siter = bars->begin(); siter != bars->end(); ++siter) {
       std::vector<GlueXHitFTOFbar::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
@@ -488,7 +488,7 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the barTruthPoints
+   // Collect and output the ftofTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
       hddm_s::FtofTruthPointList point = forwardTOF.addFtofTruthPoints(1);
       point(0).setPrimary(piter->second->primary_);
