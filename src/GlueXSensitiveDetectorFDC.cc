@@ -918,7 +918,6 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(
       int strip1 = ceil((cathode_u - U_OF_STRIP_ONE) / STRIP_SPACING + 0.5);
       double cathode_u1 = (strip1 - 1) * STRIP_SPACING + U_OF_STRIP_ONE;
       double delta_u = cathode_u - cathode_u1;
-float qsum[3]={0,0,0};
       for (int node = -STRIP_NODES; node <= STRIP_NODES; node++) {
          // Induce charge on the strips according to the Mathieson 
          // function tuned to results from FDC prototype
