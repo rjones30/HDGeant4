@@ -485,30 +485,59 @@ int GlueXPrimaryGeneratorAction::ConvertGeant3ToPdg(int Geant3type)
       case 24  : return 3334;     // Omega- (PB)
       case 25  : return -2112;    // anti-neutron
       case 26  : return -3122;    // anti-Lambda
-      case 27  : return -3222;    // Sigma-
-      case 28  : return -3212;    // Sigma0
-      case 29  : return -3112;    // Sigma+ (PB)*/
-      case 30  : return -3322;    // Xi0
-      case 31  : return -3312;    // Xi+
-      case 32  : return -3334;    // Omega+ (PB)
-      case 33  : return -15;      // tau+
-      case 34  : return 15;       // tau-
-      case 35  : return 411;      // D+
-      case 36  : return -411;     // D-
-      case 37  : return 421;      // D0
-      case 38  : return -421;     // D0
-      case 39  : return 431;      // Ds+
-      case 40  : return -431;     // anti Ds-
-      case 41  : return 4122;     // Lamba_c+
-      case 42  : return 24;       // W+
-      case 43  : return -24;      // W-
-      case 44  : return 23;       // Z
+      case 27  : return -3222;    // anti-Sigma-
+      case 28  : return -3212;    // anti-Sigma0
+      case 29  : return -3112;    // anti-Sigma+
+      case 30  : return -3322;    // anti-Xi0
+      case 31  : return -3312;    // anti-Xi+
+      case 32  : return -3334;    // anti-Omega+ 
       case 45  : return 1000010020; // deuteron
       case 46  : return 1000010030; // triton
       case 47  : return 1000020040; // alpha
       case 48  : return 0;        // geantino (no PDG type)
       case 49  : return 1000020030; // He3 ion
       case 50  : return 0;        // Cerenkov photon (no PDG type)
+
+      // These are "private" Geant3 types that were defined in hdgeant
+      case 33  : return 223;      // omega(782)
+      case 34  : return 333;      // phi(1020)
+      case 35  : return 331;      // etaPrime(958)
+      case 36  : return 0;        // unused
+      case 37  : return 0;        // unused
+      case 38  : return 0;        // unused
+      case 39  : return 0;        // unused
+      case 40  : return 0;        // unused
+      case 41  : return 0;        // unused
+      case 42  : return 213;      // rho(770)+
+      case 43  : return -213;     // rho(770)-
+      case 44  : return 113;      // rho(770)0
+
+      case 82  : return 2224;     // Delta++
+      case 83  : return 443;      // Jpsi
+      case 84  : return 441;      // Eta_c
+      case 85  : return 10441;    // Chi_c0
+      case 86  : return 20443;    // Chi_c1
+      case 87  : return 445;      // Chi_c2
+      case 88  : return 100443;   // Psi2s
+      case 89  : return 421;      // D0
+      case 90  : return 411;      // D+
+      case 91  : return 10421;    // Dstar0
+      case 92  : return 10411;    // Dstar+
+      case 93  : return 4022;     // Lambda_c+
+      case 94  : return -421;     // anti-D0
+
+      case 163  : return 9000111; // a0(980)
+      case 164  : return 9010221; // f0(980)
+      case 165  : return 313;     // K*(892)0
+      case 166  : return 323;     // K*(892)+
+      case 167  : return -323;    // K*(892)-
+      case 168  : return -313;    // anti-K*(892)0
+      case 169  : return 20323;   // K1(1400)+
+      case 170  : return -20323;  // K1(1400)-
+      case 171  : return 4122;    // b1(1235)+
+      case 172  : return 3224;    // Sigma*(1385)+
+      case 173  : return 3214;    // Sigma*(1385)0
+      case 174  : return 3114;    // Sigma*(1385)-
 
       default  :
          G4cout << "Warning in GlueXPrimaryGeneratorAction::"
@@ -555,31 +584,54 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
       case       3112 : return 21;    // Sigma-
       case       3322 : return 22;    // Xi0
       case       3312 : return 23;    // Xi-
-      case       3334 : return 24;    // Omega- (PB)
+      case       3334 : return 24;    // Omega-
       case      -2112 : return 25;    // anti-neutron
       case      -3122 : return 26;    // anti-Lambda
       case      -3222 : return 27;    // Sigma-
       case      -3212 : return 28;    // Sigma0
-      case      -3112 : return 29;    // Sigma+ (PB)*/
+      case      -3112 : return 29;    // Sigma+
       case      -3322 : return 30;    // Xi0
       case      -3312 : return 31;    // Xi+
-      case      -3334 : return 32;    // Omega+ (PB)
-      case        -15 : return 33;    // tau+
-      case         15 : return 34;    // tau-
-      case        411 : return 35;    // D+
-      case       -411 : return 36;    // D-
-      case        421 : return 37;    // D0
-      case       -421 : return 38;    // D0
-      case        431 : return 39;    // Ds+
-      case       -431 : return 40;    // anti Ds-
-      case       4122 : return 41;    // Lamba_c+
-      case         24 : return 42;    // W+
-      case        -24 : return 43;    // W-
-      case         23 : return 44;    // Z
+      case      -3334 : return 32;    // Omega+
       case 1000010020 : return 45;    // deuteron
       case 1000010030 : return 46;    // triton
       case 1000020040 : return 47;    // alpha
-      case 1000020030 : return 49;    // He3 ion
+      case 1000020030 : return 49;    // He3
+
+      // These are "private" Geant3 types that were defined in hdgeant
+      case 223        : return 33;    // omega(782)
+      case 333        : return 34;    // phi(1020)
+      case 331        : return 35;    // etaPrime(958)
+      case 213        : return 42;    // rho(770)+
+      case -213       : return 43;    // rho(770)-
+      case 113        : return 44;    // rho(770)0
+
+      case 2224       : return 82;    // Delta++
+      case 443        : return 83;    // Jpsi
+      case 441        : return 84;    // Eta_c
+      case 10441      : return 85;    // Chi_c0
+      case 20443      : return 86;    // Chi_c1
+      case 445        : return 87;    // Chi_c2
+      case 100443     : return 88;    // Psi2s
+      case 421        : return 89;    // D0
+      case 411        : return 90;    // D+
+      case 10421      : return 91;    // Dstar0
+      case 10411      : return 92;    // Dstar+
+      case 4022       : return 93;    // Lambda_c+
+      case -421       : return 94;    // anti-D0
+
+      case 9000111    : return 163;   // a0(980)
+      case 9010221    : return 164;   // f0(980)
+      case 313        : return 165;   // K*(892)0
+      case 323        : return 166;   // K*(892)+
+      case -323       : return 167;   // K*(892)-
+      case -313       : return 168;   // anti-K*(892)0
+      case 20323      : return 169;   // K1(1400)+
+      case -20323     : return 170;   // K1(1400)-
+      case 4122       : return 171;   // b1(1235)+
+      case 3224       : return 172;   // Sigma*(1385)+
+      case 3214       : return 173;   // Sigma*(1385)0
+      case 3114       : return 174;   // Sigma*(1385)-
 
       default  :
          if (PDGtype < 1000000000) {
