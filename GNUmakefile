@@ -23,7 +23,7 @@ endif
 
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
 CPPFLAGS += -I./src/G4debug
-CPPFLAGS += -I$(HALLD_HOME)/$(BMS_OSNAME)/include
+CPPFLAGS += -I$(HALLD_RECON_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
 CPPFLAGS += -I/usr/include/Qt
@@ -45,6 +45,7 @@ CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
 #CPPFLAGS += -DDEBUG_PLACEMENT
 #CPPFLAGS += -DDEBUG_SECTIONPLANE
 #CPPFLAGS += -DDEBUG_SECTIONPLANE_ZAVE
+CPPFLAGS += -DG4VERSION_10_04_OR_LATER=1
 
 # If you want to build against Geant4.10.03 or greater, you will need this line uncommented
 #CPPFLAGS += -DG4VUSERPHYSICSLIST_HAS_GETPARTICLEITERATOR
@@ -61,12 +62,12 @@ HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/
 
 ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer
 
-DANALIBS = -L$(HALLD_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
+DANALIBS = -L$(HALLD_RECON_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lDIRC -lFCAL \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
            -lTRIGGER -lDAQ -lTTAB -lEVENTSTORE -lKINFITTER -lTAC \
-           -L$(SQLITECPP_HOME)/lib -lSQLiteCpp -lsqlite3 \
+           -L$(SQLITECPP_HOME)/lib -lSQLiteCpp -L$(SQLITE_HOME)/lib -Wl,-rpath=$(SQLITE_HOME)/lib -lsqlite3 \
            -lxstream -lbz2 -lz \
            -L/usr/lib64/mysql -lmysqlclient\
            -L$(JANA_HOME)/lib -lJANA \
