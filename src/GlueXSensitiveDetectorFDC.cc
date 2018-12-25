@@ -70,6 +70,16 @@ double GlueXSensitiveDetectorFDC::CATHODE_ROT_ANGLE = 1.309; // radians (75 degr
 double GlueXSensitiveDetectorFDC::STRIP_GAP = 0.1*cm;
 double GlueXSensitiveDetectorFDC::STRIP_NODES = 3;
 
+// Parameters for calculating the drift time-distance relation
+double GlueXSensitiveDetectorFDC::LORENTZ_NR_PAR1;
+double GlueXSensitiveDetectorFDC::LORENTZ_NR_PAR2;
+double GlueXSensitiveDetectorFDC::LORENTZ_NZ_PAR1;
+double GlueXSensitiveDetectorFDC::LORENTZ_NZ_PAR2;
+double GlueXSensitiveDetectorFDC::DRIFT_RES_PARMS[3];
+double GlueXSensitiveDetectorFDC::DRIFT_FUNC_PARMS[6];
+double GlueXSensitiveDetectorFDC::DRIFT_BSCALE_PAR1;
+double GlueXSensitiveDetectorFDC::DRIFT_BSCALE_PAR2;
+
 // Parameters for estimating magnetic field drift effects
 double GlueXSensitiveDetectorFDC::DIFFUSION_COEFF = 1.1e-6*cm*cm/s; // cm^2/s --> 200 microns at 1 cm
 double GlueXSensitiveDetectorFDC::K2 = 1.15;
@@ -79,6 +89,11 @@ double GlueXSensitiveDetectorFDC::wire_dead_zone_radius[4] =
                                   {3.0*cm, 3.0*cm, 3.9*cm, 3.9*cm};
 double GlueXSensitiveDetectorFDC::strip_dead_zone_radius[4] =
                                   {1.3*cm, 1.3*cm, 1.3*cm, 1.3*cm};
+
+// Drift time - distance lookup table
+int GlueXSensitiveDetectorFDC::drift_table_len;
+double *GlueXSensitiveDetectorFDC::drift_table_t_ns;
+double *GlueXSensitiveDetectorFDC::drift_table_d_cm;
 
 int GlueXSensitiveDetectorFDC::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorFDC::fMutex = G4MUTEX_INITIALIZER;
@@ -128,6 +143,70 @@ GlueXSensitiveDetectorFDC::GlueXSensitiveDetectorFDC(const G4String& name)
       DIFFUSION_COEFF = fdc_parms.at("FDC_DIFFUSION_COEFF")*cm*cm/s;
       U_OF_WIRE_ONE = -(WIRES_PER_PLANE -1) * WIRE_SPACING / 2;
       U_OF_STRIP_ONE = -(STRIPS_PER_PLANE -1) * STRIP_SPACING / 2;
+
+      // Parameters for correcting for deflection due to Lorentz force
+      std::map<string, double> lorentz_parms;
+      jcalib->Get("FDC/lorentz_deflection_parms", lorentz_parms);
+      LORENTZ_NR_PAR1 = lorentz_parms["nr_par1"];
+      LORENTZ_NR_PAR2 = lorentz_parms["nr_par2"];
+      LORENTZ_NZ_PAR1 = lorentz_parms["nz_par1"];
+      LORENTZ_NZ_PAR2 = lorentz_parms["nz_par2"];
+
+      // Parameters for accounting for variation in drift distance from FDC
+      std::map<string, double> drift_res_parms;
+      jcalib->Get("FDC/drift_resolution_parms", drift_res_parms); 
+      DRIFT_RES_PARMS[0] = drift_res_parms["p0"];   
+      DRIFT_RES_PARMS[1] = drift_res_parms["p1"];
+      DRIFT_RES_PARMS[2] = drift_res_parms["p2"]; 
+
+      // Time-to-distance function parameters for FDC
+      std::map<string, double> drift_func_parms;
+      jcalib->Get("FDC/drift_function_parms", drift_func_parms); 
+      DRIFT_FUNC_PARMS[0] = drift_func_parms["p0"];   
+      DRIFT_FUNC_PARMS[1] = drift_func_parms["p1"];
+      DRIFT_FUNC_PARMS[2] = drift_func_parms["p2"]; 
+      DRIFT_FUNC_PARMS[3] = drift_func_parms["p3"];
+      DRIFT_FUNC_PARMS[4] = 1000.;
+      DRIFT_FUNC_PARMS[5] = 0.;
+      std::map<string, double> drift_func_ext;
+      if (jcalib->Get("FDC/drift_function_ext", drift_func_ext) == false) {
+         DRIFT_FUNC_PARMS[4] = drift_func_ext["p4"]; 
+         DRIFT_FUNC_PARMS[5] = drift_func_ext["p5"]; 
+      }
+
+      // Factors for taking care of B-dependence of drift time for FDC
+      std::map<string, double> fdc_drift_parms;
+      jcalib->Get("FDC/fdc_drift_parms", fdc_drift_parms);
+      DRIFT_BSCALE_PAR1 = fdc_drift_parms["bscale_par1"];
+      DRIFT_BSCALE_PAR2 = fdc_drift_parms["bscale_par2"];
+
+      // Build a lookup table of drift time->distance for the FDC,
+      // used in the code to build an efficient reverse-map function.
+      drift_table_len = 1000;
+      drift_table_t_ns = new double[drift_table_len];
+      drift_table_d_cm = new double[drift_table_len];
+      double thigh = DRIFT_FUNC_PARMS[4];
+      double tstep = 0.5; //ns
+	  for (int j=0; j < drift_table_len; j++) {
+	     double t = j * tstep;
+	     if (t < thigh) {
+	        double t2 = t*t;
+            drift_table_t_ns[j] = t;
+	        drift_table_d_cm[j] = DRIFT_FUNC_PARMS[0] * sqrt(t) +
+                                  DRIFT_FUNC_PARMS[1] * t +
+	                              DRIFT_FUNC_PARMS[2] * t2 +
+                                  DRIFT_FUNC_PARMS[3] * t*t2;
+	     }
+	     else {
+	        double thigh2 = thigh * thigh;
+	        drift_table_t_ns[j] = t;
+            drift_table_d_cm[j] = DRIFT_FUNC_PARMS[0] * sqrt(thigh) +
+	                              DRIFT_FUNC_PARMS[1] * thigh +
+	                              DRIFT_FUNC_PARMS[2] * thigh2 +
+	                              DRIFT_FUNC_PARMS[3] * thigh2 * thigh +
+	                              DRIFT_FUNC_PARMS[5] * (t - thigh);
+	     }
+      }
 
       G4cout << "FDC: ALL parameters loaded from ccdb" << G4endl;
 
@@ -272,10 +351,10 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
          fPointsMap->add(key, newPoint);
          newPoint->primary_ = (track->GetParentID() == 0);
          newPoint->track_ = trackID;
-         newPoint->x_cm = x[0]/cm;
-         newPoint->y_cm = x[1]/cm;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->t_ns = t/ns;
+         newPoint->x_cm = xout[0]/cm;
+         newPoint->y_cm = xout[1]/cm;
+         newPoint->z_cm = xout[2]/cm;
+         newPoint->t_ns = tout/ns;
          newPoint->px_GeV = pin[0]/GeV;
          newPoint->py_GeV = pin[1]/GeV;
          newPoint->pz_GeV = pin[2]/GeV;
@@ -421,7 +500,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
 
       G4cout << G4endl
              << "--------> Hits Collection: in this event there are "
-             << points->size() << " truth points in the CDC: "
+             << points->size() << " truth points in the FDC: "
              << G4endl;
       for (piter = points->begin(); piter != points->end(); ++piter)
          piter->second->Print();
@@ -978,7 +1057,6 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(
    // Get the magnetic field at this cluster position        
    G4ThreeVector B = GlueXDetectorConstruction::GetInstance()
                      ->GetMagneticField(xglobal, tesla);
-   double BmagT = B.mag();
    double BrhoT = B.perp();
   
    // Find the angle between the wire direction and the direction of the
@@ -1002,8 +1080,8 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(
    // due to the Lorentz force.
    double cm2 = cm * cm;
    double cm4 = cm2 * cm2;
-   xlocal[1] += (-0.125 * B[2] * (1 - 0.048 * BrhoT)) * dx +
-                (-0.180 - 0.0129 * B[2]) * BrhoT * cos(phi) * xlocal[2] +
+   xlocal[1] += (LORENTZ_NR_PAR1 * B[2] * (1 + LORENTZ_NR_PAR2 * BrhoT)) * dx +
+                (LORENTZ_NZ_PAR1 + LORENTZ_NZ_PAR2 * B[2]) * BrhoT * cos(phi) * xlocal[2] +
                 (-0.000176 * dx * dx2 / (dz2 + 1e-30));
    // Add transverse diffusion
    xlocal[1] += G4RandGauss::shoot() *
@@ -1016,19 +1094,41 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(
 
    // Model the drift time and longitudinal diffusion as a function of 
    // position of the cluster within the cell            
-   double tdrift_unsmeared = 1086.0*ns * (1 + 0.039 * BmagT) * dx2/cm2 +
+
+#if OLD_FDC_DRIFT_TIME_MODEL
+   double tdrift_unsmeared = 1086.0*ns * (1 + 0.039 * B.mag()) * dx2/cm2 +
                              1068.0*ns * dz2/cm2 + 
                              (-2.675*ns / (dz2/cm2 + 0.001) +
                                2.4e4*ns * dz2/cm2) * dx4/cm4;
-   double dt = G4RandGauss::shoot() *
+#else
+    double dradius = sqrt(dx2 + dz2);
+    int index = locate(drift_table_d_cm, drift_table_len, dradius/cm);
+    index = (index < drift_table_len - 3)? index : drift_table_len - 3;
+    double *dd = &drift_table_d_cm[index];
+    double tt = 0.5; //ns
+    double dd10 = dd[1] - dd[0];
+    double dd20 = dd[2] - dd[0];
+    double dd21 = dd[2] - dd[1];
+    double qa = tt*index;
+    double qb = (dd20/dd10 - 2*dd10/dd20) * tt/dd21;
+    double qc = (2/dd20 - 1/dd10) * tt/dd21;
+    double d0 = dradius/cm - dd[0];
+    double tdrift_unsmeared = qa + qb*d0 + qc*d0*d0;
+#endif
+
+   // Apply small B-field dependence on the drift time
+   tdrift_unsmeared *= 1. + DRIFT_BSCALE_PAR1 + DRIFT_BSCALE_PAR2*B[2]*B[2];
+
+   // Minimum drift time for docas near wire (very crude approximation)
+   double v_max = 0.08*cm/ns; // guess for now based on Garfield, near wire 
+   double tmin = dradius / v_max;
+
+   // longitidinal diffusion, derived from Garfield calculations
+   double dt = (G4RandGauss::shoot() - 0.5) *
                (39.44*ns * dx4/cm4 / (0.5 - dz2/cm2) + 
                 56.00*ns * dz4/cm4 / (0.5 - dx2/cm2) +
                 0.01566*ns * dx4/cm4 / (dz4/cm4 + 0.002) / (0.251 - dx2/cm2));
 
-   // Minimum drift time for docas near wire (very crude approximation)
-   double v_max = 0.08*cm/ns; // guess for now based on Garfield, near wire 
-   double dradius = sqrt(dx2 + dz2);
-   double tmin = dradius / v_max;
    double tdrift_smeared = tdrift_unsmeared + dt;
    if (tdrift_smeared < tmin) {
       tdrift_smeared = tmin;
@@ -1142,10 +1242,11 @@ void GlueXSensitiveDetectorFDC::polint(double *xa, double *ya, int n,
       free(d);
 }
 
-void locate(double *xx, int n, double x, int *j)
+int GlueXSensitiveDetectorFDC::locate(double *xx, int n, double x)
 {
    // Locate a position in array xx of value x
 
+   int j;
    int ju;
    int jm;
    int jl;
@@ -1162,11 +1263,12 @@ void locate(double *xx, int n, double x, int *j)
          ju = jm;
    }
    if (x == xx[0])
-      *j = 0;
+      j = 0;
    else if (x == xx[n-1])
-      *j = n-2;
+      j = n-2;
    else
-      *j = jl; 
+      j = jl; 
+   return j;
 }
 
 int GlueXSensitiveDetectorFDC::GetIdent(std::string div, 
