@@ -125,6 +125,7 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
       std::string url = getenv("JANA_GEOMETRY_URL");
       int run = HddmOutput::getRunNo();
       fGeometryXML = new HddsGeometryXML(url, run);
+      last_md5_checksum = fGeometryXML->GetChecksum();
       document = fGeometryXML->getDocument();
 #else
       int size=100;
