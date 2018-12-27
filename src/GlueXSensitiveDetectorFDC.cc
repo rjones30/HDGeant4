@@ -309,6 +309,8 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
              "THIS SHOULD NEVER HAPPEN! drop this particle.\n");
       return false;
    }
+   // Normally numeric identifiers start at 1, eg. layer, package, module
+   // but if it is an index counting from zero, add the "No" suffix.
    int packNo = package - 1;
    int module = 2 * packNo + ((layer - 1) / 3) + 1;
    int chamber = (module * 10) + ((layer - 1) % 3) + 1;
@@ -534,14 +536,13 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
       // Merge multiple segments from a single track into one, and 
       // apply the drift time algorithm to get a single hit time for each.
 
-      int chamberNo = witer->second->chamber_;
-      int wireNo = witer->second->wire_;
-      int module = chamberNo / 10;
+      int chamber = witer->second->chamber_;
+      int wire = witer->second->wire_;
+      int module = chamber / 10;
       int packNo = (module - 1) / 2;
-      int layer = chamberNo % 10;
-      int layerNo = layer - 1;
-      int glayer = 3 * layerNo + module - 1;
-      int global_wire_number = 96 * glayer + wireNo - 1;
+      int layer = chamber % 10;
+      int glayerNo = 3*(layer - 1) + module-1;
+      int global_wire_number = 96 * glayerNo + wire - 1;
       std::vector<GlueXHitFDCwire::hitinfo_t> &splits = witer->second->hits;
       std::vector<GlueXHitFDCwire::hitinfo_t> hits;
       while (splits.size() > 0) {
@@ -562,7 +563,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
          // On average for each primary ion pair produced there are n_s_per_p 
          // secondary ion pairs produced. 
     
-         double xwire = U_OF_WIRE_ONE + (wireNo - 1) * WIRE_SPACING;
+         double xwire = U_OF_WIRE_ONE + (wire - 1) * WIRE_SPACING;
          double dE = splits[0].dE_keV*keV;
          if (dE > THRESH_KEV*keV*0) {
             // Average number of primary ion pairs
@@ -581,12 +582,12 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
                G4ThreeVector x((splits[0].x0_g + splits[0].x1_g) / 2);
                G4ThreeVector xlocal(x0 + alpha * dx);
                double tdrift;
-               int wire_fired = add_anode_hit(hits, splits[0], layerNo,
+               int wire_fired = add_anode_hit(hits, splits[0], layer,
                                               xwire, x, xlocal, dE,
                                               t, tdrift);
                if (wire_fired) {
                   add_cathode_hit(splits[0], packNo, xwire, xlocal[1],
-                                  tdrift, n_p, chamberNo, module, layerNo,
+                                  tdrift, n_p, chamber, module, layer,
                                   global_wire_number);
                }
             }
@@ -601,12 +602,12 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
                   double u = G4UniformRand();
                   xlocal = x0 + u * (x1 - x0);
                   double tdrift;
-                  int wire_fired = add_anode_hit(hits, splits[0], layerNo,
+                  int wire_fired = add_anode_hit(hits, splits[0], layer,
                                                  xwire, x, xlocal, dE,
                                                  t, tdrift);
                   if (wire_fired) {
                      add_cathode_hit(splits[0], packNo, xwire, xlocal[1],
-                                     tdrift, n_p, chamberNo, module, layerNo,
+                                     tdrift, n_p, chamber, module, layer,
                                      global_wire_number);
                   }
                }
@@ -721,12 +722,12 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
          hddm_s::FdcAnodeWireList anodes = citer->getFdcAnodeWires();
          hddm_s::FdcAnodeWireList::iterator aiter;
          for (aiter = anodes.begin(); aiter != anodes.end(); ++aiter) {
-            if (aiter->getWire() == wireNo)
+            if (aiter->getWire() == wire)
                break;
          }
          if (aiter == anodes.end()) {
             anodes = citer->addFdcAnodeWires(1);
-            anodes(0).setWire(wireNo);
+            anodes(0).setWire(wire);
             aiter = anodes.begin();
          }
          for (int ih=0; ih < (int)splits.size(); ++ih) {
@@ -744,11 +745,11 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
    // Collect and output the cathodeTruthHits
 
    for (siter = strips->begin(); siter != strips->end(); ++siter) {
-      int chamberNo = siter->second->chamber_;
+      int chamber = siter->second->chamber_;
       int planeNo = siter->second->plane_;
       int stripNo = siter->second->strip_;
-      int module = chamberNo / 10;
-      int layer = chamberNo % 10;
+      int module = chamber / 10;
+      int layer = chamber % 10;
       std::vector<GlueXHitFDCcathode::hitinfo_t> &hits = siter->second->hits;
       std::vector<GlueXHitFDCcathode::hitinfo_t>::iterator hiter;
       if (fDrift_clusters) {
@@ -1066,7 +1067,7 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(
    double phi = 0;
    if (BrhoT > 0)
       phi = acos((B[0] * wire_dir[0] + B[1] * wire_dir[1]) / BrhoT);
-  
+
    // useful combinations of dx and dz
    double dx = xlocal[0] - xwire;
    double dx2 = dx * dx;
@@ -1082,7 +1083,7 @@ int GlueXSensitiveDetectorFDC::add_anode_hit(
    double cm4 = cm2 * cm2;
    xlocal[1] += (LORENTZ_NR_PAR1 * B[2] * (1 + LORENTZ_NR_PAR2 * BrhoT)) * dx +
                 (LORENTZ_NZ_PAR1 + LORENTZ_NZ_PAR2 * B[2]) * BrhoT * cos(phi) * xlocal[2] +
-                (-0.000176 * dx * dx2 / (dz2 + 1e-30));
+                (-0.000176 * dx * dx2 / (dz2 + 0.001*cm2));
    // Add transverse diffusion
    xlocal[1] += G4RandGauss::shoot() *
                 (0.01*cm * pow((dx2 + dz2)/cm2, 0.125) + 0.0061*cm * dx2/cm2);
