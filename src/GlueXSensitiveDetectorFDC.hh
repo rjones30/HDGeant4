@@ -54,7 +54,7 @@ class GlueXSensitiveDetectorFDC : public G4VSensitiveDetector
                         int n_p, int chamber, int module, int layer,
                         int global_wire_number);
    void polint(double *xa, double *ya, int n, double x, double *y, double *dy);
-   void locate(float *xx, int n, float x, int *j);
+   int locate(double *xx, int n, double x);
 
  private:
    GlueXHitsMapFDCwire* fWiresMap;
@@ -88,10 +88,23 @@ class GlueXSensitiveDetectorFDC : public G4VSensitiveDetector
    static int N_SECOND_PER_PRIMARY;
    static int MAX_HITS;
 
+   static double LORENTZ_NR_PAR1;
+   static double LORENTZ_NR_PAR2;
+   static double LORENTZ_NZ_PAR1;
+   static double LORENTZ_NZ_PAR2;
+   static double DRIFT_RES_PARMS[3];
+   static double DRIFT_FUNC_PARMS[6];
+   static double DRIFT_BSCALE_PAR1;
+   static double DRIFT_BSCALE_PAR2;
+
    static int fDrift_clusters;
 
    static double wire_dead_zone_radius[4];
    static double strip_dead_zone_radius[4];
+
+   static int drift_table_len;
+   static double *drift_table_t_ns;
+   static double *drift_table_d_cm;
 
    static int instanceCount;
    static G4Mutex fMutex;
