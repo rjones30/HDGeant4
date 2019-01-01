@@ -14,6 +14,13 @@ GlueXHitPStile::GlueXHitPStile(G4int arm, G4int column)
    column_(column)
 {}
 
+GlueXHitPStile::GlueXHitPStile(const GlueXHitPStile &src)
+{
+   arm_ = src.arm_;
+   column_ = src.column_;
+   hits = src.hits;
+}
+
 int GlueXHitPStile::operator==(const GlueXHitPStile &right) const
 {
    if (arm_ !=  right.arm_ || column_ != right.column_)

@@ -19,7 +19,9 @@
 class GlueXHitSTCpaddle : public G4VHit
 {
  public:
+   GlueXHitSTCpaddle() {}
    GlueXHitSTCpaddle(G4int sector);
+   GlueXHitSTCpaddle(const GlueXHitSTCpaddle &src);
    int operator==(const GlueXHitSTCpaddle &right) const;
    GlueXHitSTCpaddle &operator+=(const GlueXHitSTCpaddle &right);
 

@@ -93,7 +93,7 @@ GlueXSensitiveDetectorPSC::~GlueXSensitiveDetectorPSC()
 
 void GlueXSensitiveDetectorPSC::Initialize(G4HCofThisEvent* hce)
 {
-   fCounterHitsMap = new 
+   fCounterHitsMap = new
               GlueXHitsMapPSCpaddle(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapPSCpoint(SensitiveDetectorName, collectionName[1]);
@@ -158,23 +158,23 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
           fabs(lastPoint->y_cm - x[1]/cm) > 5.0 ||
           fabs(lastPoint->z_cm - x[2]/cm) > 5.0)
       {
-         GlueXHitPSCpoint* newPoint = new GlueXHitPSCpoint();
+         GlueXHitPSCpoint newPoint;
+         newPoint.arm_ = arm;
+         newPoint.module_ = module;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.x_cm = x[0]/cm;
+         newPoint.y_cm = x[1]/cm;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         newPoint.dEdx_GeV_cm = dEdx/(GeV/cm);
          fPointsMap->add(key, newPoint);
-         newPoint->arm_ = arm;
-         newPoint->module_ = module;
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = itrack;
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->t_ns = t/ns;
-         newPoint->x_cm = x[0]/cm;
-         newPoint->y_cm = x[1]/cm;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
-         newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
       }
    }
 
@@ -184,8 +184,9 @@ G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step,
       int key = GlueXHitPSCpaddle::GetKey(arm, module);
       GlueXHitPSCpaddle *paddle = (*fCounterHitsMap)[key];
       if (paddle == 0) {
-         paddle = new GlueXHitPSCpaddle(arm, module);
-         fCounterHitsMap->add(key, paddle);
+         GlueXHitPSCpaddle newpaddle(arm, module);
+         fCounterHitsMap->add(key, newpaddle);
+         paddle = (*fCounterHitsMap)[key];
       }
 
       // Add the hit to the hits vector, maintaining strict time ordering

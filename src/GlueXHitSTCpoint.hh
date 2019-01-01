@@ -20,6 +20,7 @@ class GlueXHitSTCpoint : public G4VHit
 {
  public:
    GlueXHitSTCpoint() {}
+   GlueXHitSTCpoint(const GlueXHitSTCpoint &src);
    int operator==(const GlueXHitSTCpoint &right) const;
    GlueXHitSTCpoint &operator+=(const GlueXHitSTCpoint &right);
 

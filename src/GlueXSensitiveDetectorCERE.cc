@@ -93,7 +93,7 @@ GlueXSensitiveDetectorCERE::~GlueXSensitiveDetectorCERE()
 
 void GlueXSensitiveDetectorCERE::Initialize(G4HCofThisEvent* hce)
 {
-   fTubeHitsMap = new 
+   fTubeHitsMap = new
               GlueXHitsMapCEREtube(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapCEREpoint(SensitiveDetectorName, collectionName[1]);
@@ -153,20 +153,20 @@ G4bool GlueXSensitiveDetectorCERE::ProcessHits(G4Step* step,
              fabs(lastPoint->y_cm - x[1]/cm) > 2. ||
              fabs(lastPoint->z_cm - x[2]/cm) > 2.)
          {
-            GlueXHitCEREpoint* newPoint = new GlueXHitCEREpoint();
+            GlueXHitCEREpoint newPoint;
+            newPoint.ptype_G3 = g3type;
+            newPoint.track_ = trackID;
+            newPoint.trackID_ = itrack;
+            newPoint.primary_ = (track->GetParentID() == 0);
+            newPoint.t_ns = t/ns;
+            newPoint.x_cm = x[0]/cm;
+            newPoint.y_cm = x[1]/cm;
+            newPoint.z_cm = x[2]/cm;
+            newPoint.px_GeV = pin[0]/GeV;
+            newPoint.py_GeV = pin[1]/GeV;
+            newPoint.pz_GeV = pin[2]/GeV;
+            newPoint.E_GeV = Ein/GeV;
             fPointsMap->add(key, newPoint);
-            newPoint->ptype_G3 = g3type;
-            newPoint->track_ = trackID;
-            newPoint->trackID_ = itrack;
-            newPoint->primary_ = (track->GetParentID() == 0);
-            newPoint->t_ns = t/ns;
-            newPoint->x_cm = x[0]/cm;
-            newPoint->y_cm = x[1]/cm;
-            newPoint->z_cm = x[2]/cm;
-            newPoint->px_GeV = pin[0]/GeV;
-            newPoint->py_GeV = pin[1]/GeV;
-            newPoint->pz_GeV = pin[2]/GeV;
-            newPoint->E_GeV = Ein/GeV;
          }
       }
       // This sensitive detector is unique in that different volumes are used
@@ -182,8 +182,9 @@ G4bool GlueXSensitiveDetectorCERE::ProcessHits(G4Step* step,
       int key = GlueXHitCEREtube::GetKey(sector);
       GlueXHitCEREtube *counter = (*fTubeHitsMap)[key];
       if (counter == 0) {
-         counter = new GlueXHitCEREtube(sector);
-         fTubeHitsMap->add(key, counter);
+         GlueXHitCEREtube newcounter(sector);
+         fTubeHitsMap->add(key, newcounter);
+         counter = (*fTubeHitsMap)[key];
       }
 
       // Add the hit to the hits vector, maintaining strict time ordering

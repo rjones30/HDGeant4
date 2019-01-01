@@ -9,9 +9,16 @@
 
 G4ThreadLocal G4Allocator<GlueXHitDIRCPmt>* GlueXHitDIRCPmtAllocator = 0;
 
-GlueXHitDIRCPmt::GlueXHitDIRCPmt()
-  : G4VHit()
-{}
+GlueXHitDIRCPmt::GlueXHitDIRCPmt(const GlueXHitDIRCPmt &src)
+{
+  E_GeV = src.E_GeV;
+  t_ns = src.t_ns;
+  x_cm = src.x_cm;
+  y_cm = src.y_cm;
+  z_cm = src.z_cm;
+  ch = src.ch;
+  key_bar = src.key_bar;
+}
 
 void GlueXHitDIRCPmt::Draw() const
 {

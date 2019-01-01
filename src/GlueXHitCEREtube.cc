@@ -13,6 +13,12 @@ GlueXHitCEREtube::GlueXHitCEREtube(G4int sector)
    sector_(sector)
 {}
 
+GlueXHitCEREtube::GlueXHitCEREtube(const GlueXHitCEREtube &src)
+{
+   sector_ = src.sector_;
+   hits = src.hits;
+}
+
 int GlueXHitCEREtube::operator==(const GlueXHitCEREtube &right) const
 {
    if (sector_ !=  right.sector_)

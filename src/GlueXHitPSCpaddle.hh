@@ -19,7 +19,9 @@
 class GlueXHitPSCpaddle : public G4VHit
 {
  public:
+   GlueXHitPSCpaddle() {}
    GlueXHitPSCpaddle(G4int arm, G4int module);
+   GlueXHitPSCpaddle(const GlueXHitPSCpaddle &src);
    int operator==(const GlueXHitPSCpaddle &right) const;
    GlueXHitPSCpaddle &operator+=(const GlueXHitPSCpaddle &right);
 

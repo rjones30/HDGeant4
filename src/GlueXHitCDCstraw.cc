@@ -15,6 +15,13 @@ GlueXHitCDCstraw::GlueXHitCDCstraw(G4int ring, G4int sector)
    sector_(sector)
 {}
 
+GlueXHitCDCstraw::GlueXHitCDCstraw(const GlueXHitCDCstraw &src)
+{
+   ring_ = src.ring_;
+   sector_ = src.sector_;
+   hits = src.hits;
+}
+
 int GlueXHitCDCstraw::operator==(const GlueXHitCDCstraw &right) const
 {
    if (ring_ != right.ring_  || sector_ !=  right.sector_)

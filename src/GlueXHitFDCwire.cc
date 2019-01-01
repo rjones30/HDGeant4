@@ -14,6 +14,13 @@ GlueXHitFDCwire::GlueXHitFDCwire(G4int chamber, G4int wire)
    wire_(wire)
 {}
 
+GlueXHitFDCwire::GlueXHitFDCwire(const GlueXHitFDCwire &src)
+{
+   chamber_ = src.chamber_;
+   wire_ = src.wire_;
+   hits = src.hits;
+}
+
 int GlueXHitFDCwire::operator==(const GlueXHitFDCwire &right) const
 {
    if (chamber_ != right.chamber_  || wire_ !=  right.wire_)

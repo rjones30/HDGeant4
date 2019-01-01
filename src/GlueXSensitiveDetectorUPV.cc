@@ -94,7 +94,7 @@ GlueXSensitiveDetectorUPV::~GlueXSensitiveDetectorUPV()
 
 void GlueXSensitiveDetectorUPV::Initialize(G4HCofThisEvent* hce)
 {
-   fBarHitsMap = new 
+   fBarHitsMap = new
               GlueXHitsMapUPVbar(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapUPVpoint(SensitiveDetectorName, collectionName[1]);
@@ -152,22 +152,22 @@ G4bool GlueXSensitiveDetectorUPV::ProcessHits(G4Step* step,
           fabs(lastPoint->y_cm - x[1]/cm) > 2. ||
           fabs(lastPoint->z_cm - x[2]/cm) > 2.)
       {
-         GlueXHitUPVpoint* newPoint = new GlueXHitUPVpoint();
-         fPointsMap->add(key, newPoint);
          int pdgtype = track->GetDynamicParticle()->GetPDGcode();
          int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = trackinfo->GetGlueXTrackID();
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->t_ns = t/ns;
-         newPoint->x_cm = x[0]/cm;
-         newPoint->y_cm = x[1]/cm;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
+         GlueXHitUPVpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = trackinfo->GetGlueXTrackID();
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.x_cm = x[0]/cm;
+         newPoint.y_cm = x[1]/cm;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         fPointsMap->add(key, newPoint);
       }
    }
 
@@ -177,8 +177,9 @@ G4bool GlueXSensitiveDetectorUPV::ProcessHits(G4Step* step,
       int key = GlueXHitUPVbar::GetKey(layer, row);
       GlueXHitUPVbar *counter = (*fBarHitsMap)[key];
       if (counter == 0) {
-         counter = new GlueXHitUPVbar(layer, row);
-         fBarHitsMap->add(key, counter);
+         GlueXHitUPVbar newcounter(layer, row);
+         fBarHitsMap->add(key, newcounter);
+         counter = (*fBarHitsMap)[key];
       }
 
       double dxleft = xlocal[0];

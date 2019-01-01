@@ -19,7 +19,9 @@
 class GlueXHitFMWPCwire : public G4VHit
 {
  public:
+   GlueXHitFMWPCwire() {}
    GlueXHitFMWPCwire(G4int layer, G4int wire);
+   GlueXHitFMWPCwire(const GlueXHitFMWPCwire &src);
    int operator==(const GlueXHitFMWPCwire &right) const;
    GlueXHitFMWPCwire &operator+=(const GlueXHitFMWPCwire &right);
 
