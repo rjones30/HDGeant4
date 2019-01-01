@@ -15,6 +15,14 @@ GlueXHitBCALcell::GlueXHitBCALcell(G4int module, G4int layer, G4int sector)
    sector_(sector)
 {}
 
+GlueXHitBCALcell::GlueXHitBCALcell(const GlueXHitBCALcell &src)
+{
+   module_ = src.module_;
+   layer_ = src.layer_;
+   sector_ = src.sector_;
+   hits = src.hits;
+}
+
 int GlueXHitBCALcell::operator==(const GlueXHitBCALcell &right) const
 {
    if (module_ !=  right.module_ || layer_ != right.layer_ || 

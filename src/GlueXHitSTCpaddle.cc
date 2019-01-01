@@ -13,6 +13,12 @@ GlueXHitSTCpaddle::GlueXHitSTCpaddle(G4int sector)
    sector_(sector)
 {}
 
+GlueXHitSTCpaddle::GlueXHitSTCpaddle(const GlueXHitSTCpaddle &src)
+{
+   sector_ = src.sector_;
+   hits = src.hits;
+}
+
 int GlueXHitSTCpaddle::operator==(const GlueXHitSTCpaddle &right) const
 {
    if (sector_ !=  right.sector_)

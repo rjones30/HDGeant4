@@ -13,6 +13,25 @@ GlueXHitFDCpoint::GlueXHitFDCpoint(G4int chamber)
    chamber_(chamber)
 {}
 
+GlueXHitFDCpoint::GlueXHitFDCpoint(const GlueXHitFDCpoint &src)
+{
+   chamber_ = src.chamber_;
+   E_GeV = src.E_GeV;
+   dEdx_GeV_cm = src.dEdx_GeV_cm;
+   dradius_cm = src.dradius_cm;
+   primary_ = src.primary_;
+   ptype_G3 = src.ptype_G3;
+   px_GeV = src.px_GeV;
+   py_GeV = src.py_GeV;
+   pz_GeV = src.pz_GeV;
+   x_cm = src.x_cm;
+   y_cm = src.y_cm;
+   z_cm = src.z_cm;
+   t_ns = src.t_ns;
+   track_ = src.track_;
+   trackID_ = src.trackID_;
+}
+
 int GlueXHitFDCpoint::operator==(const GlueXHitFDCpoint &right) const
 {
    if (E_GeV          != right.E_GeV       ||

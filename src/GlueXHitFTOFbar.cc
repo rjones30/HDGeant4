@@ -14,6 +14,13 @@ GlueXHitFTOFbar::GlueXHitFTOFbar(G4int plane, G4int bar)
    bar_(bar)
 {}
 
+GlueXHitFTOFbar::GlueXHitFTOFbar(const GlueXHitFTOFbar &src)
+{
+   plane_ = src.plane_;
+   bar_ = src.bar_;
+   hits = src.hits;
+}
+
 int GlueXHitFTOFbar::operator==(const GlueXHitFTOFbar &right) const
 {
    if (plane_ !=  right.plane_ || bar_ != right.bar_ )

@@ -8,6 +8,25 @@
 
 G4ThreadLocal G4Allocator<GlueXHitCDCpoint>* GlueXHitCDCpointAllocator = 0;
 
+GlueXHitCDCpoint::GlueXHitCDCpoint(const GlueXHitCDCpoint &src)
+{
+   dEdx_GeV_cm = src.dEdx_GeV_cm;
+   dradius_cm = src.dradius_cm;
+   phi_rad = src.phi_rad;
+   primary_ = src.primary_;
+   ptype_G3 = src.ptype_G3;
+   px_GeV = src.px_GeV;
+   py_GeV = src.py_GeV;
+   pz_GeV = src.pz_GeV;
+   r_cm = src.r_cm;
+   z_cm = src.z_cm;
+   t_ns = src.t_ns;
+   track_ = src.track_;
+   trackID_ = src.trackID_;
+   sector_ = src.sector_;
+   ring_ = src.ring_;
+}
+
 int GlueXHitCDCpoint::operator==(const GlueXHitCDCpoint &right) const
 {
    if (dEdx_GeV_cm != right.dEdx_GeV_cm ||

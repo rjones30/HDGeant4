@@ -19,7 +19,9 @@
 class GlueXHitBCALcell : public G4VHit
 {
  public:
+   GlueXHitBCALcell() {}
    GlueXHitBCALcell(G4int module, G4int layer, G4int sector);
+   GlueXHitBCALcell(const GlueXHitBCALcell &src);
    int operator==(const GlueXHitBCALcell &right) const;
    GlueXHitBCALcell &operator+=(const GlueXHitBCALcell &right);
 

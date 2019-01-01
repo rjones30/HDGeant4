@@ -14,6 +14,13 @@ GlueXHitUPVbar::GlueXHitUPVbar(G4int layer, G4int row)
    row_(row)
 {}
 
+GlueXHitUPVbar::GlueXHitUPVbar(const GlueXHitUPVbar &src)
+{
+   layer_ = src.layer_;
+   row_ = src.row_;
+   hits = src.hits;
+}
+
 int GlueXHitUPVbar::operator==(const GlueXHitUPVbar &right) const
 {
    if (layer_ !=  right.layer_ || row_ != right.row_ )

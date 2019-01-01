@@ -90,7 +90,7 @@ GlueXSensitiveDetectorFMWPC::~GlueXSensitiveDetectorFMWPC()
 
 void GlueXSensitiveDetectorFMWPC::Initialize(G4HCofThisEvent* hce)
 {
-   fWireHitsMap = new 
+   fWireHitsMap = new
               GlueXHitsMapFMWPCwire(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapFMWPCpoint(SensitiveDetectorName, collectionName[1]);
@@ -147,22 +147,22 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
           fabs(lastPoint->y_cm - x[1]/cm) > 2. ||
           fabs(lastPoint->z_cm - x[2]/cm) > 2.)
       {
-         GlueXHitFMWPCpoint* newPoint = new GlueXHitFMWPCpoint();
-         fPointsMap->add(key, newPoint);
          int pdgtype = track->GetDynamicParticle()->GetPDGcode();
          int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = itrack;
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->t_ns = t/ns;
-         newPoint->x_cm = x[0]/cm;
-         newPoint->y_cm = x[1]/cm;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
+         GlueXHitFMWPCpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.x_cm = x[0]/cm;
+         newPoint.y_cm = x[1]/cm;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         fPointsMap->add(key, newPoint);
       }
    }
 
@@ -196,8 +196,9 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
       int key = GlueXHitFMWPCwire::GetKey(layer, wire);
       GlueXHitFMWPCwire *counter = (*fWireHitsMap)[key];
       if (counter == 0) {
-         counter = new GlueXHitFMWPCwire(layer, wire);
-         fWireHitsMap->add(key, counter);
+         GlueXHitFMWPCwire newwire(layer, wire);
+         fWireHitsMap->add(key, newwire);
+         counter = (*fWireHitsMap)[key];
       }
 
       // Add the hit to the hits vector, maintaining strict time ordering

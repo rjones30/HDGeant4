@@ -33,6 +33,7 @@ class GlueXHitDIRCflash : public G4VHit
 {
  public:
    GlueXHitDIRCflash(G4int bar=0);
+   GlueXHitDIRCflash(const GlueXHitDIRCflash &src);
    int operator==(const GlueXHitDIRCflash &right) const;
    GlueXHitDIRCflash &operator+=(const GlueXHitDIRCflash &right);
 

@@ -14,6 +14,13 @@ GlueXHitPSCpaddle::GlueXHitPSCpaddle(G4int arm, G4int module)
    module_(module)
 {}
 
+GlueXHitPSCpaddle::GlueXHitPSCpaddle(const GlueXHitPSCpaddle &src)
+{
+   arm_ = src.arm_;
+   module_ = src.module_;
+   hits = src.hits;
+}
+
 int GlueXHitPSCpaddle::operator==(const GlueXHitPSCpaddle &right) const
 {
    if (module_ !=  right.module_ || arm_ != right.arm_)
