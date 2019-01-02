@@ -20,7 +20,9 @@
 class GlueXHitCDCstraw : public G4VHit
 {
  public:
+   GlueXHitCDCstraw() {}
    GlueXHitCDCstraw(G4int ring, G4int sector);
+   GlueXHitCDCstraw(const GlueXHitCDCstraw &src);
    int operator==(const GlueXHitCDCstraw &right) const;
    GlueXHitCDCstraw &operator+=(const GlueXHitCDCstraw &right);
 

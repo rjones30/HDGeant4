@@ -111,7 +111,7 @@ GlueXSensitiveDetectorFCAL::~GlueXSensitiveDetectorFCAL()
 
 void GlueXSensitiveDetectorFCAL::Initialize(G4HCofThisEvent* hce)
 {
-   fBlocksMap = new 
+   fBlocksMap = new
               GlueXHitsMapFCALblock(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapFCALpoint(SensitiveDetectorName, collectionName[1]);
@@ -158,23 +158,23 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
    if (trackinfo->GetGlueXHistory() == 0 &&
        xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
    {
-      GlueXHitFCALpoint* newPoint = new GlueXHitFCALpoint();
-      G4int key = fPointsMap->entries();
-      fPointsMap->add(key, newPoint);
       int pdgtype = track->GetDynamicParticle()->GetPDGcode();
       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-      newPoint->ptype_G3 = g3type;
-      newPoint->track_ = trackID;
-      newPoint->trackID_ = itrack;
-      newPoint->primary_ = (track->GetParentID() == 0);
-      newPoint->t_ns = t/ns;
-      newPoint->x_cm = xin[0]/cm;
-      newPoint->y_cm = xin[1]/cm;
-      newPoint->z_cm = xin[2]/cm;
-      newPoint->px_GeV = pin[0]/GeV;
-      newPoint->py_GeV = pin[1]/GeV;
-      newPoint->pz_GeV = pin[2]/GeV;
-      newPoint->E_GeV = Ein/GeV;
+      GlueXHitFCALpoint newPoint;
+      newPoint.ptype_G3 = g3type;
+      newPoint.track_ = trackID;
+      newPoint.trackID_ = itrack;
+      newPoint.primary_ = (track->GetParentID() == 0);
+      newPoint.t_ns = t/ns;
+      newPoint.x_cm = xin[0]/cm;
+      newPoint.y_cm = xin[1]/cm;
+      newPoint.z_cm = xin[2]/cm;
+      newPoint.px_GeV = pin[0]/GeV;
+      newPoint.py_GeV = pin[1]/GeV;
+      newPoint.pz_GeV = pin[2]/GeV;
+      newPoint.E_GeV = Ein/GeV;
+      G4int key = fPointsMap->entries();
+      fPointsMap->add(key, newPoint);
       trackinfo->SetGlueXHistory(2);
    }
 
@@ -186,8 +186,9 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
       int key = GlueXHitFCALblock::GetKey(column, row);
       GlueXHitFCALblock *block = (*fBlocksMap)[key];
       if (block == 0) {
-         block = new GlueXHitFCALblock(column, row);
-         fBlocksMap->add(key, block);
+         GlueXHitFCALblock newblock(column, row);
+         fBlocksMap->add(key, newblock);
+         block = (*fBlocksMap)[key];
       }
 
       // Handle hits in the lead glass

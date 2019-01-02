@@ -8,6 +8,22 @@
 
 G4ThreadLocal G4Allocator<GlueXHitCCALpoint>* GlueXHitCCALpointAllocator = 0;
 
+GlueXHitCCALpoint::GlueXHitCCALpoint(const GlueXHitCCALpoint &src)
+{
+   E_GeV = src.E_GeV;
+   primary_ = src.primary_;
+   ptype_G3 = src.ptype_G3;
+   px_GeV = src.px_GeV;
+   py_GeV = src.py_GeV;
+   pz_GeV = src.pz_GeV;
+   x_cm = src.x_cm;
+   y_cm = src.y_cm;
+   z_cm = src.z_cm;
+   t_ns = src.t_ns;
+   track_ = src.track_;
+   trackID_ = src.trackID_;
+}
+
 int GlueXHitCCALpoint::operator==(const GlueXHitCCALpoint &right) const
 {
    if (E_GeV    != right.E_GeV    ||

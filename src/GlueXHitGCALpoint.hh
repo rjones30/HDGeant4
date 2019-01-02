@@ -20,6 +20,7 @@ class GlueXHitGCALpoint : public G4VHit
 {
  public:
    GlueXHitGCALpoint() {}
+   GlueXHitGCALpoint(const GlueXHitGCALpoint &src);
    int operator==(const GlueXHitGCALpoint &right) const;
    GlueXHitGCALpoint &operator+=(const GlueXHitGCALpoint &right);
 

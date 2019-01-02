@@ -8,8 +8,19 @@
 
 G4ThreadLocal G4Allocator<GlueXHitDIRCBar>* GlueXHitDIRCBarAllocator = 0;
 
-GlueXHitDIRCBar::GlueXHitDIRCBar():G4VHit()
+GlueXHitDIRCBar::GlueXHitDIRCBar(const GlueXHitDIRCBar &src)
 {
+  E_GeV = src.E_GeV;
+  t_ns = src.t_ns;
+  x_cm = src.x_cm;
+  y_cm = src.y_cm;
+  z_cm = src.z_cm;
+  px_GeV = src.px_GeV;
+  py_GeV = src.py_GeV;
+  pz_GeV = src.pz_GeV;
+  pdg = src.pdg;
+  bar = src.bar;
+  track = src.track;
 }
 
 void GlueXHitDIRCBar::Draw() const

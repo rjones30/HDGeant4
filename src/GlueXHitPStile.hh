@@ -19,7 +19,9 @@
 class GlueXHitPStile : public G4VHit
 {
  public:
+   GlueXHitPStile() {}
    GlueXHitPStile(G4int arm, G4int column);
+   GlueXHitPStile(const GlueXHitPStile &src);
    int operator==(const GlueXHitPStile &right) const;
    GlueXHitPStile &operator+=(const GlueXHitPStile &right);
 

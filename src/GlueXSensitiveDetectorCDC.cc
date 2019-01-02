@@ -175,7 +175,7 @@ GlueXSensitiveDetectorCDC::~GlueXSensitiveDetectorCDC()
 
 void GlueXSensitiveDetectorCDC::Initialize(G4HCofThisEvent* hce)
 {
-   fStrawsMap = new 
+   fStrawsMap = new
                 GlueXHitsMapCDCstraw(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
                 GlueXHitsMapCDCpoint(SensitiveDetectorName, collectionName[1]);
@@ -304,23 +304,23 @@ G4bool GlueXSensitiveDetectorCDC::ProcessHits(G4Step* step,
       if (lastPoint == 0 || lastPoint->track_ != trackID || 
           lastPoint->ring_ != ring)
       {
-         GlueXHitCDCpoint* newPoint = new GlueXHitCDCpoint();
+         GlueXHitCDCpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.r_cm = x.perp()/cm;
+         newPoint.phi_rad = x.phi();
+         newPoint.dradius_cm = dradius/cm;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.dEdx_GeV_cm = dEdx/(GeV/cm);
+         newPoint.sector_ = sector;
+         newPoint.ring_ = ring;
          fPointsMap->add(key, newPoint);
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = itrack;
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->t_ns = t/ns;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->r_cm = x.perp()/cm;
-         newPoint->phi_rad = x.phi();
-         newPoint->dradius_cm = dradius/cm;
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
-         newPoint->sector_ = sector;
-         newPoint->ring_ = ring;
       }
    }
    
@@ -330,8 +330,9 @@ G4bool GlueXSensitiveDetectorCDC::ProcessHits(G4Step* step,
       int key = GlueXHitCDCstraw::GetKey(ring, sector);
       GlueXHitCDCstraw *straw = (*fStrawsMap)[key];
       if (straw == 0) {
-         straw = new GlueXHitCDCstraw(ring, sector);
-         fStrawsMap->add(key, straw);
+         GlueXHitCDCstraw newstraw(ring, sector);
+         fStrawsMap->add(key, newstraw);
+         straw = (*fStrawsMap)[key];
       }
 
       // Add the hit to the hits vector, maintaining track time ordering,

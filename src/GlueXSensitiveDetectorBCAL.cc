@@ -113,7 +113,7 @@ GlueXSensitiveDetectorBCAL::~GlueXSensitiveDetectorBCAL()
 
 void GlueXSensitiveDetectorBCAL::Initialize(G4HCofThisEvent* hce)
 {
-   fCellsMap = new 
+   fCellsMap = new
               GlueXHitsMapBCALcell(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapBCALpoint(SensitiveDetectorName, collectionName[1]);
@@ -164,21 +164,21 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
           xin[0] * pin[0] + xin[1] * pin[1] > 0 &&
           Ein > THRESH_MEV*MeV)
       {
-         GlueXHitBCALpoint* newPoint = new GlueXHitBCALpoint();
+         GlueXHitBCALpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.z_cm = xin[2]/cm;
+         newPoint.r_cm = xin.perp()/cm;
+         newPoint.phi_rad = xin.phi();
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
          G4int key = fPointsMap->entries();
          fPointsMap->add(key, newPoint);
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = itrack;
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->t_ns = t/ns;
-         newPoint->z_cm = xin[2]/cm;
-         newPoint->r_cm = xin.perp()/cm;
-         newPoint->phi_rad = xin.phi();
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
          trackinfo->SetGlueXHistory(1);
  
          // The original HDGeant hits code for the BCal had a heavy-weight
@@ -229,8 +229,9 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
       int key = GlueXHitBCALcell::GetKey(module, layer, sector);
       GlueXHitBCALcell *cell = (*fCellsMap)[key];
       if (cell == 0) {
-         cell = new GlueXHitBCALcell(module, layer, sector);
-         fCellsMap->add(key, cell);
+         GlueXHitBCALcell newcell(module, layer, sector);
+         fCellsMap->add(key, newcell);
+         cell = (*fCellsMap)[key];
       }
 
       // Add the hit to the hits vector, maintaining strict time ordering

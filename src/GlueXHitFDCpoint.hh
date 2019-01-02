@@ -19,7 +19,9 @@
 class GlueXHitFDCpoint : public G4VHit
 {
  public:
+   GlueXHitFDCpoint() {}
    GlueXHitFDCpoint(int chamber);
+   GlueXHitFDCpoint(const GlueXHitFDCpoint &src);
    int operator==(const GlueXHitFDCpoint &right) const;
    GlueXHitFDCpoint &operator+=(const GlueXHitFDCpoint &right);
 

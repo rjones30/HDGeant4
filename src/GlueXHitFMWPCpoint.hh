@@ -20,6 +20,7 @@ class GlueXHitFMWPCpoint : public G4VHit
 {
  public:
    GlueXHitFMWPCpoint() {}
+   GlueXHitFMWPCpoint(const GlueXHitFMWPCpoint &src);
    int operator==(const GlueXHitFMWPCpoint &right) const;
    GlueXHitFMWPCpoint &operator+=(const GlueXHitFMWPCpoint &right);
 

@@ -13,6 +13,12 @@ GlueXHitGCALblock::GlueXHitGCALblock(G4int module)
    module_(module)
 {}
 
+GlueXHitGCALblock::GlueXHitGCALblock(const GlueXHitGCALblock &src)
+{
+   module_ = src.module_;
+   hits = src.hits;
+}
+
 int GlueXHitGCALblock::operator==(const GlueXHitGCALblock &right) const
 {
    if (module_ !=  right.module_) {

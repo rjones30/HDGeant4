@@ -154,7 +154,7 @@ GlueXSensitiveDetectorSTC::~GlueXSensitiveDetectorSTC()
 
 void GlueXSensitiveDetectorSTC::Initialize(G4HCofThisEvent* hce)
 {
-   fHitsMap = new 
+   fHitsMap = new
               GlueXHitsMapSTCpaddle(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapSTCpoint(SensitiveDetectorName, collectionName[1]);
@@ -215,22 +215,22 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
           fabs(lastPoint->t_ns - t/ns) > 0.1 ||
           fabs(lastPoint->z_cm - x[2]/cm) > 0.1)
       {
-         GlueXHitSTCpoint* newPoint = new GlueXHitSTCpoint();
+         GlueXHitSTCpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.sector_ = sector;
+         newPoint.t_ns = t/ns;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.r_cm = x.perp()/cm;
+         newPoint.phi_rad = x.phi();
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         newPoint.dEdx_GeV_cm = dEdx/(GeV/cm);
          fPointsMap->add(key, newPoint);
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = itrack;
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->sector_ = sector;
-         newPoint->t_ns = t/ns;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->r_cm = x.perp()/cm;
-         newPoint->phi_rad = x.phi();
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
-         newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
       }
    }
 
@@ -240,8 +240,9 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
       int key = GlueXHitSTCpaddle::GetKey(sector);
       GlueXHitSTCpaddle *paddle = (*fHitsMap)[key];
       if (paddle == 0) {
-         paddle = new GlueXHitSTCpaddle(sector);
-         fHitsMap->add(key, paddle);
+         GlueXHitSTCpaddle newpaddle(sector);
+         fHitsMap->add(key, newpaddle);
+         paddle = (*fHitsMap)[key];
       }
 
       double dbent = 0.0;

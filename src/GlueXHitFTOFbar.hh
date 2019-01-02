@@ -19,7 +19,9 @@
 class GlueXHitFTOFbar : public G4VHit
 {
  public:
+   GlueXHitFTOFbar() {}
    GlueXHitFTOFbar(G4int plane, G4int bar);
+   GlueXHitFTOFbar(const GlueXHitFTOFbar &src);
    int operator==(const GlueXHitFTOFbar &right) const;
    GlueXHitFTOFbar &operator+=(const GlueXHitFTOFbar &right);
 

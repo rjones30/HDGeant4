@@ -19,7 +19,9 @@
 class GlueXHitCEREtube : public G4VHit
 {
  public:
+   GlueXHitCEREtube() {}
    GlueXHitCEREtube(G4int sector);
+   GlueXHitCEREtube(const GlueXHitCEREtube &src);
    int operator==(const GlueXHitCEREtube &right) const;
    GlueXHitCEREtube &operator+=(const GlueXHitCEREtube &right);
 

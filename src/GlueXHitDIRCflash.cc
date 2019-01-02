@@ -26,6 +26,12 @@ GlueXHitDIRCflash::GlueXHitDIRCflash(G4int bar)
    bar_(bar)
 {}
 
+GlueXHitDIRCflash::GlueXHitDIRCflash(const GlueXHitDIRCflash &src)
+{
+   bar_ = src.bar_;
+   hits = src.hits;
+}
+
 int GlueXHitDIRCflash::operator==(const GlueXHitDIRCflash &right) const
 {
    if (bar_ !=  right.bar_)
