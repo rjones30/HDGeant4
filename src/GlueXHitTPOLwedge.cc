@@ -13,6 +13,14 @@ GlueXHitTPOLwedge::GlueXHitTPOLwedge(G4int sector, G4int ring)
    ring_(ring), sector_(sector)
 {}
 
+
+GlueXHitTPOLwedge::GlueXHitTPOLwedge(const GlueXHitTPOLwedge &src)
+{
+   ring_ = src.ring_;
+   sector_ = src.sector_;
+   hits = src.hits;
+}
+
 int GlueXHitTPOLwedge::operator==(const GlueXHitTPOLwedge &right) const
 {
    if (sector_ !=  right.sector_ || ring_ != right.ring_)

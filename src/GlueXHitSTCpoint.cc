@@ -8,6 +8,24 @@
 
 G4ThreadLocal G4Allocator<GlueXHitSTCpoint>* GlueXHitSTCpointAllocator = 0;
 
+GlueXHitSTCpoint::GlueXHitSTCpoint(const GlueXHitSTCpoint &src)
+{
+   E_GeV = src.E_GeV;
+   dEdx_GeV_cm = src.dEdx_GeV_cm;
+   phi_rad = src.phi_rad;
+   primary_ = src.primary_;
+   ptype_G3 = src.ptype_G3;
+   px_GeV = src.px_GeV;
+   py_GeV = src.py_GeV;
+   pz_GeV = src.pz_GeV;
+   r_cm = src.r_cm;
+   z_cm = src.z_cm;
+   t_ns = src.t_ns;
+   sector_ = src.sector_;
+   track_ = src.track_;
+   trackID_ = src.trackID_;
+}
+
 int GlueXHitSTCpoint::operator==(const GlueXHitSTCpoint &right) const
 {
    if (E_GeV       != right.E_GeV       ||

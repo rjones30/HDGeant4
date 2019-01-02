@@ -14,7 +14,8 @@
 class GlueXHitDIRCBar : public G4VHit
 {
 public:
-  GlueXHitDIRCBar();
+  GlueXHitDIRCBar() {}
+  GlueXHitDIRCBar(const GlueXHitDIRCBar &src);
 
   void *operator new(size_t);
   void operator delete(void *aHit);

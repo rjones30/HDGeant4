@@ -19,7 +19,9 @@
 class GlueXHitFDCcathode : public G4VHit
 {
  public:
+   GlueXHitFDCcathode() {}
    GlueXHitFDCcathode(G4int chamber, G4int plane, G4int strip);
+   GlueXHitFDCcathode(const GlueXHitFDCcathode &src);
    int operator==(const GlueXHitFDCcathode &right) const;
    GlueXHitFDCcathode &operator+=(const GlueXHitFDCcathode &right);
 

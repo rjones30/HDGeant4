@@ -19,7 +19,9 @@
 class GlueXHitUPVbar : public G4VHit
 {
  public:
+   GlueXHitUPVbar() {}
    GlueXHitUPVbar(G4int layer, G4int row);
+   GlueXHitUPVbar(const GlueXHitUPVbar &src);
    int operator==(const GlueXHitUPVbar &right) const;
    GlueXHitUPVbar &operator+=(const GlueXHitUPVbar &right);
 

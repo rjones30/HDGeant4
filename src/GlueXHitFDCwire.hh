@@ -20,7 +20,9 @@
 class GlueXHitFDCwire : public G4VHit
 {
  public:
+   GlueXHitFDCwire() {}
    GlueXHitFDCwire(G4int chamber, G4int wire);
+   GlueXHitFDCwire(const GlueXHitFDCwire &src);
    int operator==(const GlueXHitFDCwire &right) const;
    GlueXHitFDCwire &operator+=(const GlueXHitFDCwire &right);
 

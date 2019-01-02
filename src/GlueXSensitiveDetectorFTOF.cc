@@ -108,7 +108,7 @@ GlueXSensitiveDetectorFTOF::~GlueXSensitiveDetectorFTOF()
 
 void GlueXSensitiveDetectorFTOF::Initialize(G4HCofThisEvent* hce)
 {
-   fBarHitsMap = new 
+   fBarHitsMap = new
               GlueXHitsMapFTOFbar(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapFTOFpoint(SensitiveDetectorName, collectionName[1]);
@@ -171,20 +171,20 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
           fabs(lastPoint->y_cm - x[1]/cm) > 2. ||
           fabs(lastPoint->z_cm - x[2]/cm) > 2.)
       {
-         GlueXHitFTOFpoint* newPoint = new GlueXHitFTOFpoint();
+         GlueXHitFTOFpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.x_cm = x[0]/cm;
+         newPoint.y_cm = x[1]/cm;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
          fPointsMap->add(key, newPoint);
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = itrack;
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->t_ns = t/ns;
-         newPoint->x_cm = x[0]/cm;
-         newPoint->y_cm = x[1]/cm;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
       }
    }
 
@@ -194,8 +194,9 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
       int key = GlueXHitFTOFbar::GetKey(plane, barNo);
       GlueXHitFTOFbar *counter = (*fBarHitsMap)[key];
       if (counter == 0) {
-         counter = new GlueXHitFTOFbar(plane, barNo);
-         fBarHitsMap->add(key, counter);
+         GlueXHitFTOFbar newcounter(plane, barNo);
+         fBarHitsMap->add(key, newcounter);
+         counter = (*fBarHitsMap)[key];
       }
 
       double dist = x[1]; // do not use local coordinate for x and y

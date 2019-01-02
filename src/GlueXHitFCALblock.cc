@@ -14,6 +14,13 @@ GlueXHitFCALblock::GlueXHitFCALblock(G4int column, G4int row)
    row_(row)
 {}
 
+GlueXHitFCALblock::GlueXHitFCALblock(const GlueXHitFCALblock &src)
+{
+   column_ = src.column_;
+   row_ = src.row_;
+   hits = src.hits;
+}
+
 int GlueXHitFCALblock::operator==(const GlueXHitFCALblock &right) const
 {
    if (column_ !=  right.column_ || row_ != right.row_) {

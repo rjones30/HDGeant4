@@ -20,6 +20,7 @@ class GlueXHitDIRCpoint : public G4VHit
 {
  public:
    GlueXHitDIRCpoint() {}
+   GlueXHitDIRCpoint(const GlueXHitDIRCpoint &src);
    int operator==(const GlueXHitDIRCpoint &right) const;
    GlueXHitDIRCpoint &operator+=(const GlueXHitDIRCpoint &right);
 

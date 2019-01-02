@@ -21,6 +21,7 @@
 #include <G4RunManager.hh>
 #include <G4UImanager.hh>
 #include <G4Timer.hh>
+#include <G4LogicalVolumeStore.hh>
 
 #ifdef G4VIS_USE
 #include <G4VisExecutive.hh>
@@ -47,6 +48,8 @@ void usage()
 }
 
 void OpenGLXpreload();
+void describe(std::string volname, int level=0);
+void describe(G4SmartVoxelHeader *vox, std::string mother, int level=0);
 
 int main(int argc,char** argv)
 {
@@ -136,13 +139,14 @@ int main(int argc,char** argv)
 #else
    G4RunManager runManager;
 #endif
+   runManager.SetVerboseLevel(3);
 
-	// Let user turn off geometry optimization for faster startup
-	// (and slower running)
-	std::map<int, int> geomopt;
-	if ( opts.Find("GEOMOPT", geomopt) ) {
-         if( geomopt[1] == 0 ) runManager.SetGeometryToBeOptimized( false );
-	}
+   // Let user turn off geometry optimization for faster startup
+   // (and slower running)
+   std::map<int, int> geomopt;
+   if ( opts.Find("GEOMOPT", geomopt) ) {
+      if( geomopt[1] == 0 ) runManager.SetGeometryToBeOptimized( false );
+   }
 
    // Geometry initialization
    GlueXDetectorConstruction *geometry = new GlueXDetectorConstruction();
@@ -154,6 +158,16 @@ int main(int argc,char** argv)
       geometry->RegisterParallelWorld(parallelWorld);
    }
    runManager.SetUserInitialization(geometry);
+
+#if REDUCE_OPTIMIZATION_OF_CDC
+   // Save some time at startup by reducing the level
+   // of optimization of the CDC geometry
+   G4LogicalVolumeStore *volumes = G4LogicalVolumeStore::GetInstance();
+   G4LogicalVolume *logvol = volumes->GetVolume("DCLS");
+   if (logvol) {
+      logvol->SetSmartless(0.5);
+   }
+#endif
 
    // Physics process initialization
    GlueXPhysicsList *physicslist = new GlueXPhysicsList();
@@ -168,6 +182,8 @@ int main(int argc,char** argv)
    std::cout << "Initializing the Geant4 kernel..." << std::endl;
    runManager.Initialize();
    
+   //describe("DCLS");
+
    // Initialize graphics (option -v)
    G4VisManager* visManager = 0;
    if (use_visualization) {
@@ -274,4 +290,67 @@ int main(int argc,char** argv)
 
    GlueXTimer::PrintAll();
    return 0;
+}
+
+void describe(std::string volname, int level)
+{
+   G4LogicalVolumeStore *volumes = G4LogicalVolumeStore::GetInstance();
+   G4LogicalVolume *logvol = volumes->GetVolume(volname);
+   int childcount = logvol->GetNoDaughters();
+   G4cout << "(" << level << ") " << "logical volume " << volname << ": "
+          << childcount << " daughters"
+          << std::endl;
+   G4SmartVoxelHeader *vox = logvol->GetVoxelHeader();
+   if (vox) {
+      describe(vox, volname);
+   }
+   std::map<std::string,int> children;
+   for (int i=0; i < childcount; ++i) {
+      G4VPhysicalVolume *child = logvol->GetDaughter(i);
+      std::string name(child->GetLogicalVolume()->GetName());
+      if (children.find(name) == children.end()) {
+         children[name] = 1;
+         describe(name, level+1);
+      }
+      else {
+         children[name] += 1;
+      }
+   }
+}
+
+void describe(G4SmartVoxelHeader *vox, std::string mother, int level)
+{
+   G4LogicalVolumeStore *volumes = G4LogicalVolumeStore::GetInstance();
+   G4LogicalVolume *motherlog = volumes->GetVolume(mother);
+   int nslices = vox->GetNoSlices();
+   for (int l=0; l < level; ++l)
+      G4cout << "  ";
+   G4cout << "  sliced along axis " << vox->GetAxis()
+          << " into " << nslices << " slices"
+          << " from " << vox->GetMinExtent() << " to " << vox->GetMaxExtent()
+          << " (" << vox->GetMinEquivalentSliceNo() << ","
+          << vox->GetMaxEquivalentSliceNo() << ")"
+          << std::endl;
+   for (int s=0; s < nslices; ++s) {
+      for (int l=0; l < level; ++l)
+         G4cout << "  ";
+      G4cout << "    " << s << ": ";
+      G4SmartVoxelProxy *prox = vox->GetSlice(s);
+      if (prox->IsHeader()) {
+         G4cout << "(holds another level of voxels)" << std::endl;
+         describe(prox->GetHeader(), mother, level+1);
+         continue;
+      }
+      G4SmartVoxelNode *node = prox->GetNode();
+      int ncont = node->GetNoContained();
+      G4cout << "node contains " << ncont << " volumes"
+             << " (" << prox->GetNode()->GetMinEquivalentSliceNo() << ","
+             << prox->GetNode()->GetMaxEquivalentSliceNo() << ")";
+      for (int c=0; c < ncont; c++) {
+         int ic = node->GetVolume(c);
+         G4VPhysicalVolume *cvol = motherlog->GetDaughter(ic);
+         G4cout << " " << cvol->GetName() << "[" << cvol->GetCopyNo() << "]";
+      }
+      G4cout << std::endl;
+   }
 }

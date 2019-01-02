@@ -15,6 +15,14 @@ GlueXHitFDCcathode::GlueXHitFDCcathode(G4int chamber, G4int plane, G4int strip)
    strip_(strip)
 {}
 
+GlueXHitFDCcathode::GlueXHitFDCcathode(const GlueXHitFDCcathode &src)
+{
+   chamber_ = src.chamber_;
+   plane_ = src.plane_;
+   strip_ = src.strip_;
+   hits = src.hits;
+}
+
 int GlueXHitFDCcathode::operator==(const GlueXHitFDCcathode &right) const
 {
    if (chamber_ != right.chamber_  ||

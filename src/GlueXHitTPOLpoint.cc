@@ -8,6 +8,22 @@
 
 G4ThreadLocal G4Allocator<GlueXHitTPOLpoint>* GlueXHitTPOLpointAllocator = 0;
 
+GlueXHitTPOLpoint::GlueXHitTPOLpoint(const GlueXHitTPOLpoint &src)
+{
+   E_GeV = src.E_GeV;
+   dEdx_GeV_cm = src.dEdx_GeV_cm;
+   primary_ = src.primary_;
+   ptype_G3 = src.ptype_G3;
+   px_GeV = src.px_GeV;
+   py_GeV = src.py_GeV;
+   pz_GeV = src.pz_GeV;
+   phi_rad = src.phi_rad;
+   r_cm = src.r_cm;
+   t_ns = src.t_ns;
+   track_ = src.track_;
+   trackID_ = src.trackID_;
+}
+
 int GlueXHitTPOLpoint::operator==(const GlueXHitTPOLpoint &right) const
 {
    if (E_GeV       != right.E_GeV       ||

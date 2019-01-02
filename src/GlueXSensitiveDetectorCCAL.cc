@@ -100,7 +100,7 @@ GlueXSensitiveDetectorCCAL::~GlueXSensitiveDetectorCCAL()
 
 void GlueXSensitiveDetectorCCAL::Initialize(G4HCofThisEvent* hce)
 {
-   fBlocksMap = new 
+   fBlocksMap = new
               GlueXHitsMapCCALblock(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapCCALpoint(SensitiveDetectorName, collectionName[1]);
@@ -150,23 +150,23 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
    if (trackinfo->GetGlueXHistory() == 0 &&
        xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
    {
-      GlueXHitCCALpoint* newPoint = new GlueXHitCCALpoint();
-      G4int key = fPointsMap->entries();
-      fPointsMap->add(key, newPoint);
       int pdgtype = track->GetDynamicParticle()->GetPDGcode();
       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-      newPoint->ptype_G3 = g3type;
-      newPoint->track_ = trackID;
-      newPoint->trackID_ = itrack;
-      newPoint->primary_ = (track->GetParentID() == 0);
-      newPoint->t_ns = t/ns;
-      newPoint->x_cm = xin[0]/cm;
-      newPoint->y_cm = xin[1]/cm;
-      newPoint->z_cm = xin[2]/cm;
-      newPoint->px_GeV = pin[0]/GeV;
-      newPoint->py_GeV = pin[1]/GeV;
-      newPoint->pz_GeV = pin[2]/GeV;
-      newPoint->E_GeV = Ein/GeV;
+      GlueXHitCCALpoint newPoint;
+      newPoint.ptype_G3 = g3type;
+      newPoint.track_ = trackID;
+      newPoint.trackID_ = itrack;
+      newPoint.primary_ = (track->GetParentID() == 0);
+      newPoint.t_ns = t/ns;
+      newPoint.x_cm = xin[0]/cm;
+      newPoint.y_cm = xin[1]/cm;
+      newPoint.z_cm = xin[2]/cm;
+      newPoint.px_GeV = pin[0]/GeV;
+      newPoint.py_GeV = pin[1]/GeV;
+      newPoint.pz_GeV = pin[2]/GeV;
+      newPoint.E_GeV = Ein/GeV;
+      G4int key = fPointsMap->entries();
+      fPointsMap->add(key, newPoint);
       trackinfo->SetGlueXHistory(4);
    }
 
@@ -178,8 +178,9 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
       int key = GlueXHitCCALblock::GetKey(column, row);
       GlueXHitCCALblock *block = (*fBlocksMap)[key];
       if (block == 0) {
-         block = new GlueXHitCCALblock(column, row);
-         fBlocksMap->add(key, block);
+         GlueXHitCCALblock newblock(column, row);
+         fBlocksMap->add(key, newblock);
+         block = (*fBlocksMap)[key];
       }
       double dist = 0.5 * LENGTH_OF_BLOCK - xlocal[2];
       double dEcorr = dEsum * exp(-dist / ATTENUATION_LENGTH);

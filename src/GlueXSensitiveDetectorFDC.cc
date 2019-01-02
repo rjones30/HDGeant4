@@ -251,9 +251,9 @@ GlueXSensitiveDetectorFDC::~GlueXSensitiveDetectorFDC()
 
 void GlueXSensitiveDetectorFDC::Initialize(G4HCofThisEvent* hce)
 {
-   fWiresMap = new 
+   fWiresMap = new
                GlueXHitsMapFDCwire(SensitiveDetectorName, collectionName[0]);
-   fCathodesMap = new 
+   fCathodesMap = new
                GlueXHitsMapFDCcathode(SensitiveDetectorName, collectionName[1]);
    fPointsMap = new
                GlueXHitsMapFDCpoint(SensitiveDetectorName, collectionName[2]);
@@ -349,22 +349,22 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
       if (lastPoint == 0 || lastPoint->track_ != trackID ||
           lastPoint->chamber_ != chamber)
       {
-         GlueXHitFDCpoint* newPoint = new GlueXHitFDCpoint(chamber);
+         GlueXHitFDCpoint newPoint(chamber);
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.track_ = trackID;
+         newPoint.x_cm = xout[0]/cm;
+         newPoint.y_cm = xout[1]/cm;
+         newPoint.z_cm = xout[2]/cm;
+         newPoint.t_ns = tout/ns;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         newPoint.dradius_cm = dradius/cm;
+         newPoint.dEdx_GeV_cm = dEdx/(GeV/cm);
+         newPoint.ptype_G3 = g3type;
+         newPoint.trackID_ = itrack;
          fPointsMap->add(key, newPoint);
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->track_ = trackID;
-         newPoint->x_cm = xout[0]/cm;
-         newPoint->y_cm = xout[1]/cm;
-         newPoint->z_cm = xout[2]/cm;
-         newPoint->t_ns = tout/ns;
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
-         newPoint->dradius_cm = dradius/cm;
-         newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
-         newPoint->ptype_G3 = g3type;
-         newPoint->trackID_ = itrack;
       }
    }
 
@@ -427,8 +427,9 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
          int key = GlueXHitFDCwire::GetKey(chamber, wire);
          GlueXHitFDCwire *anode = (*fWiresMap)[key];
          if (anode == 0) {
-            anode = new GlueXHitFDCwire(chamber, wire);
-            fWiresMap->add(key, anode);
+            GlueXHitFDCwire newanode(chamber, wire);
+            fWiresMap->add(key, newanode);
+            anode = (*fWiresMap)[key];
          }
 
          // Add the hit to the hits vector, maintaining track time ordering,
@@ -1021,8 +1022,9 @@ void GlueXSensitiveDetectorFDC::add_cathode_hit(
             int key = GlueXHitFDCcathode::GetKey(chamber, plane, strip);
             GlueXHitFDCcathode *cathode = (*fCathodesMap)[key];
             if (cathode == 0) {
-               cathode = new GlueXHitFDCcathode(chamber, plane, strip);
-               fCathodesMap->add(key, cathode);
+               GlueXHitFDCcathode newcathode(chamber, plane, strip);
+               fCathodesMap->add(key, newcathode);
+               cathode = (*fCathodesMap)[key];
             }
             std::vector<GlueXHitFDCcathode::hitinfo_t>::iterator hiter;
             for (hiter = cathode->hits.begin();

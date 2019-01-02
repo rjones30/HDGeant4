@@ -14,6 +14,13 @@ GlueXHitFMWPCwire::GlueXHitFMWPCwire(G4int layer, G4int wire)
    wire_(wire)
 {}
 
+GlueXHitFMWPCwire::GlueXHitFMWPCwire(const GlueXHitFMWPCwire &src)
+{
+   layer_ = src.layer_;
+   wire_ = src.wire_;
+   hits = src.hits;
+}
+
 int GlueXHitFMWPCwire::operator==(const GlueXHitFMWPCwire &right) const
 {
    if (layer_ !=  right.layer_ || wire_ != right.wire_)

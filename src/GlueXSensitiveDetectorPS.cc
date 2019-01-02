@@ -93,7 +93,7 @@ GlueXSensitiveDetectorPS::~GlueXSensitiveDetectorPS()
 
 void GlueXSensitiveDetectorPS::Initialize(G4HCofThisEvent* hce)
 {
-   fTileHitsMap = new 
+   fTileHitsMap = new
               GlueXHitsMapPStile(SensitiveDetectorName, collectionName[0]);
    fPointsMap = new
               GlueXHitsMapPSpoint(SensitiveDetectorName, collectionName[1]);
@@ -158,23 +158,23 @@ G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step,
           fabs(lastPoint->y_cm - x[1]/cm) > 5.0 ||
           fabs(lastPoint->z_cm - x[2]/cm) > 5.0)
       {
-         GlueXHitPSpoint* newPoint = new GlueXHitPSpoint();
+         GlueXHitPSpoint newPoint;
+         newPoint.arm_ = arm;
+         newPoint.column_ = column;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.x_cm = x[0]/cm;
+         newPoint.y_cm = x[1]/cm;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         newPoint.dEdx_GeV_cm = dEdx/(GeV/cm);
          fPointsMap->add(key, newPoint);
-         newPoint->arm_ = arm;
-         newPoint->column_ = column;
-         newPoint->ptype_G3 = g3type;
-         newPoint->track_ = trackID;
-         newPoint->trackID_ = itrack;
-         newPoint->primary_ = (track->GetParentID() == 0);
-         newPoint->t_ns = t/ns;
-         newPoint->x_cm = x[0]/cm;
-         newPoint->y_cm = x[1]/cm;
-         newPoint->z_cm = x[2]/cm;
-         newPoint->px_GeV = pin[0]/GeV;
-         newPoint->py_GeV = pin[1]/GeV;
-         newPoint->pz_GeV = pin[2]/GeV;
-         newPoint->E_GeV = Ein/GeV;
-         newPoint->dEdx_GeV_cm = dEdx/(GeV/cm);
       }
    }
 
@@ -184,8 +184,9 @@ G4bool GlueXSensitiveDetectorPS::ProcessHits(G4Step* step,
       int key = GlueXHitPStile::GetKey(arm, column);
       GlueXHitPStile *tile = (*fTileHitsMap)[key];
       if (tile == 0) {
-         tile = new GlueXHitPStile(arm, column);
-         fTileHitsMap->add(key, tile);
+         GlueXHitPStile newtile(arm, column);
+         fTileHitsMap->add(key, newtile);
+         tile = (*fTileHitsMap)[key];
       }
 
       // Add the hit to the hits vector, maintaining strict time ordering

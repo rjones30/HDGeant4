@@ -14,7 +14,8 @@
 class GlueXHitDIRCPmt : public G4VHit
 {
 public:
-  GlueXHitDIRCPmt();
+  GlueXHitDIRCPmt() {}
+  GlueXHitDIRCPmt(const GlueXHitDIRCPmt &src);
   
   void *operator new(size_t);
   void operator delete(void *aHit);
