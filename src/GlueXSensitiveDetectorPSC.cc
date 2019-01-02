@@ -35,8 +35,6 @@ int GlueXSensitiveDetectorPSC::NUM_MODULES_PER_ARM = 8;
 int GlueXSensitiveDetectorPSC::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorPSC::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorPSC::fVolumeTable;
-
 GlueXSensitiveDetectorPSC::GlueXSensitiveDetectorPSC(const G4String& name)
  : G4VSensitiveDetector(name),
    fCounterHitsMap(0), fPointsMap(0)
@@ -73,12 +71,14 @@ GlueXSensitiveDetectorPSC::GlueXSensitiveDetectorPSC(
  : G4VSensitiveDetector(src),
    fCounterHitsMap(src.fCounterHitsMap), fPointsMap(src.fPointsMap)
 {
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
 GlueXSensitiveDetectorPSC &GlueXSensitiveDetectorPSC::operator=(const
                                          GlueXSensitiveDetectorPSC &src)
 {
+   G4AutoLock barrier(&fMutex);
    *(G4VSensitiveDetector*)this = src;
    fCounterHitsMap = src.fCounterHitsMap;
    fPointsMap = src.fPointsMap;
@@ -87,6 +87,7 @@ GlueXSensitiveDetectorPSC &GlueXSensitiveDetectorPSC::operator=(const
 
 GlueXSensitiveDetectorPSC::~GlueXSensitiveDetectorPSC() 
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -102,7 +103,7 @@ void GlueXSensitiveDetectorPSC::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorPSC::ProcessHits(G4Step* step, 
-                                              G4TouchableHistory* unused)
+                                              G4TouchableHistory* ROhist)
 {
    double dEsum = step->GetTotalEnergyDeposit();
    if (dEsum == 0)
@@ -332,10 +333,9 @@ int GlueXSensitiveDetectorPSC::GetIdent(std::string div,
       }
       identifiers = &Refsys::fIdentifierTable[volId];
       if ((iter = identifiers->find(div)) != identifiers->end()) {
-         if (dynamic_cast<G4PVPlacement*>(pvol))
-            return iter->second[pvol->GetCopyNo() - 1];
-         else
-            return iter->second[pvol->GetCopyNo()];
+         int copyNum = touch->GetCopyNumber(depth);
+         copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+         return iter->second[copyNum];
       }
    }
    return -1;

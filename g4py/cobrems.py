@@ -25,6 +25,7 @@ cur = 2.2
 E0 = 12
 Erms = 0.0006
 emit = 2.5e-9
+spot = 0.5e-3
 dist = 76
 coldiam = 0.0034
 radt = 20e-6
@@ -54,6 +55,7 @@ def usage():
       * E0 - mean energy (GeV) of electron beam [12]
       * Erms - rms energy width (GeV) of electron beam [0.0006]
       * emit - transverse emittance (m rad) of electron beam [2.5e-9]
+      * spot - virtual e-beam spot rms (m) at primary collimator [0.5e-3]
       * dist - distance (m) from radiator to primary collimator [76]
       * coldiam - diameter (m) of primary collimator [0.0034]
       * radt - thickness (m) of radiator crystal [20e-6]
@@ -95,6 +97,10 @@ def init(**kwargs):
          global emit
          emit = value
          generator.setBeamEmittance(emit)
+      elif arg == "spot":
+         global spot
+         spot = value
+         generator.setCollimatorSpotrms(spot)
       elif arg == "dist":
          global dist
          dist = value
@@ -214,7 +220,10 @@ def plotCoherent(collimated=1):
    # convert the result to a spectrum vs photon energy
    global dRcdkH1
    dRcdkH1 = 0
-   title = "collimated photon beam spectrum, coherent part only"
+   if collimated:
+      title = "collimated photon beam spectrum, coherent part only"
+   else:
+      title = "uncollimated photon beam spectrum, coherent part only"
    dRcdkH1 = TH1D("dRcdkH1", title, nbins, Emin, Emax)
    for i in range(0, nbins):
       dRcdkH1.Fill(xvals[i] * E0, yvals[i] / E0)
@@ -224,6 +233,44 @@ def plotCoherent(collimated=1):
    dRcdkH1.SetStats(0)
    dRcdkH1.Draw("hist")
    return dRcdkH1
+
+def plotEnhancement(collimated=1):
+   """
+   Plot the ratio of the total diamond spectrum to an amorphous
+   bremsstrahlung spectrum with the same endpoint, either pre-collimator
+   (collimated=0) or post-collimator (collimated=1) as a TH1D object.
+   """
+
+   # apply the beam-crystal convolution
+   x0 = Emin / E0
+   x1 = Emax / E0
+   xvals = array('d', nbins * [0])
+   yvals = array('d', nbins * [0])
+   colFlag = generator.getCollimatedFlag()
+   generator.setCollimatedFlag(collimated)
+   generator.setPolarizedFlag(False)
+   for i in range(0, nbins):
+      xvals[i] = x0 + (i + 0.5) * (x1 - x0) / nbins;
+      yvals[i] = dRcdx([xvals[i]]) / dRidx([xvals[i]]) + 1
+   generator.setCollimatedFlag(colFlag)
+   generator.applyBeamCrystalConvolution(nbins, xvals, yvals)
+
+   # convert the result to a spectrum vs photon energy
+   global enhanH1
+   enhanH1 = 0
+   if collimated:
+      title = "collimated photon beam spectrum, enhancement"
+   else:
+      title = "uncollimated photon beam spectrum, enhancement"
+   enhanH1 = TH1D("enhanH1", title, nbins, Emin, Emax)
+   for i in range(0, nbins):
+      enhanH1.Fill(xvals[i] * E0, yvals[i])
+   enhanH1.GetXaxis().SetTitle("E_{#gamma} (GeV)")
+   enhanH1.GetYaxis().SetTitle("enhancement")
+   enhanH1.GetYaxis().SetTitleOffset(1.5)
+   enhanH1.SetStats(0)
+   enhanH1.Draw("hist")
+   return enhanH1
 
 def plotIncoherent(collimated=1):
    """
@@ -248,7 +295,10 @@ def plotIncoherent(collimated=1):
    # convert the result to a spectrum vs photon energy
    global dRidkH1
    dRidkH1 = 0
-   title = "collimated photon beam spectrum, incoherent part only"
+   if collimated:
+      title = "collimated photon beam spectrum, incoherent part only"
+   else:
+      title = "uncollimated photon beam spectrum, incoherent part only"
    dRidkH1 = TH1D("dRidkH1", title, nbins, Emin, Emax)
    dRidkH1.GetXaxis().SetRangeUser(Emin + (Emax - Emin)/10., Emax)
    for i in range(0, nbins):
@@ -283,7 +333,10 @@ def plotTotal(collimated=1):
    # convert the result to a spectrum vs photon energy
    global dRtdkH1
    dRtdkH1 = 0
-   title = "collimated photon beam spectrum"
+   if collimated:
+      title = "collimated photon beam spectrum"
+   else:
+      title = "uncollimated photon beam spectrum"
    dRtdkH1 = TH1D("dRtdkH1", title, nbins, Emin, Emax)
    dRtdkH1.GetXaxis().SetRangeUser(Emin + (Emax - Emin)/10., Emax)
    for i in range(0, nbins):
@@ -322,7 +375,10 @@ def plotPolarization(collimated=1):
    # convert the result to a spectrum vs photon energy
    global polarH1
    polarH1 = 0
-   title = "collimated photon beam polarization"
+   if collimated:
+      title = "collimated photon beam polarization"
+   else:
+      title = "uncollimated photon beam polarization"
    polarH1 = TH1D("polarH1", title, nbins, Emin, Emax)
    for i in range(0, nbins):
       polarH1.Fill(xvals[i] * E0, ypols[i] / yvals[i])
@@ -449,3 +505,74 @@ def plotPolarization_rc(rchist, collimated=1):
    polarRC.SetStats(0)
    polarRC.Draw("hist")
    return polarRC
+
+# Below are a few functions that are useful in evaluating the
+# suppression of the low-energy bremsstrahlung tail due to the
+# LPM effect -- see RevModPhys.17.1501 and RevPhys.103.1811.
+
+hbarc = 0.197e-15 # GeV.m
+me = 511e-6       # electron mass, GeV/c^2
+Es = 21.2e-3      # multiple-scattering screening parameter, GeV
+X0 = 0.120        # m, radiation length of diamond
+
+import math
+alphaQED = 1 / 137.
+X0=6e-3
+E0=25
+E_LPM = me**2 * X0 * alphaQED / (4 * math.pi * hbarc)
+k_LPM = E0**2 /E_LPM
+
+def LPMfl0(k):
+   """
+   Return the free space formation length of bremsstrahlung at 
+   energy k. Units are meters.
+   """
+   return 2 * hbarc * E0 * (E0 - k) / (k * me**2)
+
+def LPMfl(k):
+   """
+   Return the in-medium formation length of bremsstrahlung at 
+   energy k. Units are meters.
+   """
+   A = Es**2 / (2 * me**2 * X0)
+   B = 1
+   C = -LPMfl0(k)
+   return (-B + (B**2 - 4 * A * C)**0.5) / (2 * A)
+
+def LPMStrong(k):
+   """
+   Return the in-medium formation length of bremsstrahlung at 
+   energy k. Units are meters.
+   """
+   return (k * E_LPM / (E0 * (E0 - k)))**0.5
+
+def plot_LPMfl(Emax):
+   """
+   Make a plot of the formation lengths vs photon energy.
+   """
+   h0 = TH1D("h0", "bremsstrahlung formation lengths vs k",
+             100, 0, Emax * 1e3)
+   h0.SetStats(0)
+   h0.SetLineColor(1)
+   h0.SetLineWidth(2)
+   h0.GetXaxis().SetTitle("photon energy (MeV)")
+   h0.GetYaxis().SetTitle("formation lengths (m)")
+   h0.GetYaxis().SetTitleOffset(1.5)
+   h1 = h0.Clone("h1")
+   h2 = h0.Clone("h2")
+   h2.SetTitle("LPM suppression S(E) in continuous medium (semiclassical)")
+   h2.GetYaxis().SetTitle("S factor")
+   h3 = h2.Clone("h3")
+   for i in range(1, h0.GetNbinsX() + 1):
+      E = h0.GetXaxis().GetBinCenter(i) * 1e-3
+      h0.SetBinContent(i, LPMfl0(E))
+      h1.SetBinContent(i, LPMfl(E))
+      h2.SetBinContent(i, LPMfl(E) / LPMfl0(E))
+      h3.SetBinContent(i, LPMStrong(E))
+   h0.Draw('c')
+   h1.SetLineColor(2)
+   h2.SetLineColor(6)
+   h3.SetLineColor(4)
+   h1.Draw('c same')
+   return h0,h1,h2,h3
+

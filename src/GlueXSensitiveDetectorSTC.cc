@@ -58,8 +58,6 @@ double GlueXSensitiveDetectorSTC::THRESH_MEV = 0.150;
 int GlueXSensitiveDetectorSTC::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorSTC::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorSTC::fVolumeTable;
-
 GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
  : G4VSensitiveDetector(name),
    fHitsMap(0), fPointsMap(0)
@@ -134,12 +132,14 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(
  : G4VSensitiveDetector(src),
    fHitsMap(src.fHitsMap), fPointsMap(src.fPointsMap)
 {
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
 GlueXSensitiveDetectorSTC &GlueXSensitiveDetectorSTC::operator=(const
                                          GlueXSensitiveDetectorSTC &src)
 {
+   G4AutoLock barrier(&fMutex);
    *(G4VSensitiveDetector*)this = src;
    fHitsMap = src.fHitsMap;
    fPointsMap = src.fPointsMap;
@@ -148,6 +148,7 @@ GlueXSensitiveDetectorSTC &GlueXSensitiveDetectorSTC::operator=(const
 
 GlueXSensitiveDetectorSTC::~GlueXSensitiveDetectorSTC() 
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -163,7 +164,7 @@ void GlueXSensitiveDetectorSTC::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step, 
-                                              G4TouchableHistory* unused)
+                                              G4TouchableHistory* ROhist)
 {
    double dEsum = step->GetTotalEnergyDeposit();
    if (dEsum == 0)
@@ -397,7 +398,7 @@ void GlueXSensitiveDetectorSTC::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the paddleTruthPoints
+   // Collect and output the stcTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
       hddm_s::StcTruthPointList point = startCntr.addStcTruthPoints(1);
       point(0).setE(piter->second->E_GeV);
@@ -435,10 +436,9 @@ int GlueXSensitiveDetectorSTC::GetIdent(std::string div,
       }
       identifiers = &Refsys::fIdentifierTable[volId];
       if ((iter = identifiers->find(div)) != identifiers->end()) {
-         if (dynamic_cast<G4PVPlacement*>(pvol))
-            return iter->second[pvol->GetCopyNo() - 1];
-         else
-            return iter->second[pvol->GetCopyNo()];
+         int copyNum = touch->GetCopyNumber(depth);
+         copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+         return iter->second[copyNum];
       }
    }
    return -1;

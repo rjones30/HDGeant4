@@ -29,7 +29,7 @@ class GlueXSensitiveDetectorBCAL : public G4VSensitiveDetector
    virtual ~GlueXSensitiveDetectorBCAL();
   
    virtual void Initialize(G4HCofThisEvent* hitCollection);
-   virtual G4bool ProcessHits(G4Step* step, G4TouchableHistory* unused);
+   virtual G4bool ProcessHits(G4Step* step, G4TouchableHistory* ROhist);
    virtual void EndOfEvent(G4HCofThisEvent* hitCollection);
 
    int GetIdent(std::string div, const G4VTouchable *touch);
@@ -38,7 +38,7 @@ class GlueXSensitiveDetectorBCAL : public G4VSensitiveDetector
    GlueXHitsMapBCALcell* fCellsMap;
    GlueXHitsMapBCALpoint* fPointsMap;
 
-   static std::map<G4LogicalVolume*, int> fVolumeTable;
+   std::map<G4LogicalVolume*, int> fVolumeTable;
 
    static int MAX_HITS;
    static double THRESH_MEV;

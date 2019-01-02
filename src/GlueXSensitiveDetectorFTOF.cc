@@ -43,8 +43,6 @@ double GlueXSensitiveDetectorFTOF::THRESH_MEV = 0.;
 int GlueXSensitiveDetectorFTOF::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorFTOF::fMutex = G4MUTEX_INITIALIZER;
 
-std::map<G4LogicalVolume*, int> GlueXSensitiveDetectorFTOF::fVolumeTable;
-
 GlueXSensitiveDetectorFTOF::GlueXSensitiveDetectorFTOF(const G4String& name)
  : G4VSensitiveDetector(name),
    fBarHitsMap(0), fPointsMap(0)
@@ -88,12 +86,14 @@ GlueXSensitiveDetectorFTOF::GlueXSensitiveDetectorFTOF(
  : G4VSensitiveDetector(src),
    fBarHitsMap(src.fBarHitsMap), fPointsMap(src.fPointsMap)
 {
+   G4AutoLock barrier(&fMutex);
    ++instanceCount;
 }
 
 GlueXSensitiveDetectorFTOF &GlueXSensitiveDetectorFTOF::operator=(const
                                          GlueXSensitiveDetectorFTOF &src)
 {
+   G4AutoLock barrier(&fMutex);
    *(G4VSensitiveDetector*)this = src;
    fBarHitsMap = src.fBarHitsMap;
    fPointsMap = src.fPointsMap;
@@ -102,6 +102,7 @@ GlueXSensitiveDetectorFTOF &GlueXSensitiveDetectorFTOF::operator=(const
 
 GlueXSensitiveDetectorFTOF::~GlueXSensitiveDetectorFTOF() 
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -117,7 +118,7 @@ void GlueXSensitiveDetectorFTOF::Initialize(G4HCofThisEvent* hce)
 }
 
 G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step, 
-                                              G4TouchableHistory* unused)
+                                               G4TouchableHistory* ROhist)
 {
    double dEsum = step->GetTotalEnergyDeposit();
    if (dEsum == 0)
@@ -426,7 +427,7 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
       hitview.addForwardTOFs();
    hddm_s::ForwardTOF &forwardTOF = hitview.getForwardTOF();
 
-   // Collect and output the tofTruthHits
+   // Collect and output the ftofTruthHits
    for (siter = bars->begin(); siter != bars->end(); ++siter) {
       std::vector<GlueXHitFTOFbar::hitinfo_t> &hits = siter->second->hits;
       // apply a pulse height threshold cut
@@ -487,7 +488,7 @@ void GlueXSensitiveDetectorFTOF::EndOfEvent(G4HCofThisEvent*)
       }
    }
 
-   // Collect and output the barTruthPoints
+   // Collect and output the ftofTruthPoints
    for (piter = points->begin(); piter != points->end(); ++piter) {
       hddm_s::FtofTruthPointList point = forwardTOF.addFtofTruthPoints(1);
       point(0).setPrimary(piter->second->primary_);
@@ -523,10 +524,9 @@ int GlueXSensitiveDetectorFTOF::GetIdent(std::string div,
       }
       identifiers = &Refsys::fIdentifierTable[volId];
       if ((iter = identifiers->find(div)) != identifiers->end()) {
-         if (dynamic_cast<G4PVPlacement*>(pvol))
-            return iter->second[pvol->GetCopyNo() - 1];
-         else
-            return iter->second[pvol->GetCopyNo()];
+         int copyNum = touch->GetCopyNumber(depth);
+         copyNum += (dynamic_cast<G4PVPlacement*>(pvol))? -1 : 0;
+         return iter->second[copyNum];
       }
    }
    return -1;

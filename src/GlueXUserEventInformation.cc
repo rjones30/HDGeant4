@@ -392,6 +392,14 @@ void GlueXUserEventInformation::SetRandomSeeds()
    }
 }
 
+int GlueXUserEventInformation::GetRunNo()
+{
+   if (fOutputRecord && fOutputRecord->getPhysicsEvents().size() > 0) {
+      return fOutputRecord->getPhysicsEvent().getRunNo();
+   }
+   return 0;
+}
+
 double GlueXUserEventInformation::GetBeamPhotonEnergy()
 {
    hddm_s::BeamList beam = fOutputRecord->getBeams();
