@@ -303,7 +303,9 @@ void GlueXPhysicsList::ConstructProcess()
             G4String processName = proc->GetProcessName();
             if (processName == "Decay") {
                mgr->RemoveProcess(proc);
-               MyPrimaryPionZapper *zapper = new MyPrimaryPionZapper();
+               G4String na("DecayWrapped");
+               G4ProcessType ty(fDecay);
+               MyPrimaryPionZapper *zapper = new MyPrimaryPionZapper(na, ty);
                zapper->RegisterProcess(proc);
                mgr->AddProcess(zapper, 0, -1, 0);
             }

@@ -9,6 +9,8 @@
 #include <G4WrapperProcess.hh>
 
 class MyPrimaryPionZapper : public G4WrapperProcess {
+ public:
+   MyPrimaryPionZapper(const G4String &aName, G4ProcessType aType);
    virtual G4double PostStepGetPhysicalInteractionLength(const G4Track &track,
                     G4double previousStepSize, G4ForceCondition *condition);
 };

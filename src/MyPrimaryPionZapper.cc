@@ -9,6 +9,10 @@
 #include "MyPrimaryPionZapper.hh"
 #include "GlueXPathFinder.hh"
 
+MyPrimaryPionZapper::MyPrimaryPionZapper(const G4String &aName, G4ProcessType aType)
+ : G4WrapperProcess(aName, aType)
+{}
+
 G4double MyPrimaryPionZapper::PostStepGetPhysicalInteractionLength(
                               const G4Track &track,
                               G4double previousStepSize,
