@@ -93,7 +93,7 @@ INTYLIBS += -L/usr/lib64
 EXTRALIBS += -lG4fixes
 
 .PHONY: all
-all: hdds cobrems g4fixes sharedlib exe lib bin g4py
+all: hdds cobrems G4fixes_symlink g4fixes sharedlib exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
 
@@ -105,6 +105,11 @@ CXXFLAGS = -g -O0 -fPIC -ftls-model=global-dynamic -W -Wall -pedantic -Wno-non-v
 
 HDDSDIR := $(G4TMPDIR)/hdds
 G4FIXESDIR := $(G4TMPDIR)/G4fixes
+G4fixes_symlink:
+	@if [ ! -L src/G4fixes ]; then\
+	    echo "ERROR - Cannot find required symlink src/G4fixes, giving up!";\
+	    false;\
+	fi
 
 $(G4TMPDIR)/libcobrems.so: $(Cobrems_sources)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libcobrems.so \
