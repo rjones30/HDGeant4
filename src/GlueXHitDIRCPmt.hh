@@ -25,11 +25,16 @@ public:
 
   G4double E_GeV;      // photon energy [GeV]
   G4double t_ns;       // detection time [ns]
+  G4double t_fixed_ns; // fixed pathlength time [ns]
   G4double x_cm;       // x coordinate where hit was created
   G4double y_cm;       // y coordinate where hit was created
   G4double z_cm;       // z coordinate where hit was created
+  int64_t  path;       // photon's path id in the optical box
+  G4int    refl;       // number of reflections in the oprical box
+  G4bool   bbrefl;     // reflected off far end mirror of bar box
   G4int    ch;         // PMT channel of the hit
   G4int    key_bar;    // key of the corresponding bar hit
+  G4int    track;      // index of the MC track
 };
 
 typedef G4THitsMap<GlueXHitDIRCPmt> GlueXHitsMapDIRCPmt;

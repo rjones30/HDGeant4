@@ -20,6 +20,7 @@
 #include "GlueXHitDIRCpoint.hh"
 #include "GlueXHitDIRCPmt.hh"
 #include "GlueXHitDIRCBar.hh"
+#include "GlueXHitDIRCWob.hh"
 
 #include <TGraph.h>
 
@@ -44,11 +45,14 @@ class GlueXSensitiveDetectorDIRC : public G4VSensitiveDetector
   
  private:
   std::vector<GlueXHitDIRCBar> fHitsBar;
+  std::vector<GlueXHitDIRCWob> fHitsWob;
   std::vector<GlueXHitDIRCPmt> fHitsPmt;
+  int fLutId;
   
   std::map<G4LogicalVolume*, int> fVolumeTable;
   
   static int MAX_HITS;
+  static int MAX_PIXELS;
   // put all other detector response parameters here
   static double TWO_HIT_TIME_RESOL;
   
