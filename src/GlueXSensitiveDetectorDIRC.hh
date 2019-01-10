@@ -17,7 +17,6 @@
 #include "G4AutoLock.hh"
 
 #include "GlueXHitDIRCflash.hh"
-#include "GlueXHitDIRCpoint.hh"
 #include "GlueXHitDIRCPmt.hh"
 #include "GlueXHitDIRCBar.hh"
 #include "GlueXHitDIRCWob.hh"
