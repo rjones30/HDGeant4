@@ -381,7 +381,7 @@ void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
     mhit(0).setCh(fHitsPmt[h].ch);
     mhit(0).setKey_bar(fHitsPmt[h].key_bar);
 #if DIRCTRUTHEXTRA
-    hddm_s::DircTruthPmtHitExtraList mhitextra = dirc.addDircTruthPmtHitExtras(1);
+    hddm_s::DircTruthPmtHitExtraList mhitextra = mhit(0).addDircTruthPmtHitExtras(1);
     mhitextra(0).setT_fixed(fHitsPmt[h].t_fixed_ns);
     mhitextra(0).setPath(fHitsPmt[h].path);
     mhitextra(0).setRefl(fHitsPmt[h].refl);
