@@ -13,6 +13,15 @@
 #include "G4ios.hh"
 #include "G4ParticleTable.hh"
 #include "TMath.h"
+#include "G4TransportationManager.hh"
+#include "G4PhysicalVolumeStore.hh"
+
+#ifdef DIRC_MONITORING_HISTOS
+#include "TH1.h"
+#include "TCanvas.h"
+TH1F *hbouncez = new TH1F("hbouncez",";bounces along z [#];entries [#]",1000,0,2000);
+TH1F *hbouncey = new TH1F("hbouncey",";bounces along y [#];entries [#]",1000,0,2000);
+#endif
 
 GlueXStackingAction::GlueXStackingAction()
 {
@@ -43,10 +52,28 @@ GlueXStackingAction::GlueXStackingAction()
    if (user_opts->Find("NOSECONDARIES", opt)) {
       nosecondaries = (opt[1] != 0);
    }
+
+   fBarEnd = 0;
+   G4PhysicalVolumeStore* pvStore = G4PhysicalVolumeStore::GetInstance();
+   for (size_t i=0; i<pvStore->size(); i++) {
+      if ((*pvStore)[i]->GetName()=="QZWN") {
+         fBarEnd = fabs((*pvStore)[i]->GetTranslation().x());
+      }
+   }
 }
 
 GlueXStackingAction::~GlueXStackingAction()
-{}
+{
+#ifdef DIRC_MONITORING_HISTOS
+   TCanvas *c = new TCanvas("c","c",800,400);
+   hbouncez->Draw();
+   c->Print("cbounces_z.png");
+   c->Print("cbounces_z.C");
+   hbouncey->Draw();
+   c->Print("cbounces_y.png");
+   c->Print("cbounces_y.C");
+#endif
+}
 
 G4ClassificationOfNewTrack GlueXStackingAction::ClassifyNewTrack(
                                                 const G4Track *aTrack)
@@ -75,15 +102,60 @@ G4ClassificationOfNewTrack GlueXStackingAction::ClassifyNewTrack(
 
    // apply detection efficiency for the DIRC at production stage:
    G4String ParticleName = aTrack->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();
-   if (aTrack->GetParentID() > 0) { // particle is secondary
+   if (aTrack->GetParentID() != 0) { // particle is secondary
       if (ParticleName == "opticalphoton") {
          Double_t Ephoton = aTrack->GetMomentum().mag();
          Double_t ra = G4UniformRand();
          if (ra > GlueXSensitiveDetectorDIRC::GetDetectionEfficiency(Ephoton))
-	        return fKill;
-       }
-   }
-   
+            return fKill;
+
+         G4ThreeVector v = aTrack->GetPosition();
+         G4ThreeVector n = aTrack->GetMomentumDirection().unit();
+
+         Double_t bary = 35;     // bar width
+         Double_t barz = 17.25;  // bar height
+         Double_t barx = 4*1225; // bar length
+ 
+         Double_t lenx;
+         if (v.y()<0) {
+           lenx = fabs(fBarEnd+v.x());
+           if (n.x()>0)
+              lenx = 2*barx - lenx;
+          }
+          else {
+             lenx = fabs(v.x()-fBarEnd);
+             if (n.x()<0)
+                lenx = 2*barx - lenx;
+          }
+
+          Double_t lenz = lenx*n.z()/fabs(n.x());
+          Double_t leny = lenx*n.y()/fabs(n.x());
+
+          int bouncesz = fabs(lenz/barz);
+          int bouncesy = fabs(leny/bary);
+
+#ifdef DIRC_MONITORING_HISTOS
+          hbouncez->Fill(bouncesz);
+          hbouncey->Fill(bouncesy);
+#endif
+
+          Double_t anglez = fabs(n.getTheta()-CLHEP::pi/2.);
+          Double_t angley = fabs(n.angle(G4ThreeVector(0,1,0))-CLHEP::pi/2.);
+
+          Double_t lambda = 197.0*2.0*CLHEP::pi/(aTrack->GetMomentum().mag()*1.0E6);
+          Double_t lambda2 = lambda*lambda; 
+
+          // calculate bounce probability
+          Double_t n_quartz = sqrt(1 + (0.696*lambda2/(lambda2-pow(0.068,2))) + (0.407*lambda2/(lambda2-pow(0.116,2))) + 0.897*lambda2/(lambda2-pow(9.896,2)));
+          Double_t bounce_probz = 1 - pow(4*CLHEP::pi*cos(anglez)*0.5*n_quartz/lambda,2);// 0.5 [nm] - roughness
+          Double_t bounce_proby = 1 - pow(4*CLHEP::pi*cos(angley)*0.5*n_quartz/lambda,2);    
+          Double_t prob = pow(bounce_probz,bouncesz) * pow(bounce_proby,bouncesy);
+
+          // transport efficiency
+          if (G4UniformRand() > prob)
+             return fKill;       
+      } //else {return fKill;} // remove this condition!!!
+   } // if particle is secondary
    return fUrgent;
 }
 

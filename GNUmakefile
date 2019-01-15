@@ -46,6 +46,9 @@ CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
 #CPPFLAGS += -DDEBUG_SECTIONPLANE
 #CPPFLAGS += -DDEBUG_SECTIONPLANE_ZAVE
 #CPPFLAGS += -DG4VERSION_10_04_OR_LATER=1
+ifneq (, $(wildcard $(HALLD_RECON_HOME)/src/libraries/DIRC/DDIRCPmtHit.*))
+	CPPFLAGS += -DDIRCTRUTHEXTRA
+endif
 
 # If you want to build against Geant4.10.03 or greater, you will need this line uncommented
 #CPPFLAGS += -DG4VUSERPHYSICSLIST_HAS_GETPARTICLEITERATOR
@@ -107,7 +110,8 @@ HDDSDIR := $(G4TMPDIR)/hdds
 G4FIXESDIR := $(G4TMPDIR)/G4fixes
 G4fixes_symlink:
 	@if [ ! -L src/G4fixes ]; then\
-	    echo "ERROR - Cannot find required symlink src/G4fixes, giving up!";\
+	    echo "ERROR - symbolic link G4fixes does not exist in directory src,"\
+	    "cannot continue!";\
 	    false;\
 	fi
 

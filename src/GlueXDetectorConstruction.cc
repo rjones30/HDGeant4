@@ -368,10 +368,26 @@ void GlueXDetectorConstruction::ConstructSDandField()
          }
          iter->second->SetSensitiveDetector(ftofHandler);
       }
-      else if (volname == "QZBL" || volname == "PIXV") {
+      // radiator volume: BNNM (NN = bar number 0-47 and M is sub-bar character A-D)
+      else if (volname == "PIXV" || 
+               (volname(0,1)(0) == 'B' && 
+                10*((int)volname(1,1)(0)-48)+(int)volname(2,1)(0)-48 >= 0 &&
+                10*((int)volname(1,1)(0)-48)+(int)volname(2,1)(0)-48 < 48))
+      {  // this is nasty, but it works
          if (dircHandler == 0) {
             dircHandler = new GlueXSensitiveDetectorDIRC("dirc");
             SDman->AddNewDetector(dircHandler);
+         }
+         iter->second->SetSensitiveDetector(dircHandler);
+      }
+      else if (volname == "FWM1" || volname == "FWM2" || volname == "FTMR" ||
+               volname == "TSM1" || volname == "TSM2" || volname == "TSM3" ||
+               volname == "FSM1" || volname == "FSM2" || volname == "OWDG" ||
+               (volname(0,1)(0) == 'A' && volname(0,1)(1) == 'G') )
+      {
+         if (dircHandler == 0) {
+           dircHandler = new GlueXSensitiveDetectorDIRC("dirc");
+           SDman->AddNewDetector(dircHandler);
          }
          iter->second->SetSensitiveDetector(dircHandler);
       }

@@ -33,8 +33,7 @@ class GlueXStackingAction : public G4UserStackingAction
    int nosecondaries;
 
  private:
-  TRandom *fRand;
-  TGraph* fDetEff;
+  double fBarEnd;
 };
 
 #endif
