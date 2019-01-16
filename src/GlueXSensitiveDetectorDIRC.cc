@@ -321,8 +321,9 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
 
 void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
 {
-  if ((fHitsBar.size() == 0 && !(fLutId<48) && !fLED) || (fHitsBar.size() == 0 && !fLED) || fHitsPmt.size() == 0 || (fHitsWob.size() == 0 && !fLED)){
-  if ((fHitsBar.size() == 0 && !(fLutId<48)) || fHitsPmt.size() == 0 || fHitsWob.size() == 0) {
+  if ((fHitsBar.size() == 0 && !(fLutId<48) && !fLED) || (fHitsBar.size() == 0 && !fLED) || fHitsPmt.size() == 0 || (fHitsWob.size() == 0 && !fLED))
+  {
+  
     fHitsBar.clear();
     fHitsPmt.clear();
     fHitsWob.clear();

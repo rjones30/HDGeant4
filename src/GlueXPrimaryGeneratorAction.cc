@@ -75,6 +75,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 
    // get positions for LUT from XML geometry
    std::map<int, int> dirclutpars;
+   std::map<int, int> dircledpars;
    if (instanceCount == 1) {
       
       if (user_opts->Find("DIRCLUT", dirclutpars)) {
@@ -501,6 +502,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
 
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
    std::map<int,int> dirclutpars; 
+   std::map<int,int> dircledpars; 
 
    // place and smear the particle gun origin
    G4ThreeVector pos(fGunParticle.pos);
