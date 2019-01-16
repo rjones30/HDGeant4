@@ -72,6 +72,14 @@ GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const G4String& name)
   else {
     fLutId = 100;
   }
+  std::map<int, int> dircledpars;
+  if (user_opts->Find("DIRCLED", dircledpars)){
+    fLED = true;
+  }
+  else {
+    fLED = false;
+  }
+
 }
 
     GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const GlueXSensitiveDetectorDIRC &src)
@@ -313,6 +321,7 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
 
 void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
 {
+  if ((fHitsBar.size() == 0 && !(fLutId<48) && !fLED) || (fHitsBar.size() == 0 && !fLED) || fHitsPmt.size() == 0 || (fHitsWob.size() == 0 && !fLED)){
   if ((fHitsBar.size() == 0 && !(fLutId<48)) || fHitsPmt.size() == 0 || fHitsWob.size() == 0) {
     fHitsBar.clear();
     fHitsPmt.clear();

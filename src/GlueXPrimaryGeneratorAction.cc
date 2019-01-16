@@ -158,6 +158,50 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
             }            
          }
       }
+
+      if (user_opts->Find("DIRCLED", dircledpars)) {
+         extern int run_number;
+         extern jana::JApplication *japp;
+         if (japp == 0) {
+            G4cerr << "Error in GlueXPrimaryGeneratorAction constructor - "
+              << "jana global DApplication object not set, "
+              << "cannot continue." << G4endl;
+            exit(-1);
+         }
+         jana::JGeometry *jgeom = japp->GetJGeometry(run_number);
+         if (japp == 0) {   // dummy
+            jgeom = 0;
+            G4cout << "DIRC: ALL parameters loaded from ccdb" << G4endl;
+         }
+         vector<double>DIRC;
+         vector<double>DRCC;
+         vector<double>OBCS_XYZ;
+         vector<double>OBCN_XYZ;
+         vector<double>FWM1_XYZ;
+         vector<double>FWM1_BOX_XYZ;
+
+         jgeom->Get("//section/composition/posXYZ[@volume='DIRC']/@X_Y_Z", DIRC);
+         jgeom->Get("//composition[@name='DIRC']/posXYZ[@volume='DRCC']/@X_Y_Z", DRCC);
+         jgeom->Get("//composition[@name='DRCC']/posXYZ[@volume='OBCS']/@X_Y_Z", OBCS_XYZ);
+         jgeom->Get("//composition[@name='DRCC']/posXYZ[@volume='OBCN']/@X_Y_Z", OBCN_XYZ);
+         jgeom->Get("//composition[@name='OBCS']/posXYZ[@volume='FWM1']/@X_Y_Z", FWM1_XYZ);
+         jgeom->Get("//box[@name='FWM1']/@X_Y_Z", FWM1_BOX_XYZ);
+
+         DIRC_LED_OBCN_FDTH_X  = (DIRC[0] + DRCC[0] + OBCN_XYZ[0] + FWM1_XYZ[0] + FWM1_BOX_XYZ[0]/2. + 1.27) * cm;
+         DIRC_LED_OBCS_FDTH_X  = (DIRC[0] + DRCC[0] + OBCS_XYZ[0] - FWM1_XYZ[0] - FWM1_BOX_XYZ[0]/2. - 1.27) * cm;
+
+         DIRC_LED_OBCN_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCN_XYZ[2] + FWM1_XYZ[2] - FWM1_BOX_XYZ[2]/2. ) * cm;
+         DIRC_LED_OBCS_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCS_XYZ[2] + FWM1_XYZ[2] - FWM1_BOX_XYZ[2]/2. ) * cm;
+
+         DIRC_LED_OBCN_FDTH1_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + FWM1_XYZ[1] - FWM1_BOX_XYZ[1]/2. + 17.235932) * cm;
+         DIRC_LED_OBCN_FDTH2_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + FWM1_XYZ[1] - FWM1_BOX_XYZ[1]/2. + 17.235932 + 31.800038 ) * cm;
+         DIRC_LED_OBCN_FDTH3_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + FWM1_XYZ[1] - FWM1_BOX_XYZ[1]/2. + 17.235932 + 31.800038 * 2. ) * cm;
+         DIRC_LED_OBCS_FDTH1_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] - FWM1_XYZ[1] + FWM1_BOX_XYZ[1]/2. - 17.235932) * cm;
+         DIRC_LED_OBCS_FDTH2_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] - FWM1_XYZ[1] + FWM1_BOX_XYZ[1]/2. - 17.235932 - 31.800038 ) * cm;
+         DIRC_LED_OBCS_FDTH3_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] - FWM1_XYZ[1] + FWM1_BOX_XYZ[1]/2. - 17.235932 - 31.800038 * 2. ) * cm;
+
+      }
+
    }
 
    std::map<int,std::string> infile;
@@ -206,6 +250,25 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
  
       fSourceType = SOURCE_TYPE_PARTICLE_GUN;
    }
+
+   else if (user_opts->Find("DIRCLED", dircledpars))
+   {
+      fGunParticle.geantType = 0;
+      fGunParticle.pdgType = 999999;
+      fGunParticle.partDef = fParticleTable->FindParticle("opticalphoton");
+      fGunParticle.deltaR = 0;
+      fGunParticle.deltaZ = 0;
+      fGunParticle.mom = 3.0613 * eV;
+
+      fGunParticle.deltaMom = 0;
+      fGunParticle.deltaTheta = 0;
+      fGunParticle.deltaPhi = 0;
+      fParticleGun->SetParticleDefinition(fGunParticle.partDef);
+
+      fSourceType = SOURCE_TYPE_PARTICLE_GUN;
+   }
+
+
 
    else if (user_opts->Find("KINE", kinepars))
    {
@@ -515,6 +578,135 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
       thetap = vec.theta();
       phip = vec.phi();
       fParticleGun->SetParticlePosition(G4ThreeVector(x,y,z));
+   }
+   // Special case of Cherenkov photon gun for DIRC LED generator 
+   if (user_opts->Find("DIRCLED", dircledpars)){
+
+      double x(0.),y(0.),z(0.);
+      double rand0 = G4UniformRand();
+
+      int FDTH = -1;
+
+/*
+      if (rand0 < 1./3.)
+      {
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH1_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+      }
+      else if (rand0 < 2./3.)
+      {
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH2_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+      }
+      else if (rand0 <= 3./3.)
+      {
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH3_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+      }
+*/
+      if (rand0 < 1./6.)
+      {
+         x = DIRC_LED_OBCN_FDTH_X;
+         y = DIRC_LED_OBCN_FDTH1_Y;
+         z = DIRC_LED_OBCN_FDTH_Z;
+         FDTH = 1;
+      }
+      else if (rand0 < 2./6.)
+      {
+         x = DIRC_LED_OBCN_FDTH_X;
+         y = DIRC_LED_OBCN_FDTH2_Y;
+         z = DIRC_LED_OBCN_FDTH_Z;
+         FDTH = 2;
+      }
+      else if (rand0 < 3./6.)
+      {
+         x = DIRC_LED_OBCN_FDTH_X;
+         y = DIRC_LED_OBCN_FDTH3_Y;
+         z = DIRC_LED_OBCN_FDTH_Z;
+         FDTH = 3;
+      }
+      else if (rand0 < 4./6.)
+      {
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH1_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+         FDTH = 4;
+      }
+      else if (rand0 < 5./6.)
+      {
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH2_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+         FDTH = 5;
+      }
+      else if (rand0 <= 6./6.)
+      {
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH3_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+         FDTH = 6;
+      }
+
+      //z -= 0.5*cm;
+      double theta_range = 12.5; // in degrees
+      double inclination_wrt_bars_deg = 0.;//negative->away from 3-segment mirror; positive->towards 3-segment mirror
+      double angle_towards_center_deg = 0.;//bending angle for the two feedthroughs on the sides towards the center 
+
+      if (x > 0.)
+         inclination_wrt_bars_deg *= -1.;
+      if (FDTH == 3 || FDTH == 4)
+         angle_towards_center_deg *= -1.;
+      if (FDTH == 2 || FDTH == 5)
+         angle_towards_center_deg = 0.;
+
+      G4ThreeVector vec(0,0,1);
+      double rand1 = G4UniformRand();
+      double rand2 = G4UniformRand();
+
+      double costheta = -1. + rand1 * (std::cos((180.-theta_range) * M_PI / 180.) + 1.);
+
+      double rand3 = G4UniformRand();
+      double theta_to_set = acos(costheta);
+      if (rand3 < 0.5)
+         theta_to_set = 2*M_PI - theta_to_set;
+
+      vec.setTheta(theta_to_set);
+      vec.setPhi(2*M_PI*rand2);
+      vec.rotateY(inclination_wrt_bars_deg*deg);
+      vec.rotateX(angle_towards_center_deg*deg);
+/*
+      //For square diffuser case
+      double theta_range = 25.; // in degrees
+      double diffuser_X = 1.697 * cm;
+      double diffuser_Y = 1.697 * cm;
+      double inclination_wrt_bars_deg = -6.;
+
+      G4ThreeVector vec(0,0,-1.);
+      double rand1 = G4UniformRand();
+      double rand2 = G4UniformRand();
+      double a = 2.* tan(theta_range*M_PI/180.);
+      vec.setX((rand1-0.5)*a);
+      vec.setY((rand2-0.5)*a);
+      vec.setZ(-1.);
+
+      double diffuser_offset_x = diffuser_X/2. - diffuser_X * G4UniformRand();
+      double diffuser_offset_y = diffuser_Y/2. - diffuser_Y * G4UniformRand();
+
+      G4ThreeVector diffuser_offset_vec(diffuser_offset_x,diffuser_offset_y,0.);
+      diffuser_offset_vec.rotateY(inclination_wrt_bars_deg*deg);
+
+      x += diffuser_offset_vec.x();
+      y += diffuser_offset_vec.y();
+      z += diffuser_offset_vec.z();
+
+*/
+      G4ThreeVector pos_vec(x,y,z);
+      thetap = vec.theta();
+      phip = vec.phi();
+      fParticleGun->SetParticlePosition(pos_vec);
    }
 
    G4ThreeVector mom(p * sin(thetap) * cos(phip),
