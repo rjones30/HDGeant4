@@ -208,6 +208,9 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
             dEcorr *= (gamma > 1.25)? 1.35 : 0;
          }
 
+         if (dEcorr == 0)
+            return true;
+
          // Add the hit to the hits vector, maintaining strict time ordering
 
          int merge_hit = 0;
