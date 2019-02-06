@@ -178,28 +178,36 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
          vector<double>DRCC;
          vector<double>OBCS_XYZ;
          vector<double>OBCN_XYZ;
-         vector<double>FWM1_XYZ;
-         vector<double>FWM1_BOX_XYZ;
+         vector<double>MRAN_XYZ;
+         vector<double>MRAS_XYZ;
+         vector<double>WM1N_XYZ;
+         vector<double>WM1S_XYZ;
+         vector<double>WM1N_BOX_XYZ;
+         vector<double>WM1S_BOX_XYZ;
 
          jgeom->Get("//section/composition/posXYZ[@volume='DIRC']/@X_Y_Z", DIRC);
          jgeom->Get("//composition[@name='DIRC']/posXYZ[@volume='DRCC']/@X_Y_Z", DRCC);
-         jgeom->Get("//composition[@name='DRCC']/posXYZ[@volume='OBCS']/@X_Y_Z", OBCS_XYZ);
          jgeom->Get("//composition[@name='DRCC']/posXYZ[@volume='OBCN']/@X_Y_Z", OBCN_XYZ);
-         jgeom->Get("//composition[@name='OBCS']/posXYZ[@volume='FWM1']/@X_Y_Z", FWM1_XYZ);
-         jgeom->Get("//box[@name='FWM1']/@X_Y_Z", FWM1_BOX_XYZ);
+         jgeom->Get("//composition[@name='DRCC']/posXYZ[@volume='OBCS']/@X_Y_Z", OBCS_XYZ);
+         jgeom->Get("//composition[@name='OBCN']/posXYZ[@volume='MRAN']/@X_Y_Z", MRAN_XYZ);
+         jgeom->Get("//composition[@name='OBCS']/posXYZ[@volume='MRAS']/@X_Y_Z", MRAS_XYZ);
+         jgeom->Get("//composition[@name='MRAN']/posXYZ[@volume='WM1N']/@X_Y_Z", WM1N_XYZ);
+         jgeom->Get("//composition[@name='MRAS']/posXYZ[@volume='WM1S']/@X_Y_Z", WM1S_XYZ);
+         jgeom->Get("//box[@name='WM1N']/@X_Y_Z", WM1N_BOX_XYZ);
+         jgeom->Get("//box[@name='WM1S']/@X_Y_Z", WM1S_BOX_XYZ);
 
-         DIRC_LED_OBCN_FDTH_X  = (DIRC[0] + DRCC[0] + OBCN_XYZ[0] + FWM1_XYZ[0] + FWM1_BOX_XYZ[0]/2. + 1.27) * cm;
-         DIRC_LED_OBCS_FDTH_X  = (DIRC[0] + DRCC[0] + OBCS_XYZ[0] - FWM1_XYZ[0] - FWM1_BOX_XYZ[0]/2. - 1.27) * cm;
+         DIRC_LED_OBCN_FDTH_X  = (DIRC[0] + DRCC[0] + OBCN_XYZ[0] + MRAN_XYZ[0] + WM1N_XYZ[0] + WM1N_BOX_XYZ[0]/2. + 1.27) * cm;
+         DIRC_LED_OBCS_FDTH_X  = (DIRC[0] + DRCC[0] + OBCS_XYZ[0] + MRAS_XYZ[0] + WM1S_XYZ[0] - WM1S_BOX_XYZ[0]/2. - 1.27) * cm;
 
-         DIRC_LED_OBCN_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCN_XYZ[2] + FWM1_XYZ[2] - FWM1_BOX_XYZ[2]/2. ) * cm;
-         DIRC_LED_OBCS_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCS_XYZ[2] + FWM1_XYZ[2] - FWM1_BOX_XYZ[2]/2. ) * cm;
+         DIRC_LED_OBCN_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCN_XYZ[2] + MRAN_XYZ[2] + WM1N_XYZ[2] - WM1N_BOX_XYZ[2]/2. ) * cm;
+         DIRC_LED_OBCS_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCS_XYZ[2] + MRAS_XYZ[2] + WM1S_XYZ[2] - WM1S_BOX_XYZ[2]/2. ) * cm;
 
-         DIRC_LED_OBCN_FDTH1_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + FWM1_XYZ[1] - FWM1_BOX_XYZ[1]/2. + 17.235932) * cm;
-         DIRC_LED_OBCN_FDTH2_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + FWM1_XYZ[1] - FWM1_BOX_XYZ[1]/2. + 17.235932 + 31.800038 ) * cm;
-         DIRC_LED_OBCN_FDTH3_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + FWM1_XYZ[1] - FWM1_BOX_XYZ[1]/2. + 17.235932 + 31.800038 * 2. ) * cm;
-         DIRC_LED_OBCS_FDTH1_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] - FWM1_XYZ[1] + FWM1_BOX_XYZ[1]/2. - 17.235932) * cm;
-         DIRC_LED_OBCS_FDTH2_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] - FWM1_XYZ[1] + FWM1_BOX_XYZ[1]/2. - 17.235932 - 31.800038 ) * cm;
-         DIRC_LED_OBCS_FDTH3_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] - FWM1_XYZ[1] + FWM1_BOX_XYZ[1]/2. - 17.235932 - 31.800038 * 2. ) * cm;
+         DIRC_LED_OBCN_FDTH1_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + MRAN_XYZ[1] + WM1N_XYZ[1] - WM1N_BOX_XYZ[1]/2. + 17.235932) * cm;
+         DIRC_LED_OBCN_FDTH2_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + MRAN_XYZ[1] + WM1N_XYZ[1] - WM1N_BOX_XYZ[1]/2. + 17.235932 + 31.800038 ) * cm;
+         DIRC_LED_OBCN_FDTH3_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + MRAN_XYZ[1] + WM1N_XYZ[1] - WM1N_BOX_XYZ[1]/2. + 17.235932 + 31.800038 * 2. ) * cm;
+         DIRC_LED_OBCS_FDTH4_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] + MRAS_XYZ[1] + WM1S_XYZ[1] + WM1S_BOX_XYZ[1]/2. - 17.235932) * cm;
+         DIRC_LED_OBCS_FDTH5_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] + MRAS_XYZ[1] + WM1S_XYZ[1] + WM1S_BOX_XYZ[1]/2. - 17.235932 - 31.800038 ) * cm;
+         DIRC_LED_OBCS_FDTH6_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] + MRAS_XYZ[1] + WM1S_XYZ[1] + WM1S_BOX_XYZ[1]/2. - 17.235932 - 31.800038 * 2. ) * cm;
 
       }
 
@@ -581,13 +589,17 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
       phip = vec.phi();
       fParticleGun->SetParticlePosition(G4ThreeVector(x,y,z));
    }
+
+
+
+   double DeltaT = 0.;
    // Special case of Cherenkov photon gun for DIRC LED generator 
    if (user_opts->Find("DIRCLED", dircledpars)){
 
       double x(0.),y(0.),z(0.);
 
       int FDTH = -1;
-      int FDTH = int(dircledpars[1])
+      FDTH = int(dircledpars[1]);
       if (FDTH < 1 || FDTH > 6)
       { 
          double rand0 = G4UniformRand();
@@ -637,19 +649,19 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
 
          case 4:
          x = DIRC_LED_OBCS_FDTH_X;
-         y = DIRC_LED_OBCS_FDTH1_Y;
+         y = DIRC_LED_OBCS_FDTH4_Y;
          z = DIRC_LED_OBCS_FDTH_Z;
          break;
 
 	 case 5:
          x = DIRC_LED_OBCS_FDTH_X;
-         y = DIRC_LED_OBCS_FDTH2_Y;
+         y = DIRC_LED_OBCS_FDTH5_Y;
          z = DIRC_LED_OBCS_FDTH_Z;
 	 break;
 
 	 case 6:
          x = DIRC_LED_OBCS_FDTH_X;
-         y = DIRC_LED_OBCS_FDTH3_Y;
+         y = DIRC_LED_OBCS_FDTH6_Y;
          z = DIRC_LED_OBCS_FDTH_Z;
 	 break;
       }
@@ -707,6 +719,48 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
       z += diffuser_offset_vec.z();
 
 */
+
+      // time smearing from LED pulse shape 
+      double t_rise = 0.84;
+      double t_FWHM = 1.5;
+
+      double t_range_LED = t_rise + t_FWHM;
+      double t_rand1 = G4UniformRand();
+      double t_rand2 = G4UniformRand();
+      double t_LEDShape = t_rand1 * t_range_LED;
+
+      double pulse_val = -1.;
+      while (t_rand2 > pulse_val)
+      {
+         t_rand1 = G4UniformRand();
+         t_rand2 = G4UniformRand();
+         t_LEDShape = t_rand1 * t_range_LED;
+
+         if (0.<= t_LEDShape && t_LEDShape < t_rise)
+            pulse_val = 1./t_rise * t_LEDShape;
+         else if (t_rise <= t_LEDShape && t_LEDShape < t_FWHM)
+	    pulse_val = 1.;
+         else if (t_FWHM <= t_LEDShape && t_LEDShape < t_range_LED)
+	    pulse_val = -1./t_rise * t_LEDShape + 1./t_rise * t_range_LED;
+	 else 
+	    pulse_val = 0.;
+
+	 if (t_rand2 <= pulse_val)
+	    break;
+      }
+      double DeltaT_LED = t_LEDShape;
+
+
+      // delay from LED feedthrough cables
+      double DeltaT_CableDelay = 0.;
+      if (FDTH == 2 || FDTH == 5)
+	 DeltaT_CableDelay = 10.;
+      if (FDTH == 3 || FDTH == 6)
+	 DeltaT_CableDelay = 20.;
+
+
+      DeltaT = DeltaT_LED + DeltaT_CableDelay;
+
       G4ThreeVector pos_vec(x,y,z);
       thetap = vec.theta();
       phip = vec.phi();
@@ -717,7 +771,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
                      p * sin(thetap) * sin(phip),
                      p * cos(thetap));
    fParticleGun->SetParticleMomentum(mom);
-   fParticleGun->SetParticleTime(0);
+   fParticleGun->SetParticleTime(0.+DeltaT);
 
    // Set the event number and fire the gun
    anEvent->SetEventID(++fEventCount);
