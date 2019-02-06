@@ -585,71 +585,73 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    if (user_opts->Find("DIRCLED", dircledpars)){
 
       double x(0.),y(0.),z(0.);
-      double rand0 = G4UniformRand();
 
       int FDTH = -1;
+      int FDTH = int(dircledpars[1])
+      if (FDTH < 1 || FDTH > 6)
+      { 
+         double rand0 = G4UniformRand();
+         if (rand0 < 1./3.)
+            FDTH = 4;
+         else if (rand0 < 2./3.)
+            FDTH = 5;
+         else if (rand0 <= 3./3.)
+            FDTH = 6;
 
-/*
-      if (rand0 < 1./3.)
-      {
-         x = DIRC_LED_OBCS_FDTH_X;
-         y = DIRC_LED_OBCS_FDTH1_Y;
-         z = DIRC_LED_OBCS_FDTH_Z;
+         /*
+	 // Generating for both optical boxes
+         if (rand0 < 1./6.)
+            FDTH = 1;
+         else if (rand0 < 2./6.)
+            FDTH = 2;
+         else if (rand0 < 3./6.)
+            FDTH = 3;
+         else if (rand0 < 4./6.)
+            FDTH = 4;
+         else if (rand0 < 5./6.)
+            FDTH = 5;
+         else if (rand0 <= 6./6.)
+            FDTH = 6;
+	 */
       }
-      else if (rand0 < 2./3.)
+
+      switch (FDTH)
       {
-         x = DIRC_LED_OBCS_FDTH_X;
-         y = DIRC_LED_OBCS_FDTH2_Y;
-         z = DIRC_LED_OBCS_FDTH_Z;
-      }
-      else if (rand0 <= 3./3.)
-      {
-         x = DIRC_LED_OBCS_FDTH_X;
-         y = DIRC_LED_OBCS_FDTH3_Y;
-         z = DIRC_LED_OBCS_FDTH_Z;
-      }
-*/
-      if (rand0 < 1./6.)
-      {
+         case 1:
          x = DIRC_LED_OBCN_FDTH_X;
          y = DIRC_LED_OBCN_FDTH1_Y;
          z = DIRC_LED_OBCN_FDTH_Z;
-         FDTH = 1;
-      }
-      else if (rand0 < 2./6.)
-      {
+         break;
+
+	 case 2:
          x = DIRC_LED_OBCN_FDTH_X;
          y = DIRC_LED_OBCN_FDTH2_Y;
          z = DIRC_LED_OBCN_FDTH_Z;
-         FDTH = 2;
-      }
-      else if (rand0 < 3./6.)
-      {
+	 break;
+
+	 case 3:
          x = DIRC_LED_OBCN_FDTH_X;
          y = DIRC_LED_OBCN_FDTH3_Y;
          z = DIRC_LED_OBCN_FDTH_Z;
-         FDTH = 3;
-      }
-      else if (rand0 < 4./6.)
-      {
+	 break;
+
+         case 4:
          x = DIRC_LED_OBCS_FDTH_X;
          y = DIRC_LED_OBCS_FDTH1_Y;
          z = DIRC_LED_OBCS_FDTH_Z;
-         FDTH = 4;
-      }
-      else if (rand0 < 5./6.)
-      {
+         break;
+
+	 case 5:
          x = DIRC_LED_OBCS_FDTH_X;
          y = DIRC_LED_OBCS_FDTH2_Y;
          z = DIRC_LED_OBCS_FDTH_Z;
-         FDTH = 5;
-      }
-      else if (rand0 <= 6./6.)
-      {
+	 break;
+
+	 case 6:
          x = DIRC_LED_OBCS_FDTH_X;
          y = DIRC_LED_OBCS_FDTH3_Y;
          z = DIRC_LED_OBCS_FDTH_Z;
-         FDTH = 6;
+	 break;
       }
 
       //z -= 0.5*cm;
