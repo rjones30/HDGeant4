@@ -82,6 +82,7 @@ INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
 INTYLIBS += -lboost_python $(shell python-config --libs)
 INTYLIBS += -L$(G4ROOT)/lib $(patsubst $(G4ROOT)/lib/lib%.dylib, -l%, $(G4shared_libs))
+INTYLIBS += -lgfortran
 
 .PHONY: all
 all: hdds cobrems sharedlib exe lib bin g4py
