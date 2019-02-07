@@ -599,32 +599,23 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
       double x(0.),y(0.),z(0.);
 
       int FDTH = -1;
-      FDTH = int(dircledpars[1]);
-      if (FDTH < 1 || FDTH > 6)
-      { 
-         double rand0 = G4UniformRand();
-         if (rand0 < 1./3.)
-            FDTH = 4;
-         else if (rand0 < 2./3.)
-            FDTH = 5;
-         else if (rand0 <= 3./3.)
-            FDTH = 6;
-
-         /*
-	 // Generating for both optical boxes
-         if (rand0 < 1./6.)
-            FDTH = 1;
-         else if (rand0 < 2./6.)
-            FDTH = 2;
-         else if (rand0 < 3./6.)
-            FDTH = 3;
-         else if (rand0 < 4./6.)
-            FDTH = 4;
-         else if (rand0 < 5./6.)
-            FDTH = 5;
-         else if (rand0 <= 6./6.)
-            FDTH = 6;
-	 */
+      vector<int> FDTHs = {}; 
+      for (int par_index = 1; par_index <= 6; par_index++)
+      {
+	 int passed_FDTH = dircledpars[par_index];
+	 if (passed_FDTH && 0 < passed_FDTH && passed_FDTH < 7)
+            FDTHs.push_back(dircledpars[par_index]);
+      }
+      int NumFDTHs = int(FDTHs.size());
+      double rand0 = G4UniformRand();
+      for (int FDTH_index = 0; FDTH_index < NumFDTHs; FDTH_index++)
+      {
+         if (rand0 <= (FDTH_index+1)*(1./NumFDTHs))
+	 {
+	    FDTH = FDTHs[FDTH_index]; break;
+	 }
+	 else
+	    continue;
       }
 
       switch (FDTH)
@@ -663,6 +654,9 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
          x = DIRC_LED_OBCS_FDTH_X;
          y = DIRC_LED_OBCS_FDTH6_Y;
          z = DIRC_LED_OBCS_FDTH_Z;
+	 break;
+	
+	 default:
 	 break;
       }
 
@@ -765,6 +759,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
       thetap = vec.theta();
       phip = vec.phi();
       fParticleGun->SetParticlePosition(pos_vec);
+
    }
 
    G4ThreeVector mom(p * sin(thetap) * cos(phip),
