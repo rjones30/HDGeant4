@@ -75,6 +75,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 
    // get positions for LUT from XML geometry
    std::map<int, int> dirclutpars;
+   std::map<int, int> dircledpars;
    if (instanceCount == 1) {
       
       if (user_opts->Find("DIRCLUT", dirclutpars)) {
@@ -158,6 +159,58 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
             }            
          }
       }
+
+      if (user_opts->Find("DIRCLED", dircledpars)) {
+         extern int run_number;
+         extern jana::JApplication *japp;
+         if (japp == 0) {
+            G4cerr << "Error in GlueXPrimaryGeneratorAction constructor - "
+              << "jana global DApplication object not set, "
+              << "cannot continue." << G4endl;
+            exit(-1);
+         }
+         jana::JGeometry *jgeom = japp->GetJGeometry(run_number);
+         if (japp == 0) {   // dummy
+            jgeom = 0;
+            G4cout << "DIRC: ALL parameters loaded from ccdb" << G4endl;
+         }
+         vector<double>DIRC;
+         vector<double>DRCC;
+         vector<double>OBCS_XYZ;
+         vector<double>OBCN_XYZ;
+         vector<double>MRAN_XYZ;
+         vector<double>MRAS_XYZ;
+         vector<double>WM1N_XYZ;
+         vector<double>WM1S_XYZ;
+         vector<double>WM1N_BOX_XYZ;
+         vector<double>WM1S_BOX_XYZ;
+
+         jgeom->Get("//section/composition/posXYZ[@volume='DIRC']/@X_Y_Z", DIRC);
+         jgeom->Get("//composition[@name='DIRC']/posXYZ[@volume='DRCC']/@X_Y_Z", DRCC);
+         jgeom->Get("//composition[@name='DRCC']/posXYZ[@volume='OBCN']/@X_Y_Z", OBCN_XYZ);
+         jgeom->Get("//composition[@name='DRCC']/posXYZ[@volume='OBCS']/@X_Y_Z", OBCS_XYZ);
+         jgeom->Get("//composition[@name='OBCN']/posXYZ[@volume='MRAN']/@X_Y_Z", MRAN_XYZ);
+         jgeom->Get("//composition[@name='OBCS']/posXYZ[@volume='MRAS']/@X_Y_Z", MRAS_XYZ);
+         jgeom->Get("//composition[@name='MRAN']/posXYZ[@volume='WM1N']/@X_Y_Z", WM1N_XYZ);
+         jgeom->Get("//composition[@name='MRAS']/posXYZ[@volume='WM1S']/@X_Y_Z", WM1S_XYZ);
+         jgeom->Get("//box[@name='WM1N']/@X_Y_Z", WM1N_BOX_XYZ);
+         jgeom->Get("//box[@name='WM1S']/@X_Y_Z", WM1S_BOX_XYZ);
+
+         DIRC_LED_OBCN_FDTH_X  = (DIRC[0] + DRCC[0] + OBCN_XYZ[0] + MRAN_XYZ[0] + WM1N_XYZ[0] + WM1N_BOX_XYZ[0]/2. + 1.27) * cm;
+         DIRC_LED_OBCS_FDTH_X  = (DIRC[0] + DRCC[0] + OBCS_XYZ[0] + MRAS_XYZ[0] + WM1S_XYZ[0] - WM1S_BOX_XYZ[0]/2. - 1.27) * cm;
+
+         DIRC_LED_OBCN_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCN_XYZ[2] + MRAN_XYZ[2] + WM1N_XYZ[2] - WM1N_BOX_XYZ[2]/2. ) * cm;
+         DIRC_LED_OBCS_FDTH_Z  = (DIRC[2] + DRCC[2] + OBCS_XYZ[2] + MRAS_XYZ[2] + WM1S_XYZ[2] - WM1S_BOX_XYZ[2]/2. ) * cm;
+
+         DIRC_LED_OBCN_FDTH1_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + MRAN_XYZ[1] + WM1N_XYZ[1] - WM1N_BOX_XYZ[1]/2. + 17.235932) * cm;
+         DIRC_LED_OBCN_FDTH2_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + MRAN_XYZ[1] + WM1N_XYZ[1] - WM1N_BOX_XYZ[1]/2. + 17.235932 + 31.800038 ) * cm;
+         DIRC_LED_OBCN_FDTH3_Y = (DIRC[1] + DRCC[1] + OBCN_XYZ[1] + MRAN_XYZ[1] + WM1N_XYZ[1] - WM1N_BOX_XYZ[1]/2. + 17.235932 + 31.800038 * 2. ) * cm;
+         DIRC_LED_OBCS_FDTH4_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] + MRAS_XYZ[1] + WM1S_XYZ[1] + WM1S_BOX_XYZ[1]/2. - 17.235932) * cm;
+         DIRC_LED_OBCS_FDTH5_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] + MRAS_XYZ[1] + WM1S_XYZ[1] + WM1S_BOX_XYZ[1]/2. - 17.235932 - 31.800038 ) * cm;
+         DIRC_LED_OBCS_FDTH6_Y = (DIRC[1] + DRCC[1] + OBCS_XYZ[1] + MRAS_XYZ[1] + WM1S_XYZ[1] + WM1S_BOX_XYZ[1]/2. - 17.235932 - 31.800038 * 2. ) * cm;
+
+      }
+
    }
 
    std::map<int,std::string> infile;
@@ -206,6 +259,25 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
  
       fSourceType = SOURCE_TYPE_PARTICLE_GUN;
    }
+
+   else if (user_opts->Find("DIRCLED", dircledpars))
+   {
+      fGunParticle.geantType = 0;
+      fGunParticle.pdgType = 999999;
+      fGunParticle.partDef = fParticleTable->FindParticle("opticalphoton");
+      fGunParticle.deltaR = 0;
+      fGunParticle.deltaZ = 0;
+      fGunParticle.mom = 3.0613 * eV;
+
+      fGunParticle.deltaMom = 0;
+      fGunParticle.deltaTheta = 0;
+      fGunParticle.deltaPhi = 0;
+      fParticleGun->SetParticleDefinition(fGunParticle.partDef);
+
+      fSourceType = SOURCE_TYPE_PARTICLE_GUN;
+   }
+
+
 
    else if (user_opts->Find("KINE", kinepars))
    {
@@ -438,6 +510,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
 
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
    std::map<int,int> dirclutpars; 
+   std::map<int,int> dircledpars; 
 
    // place and smear the particle gun origin
    G4ThreeVector pos(fGunParticle.pos);
@@ -517,11 +590,183 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
       fParticleGun->SetParticlePosition(G4ThreeVector(x,y,z));
    }
 
+
+
+   double DeltaT = 0.;
+   // Special case of Cherenkov photon gun for DIRC LED generator 
+   if (user_opts->Find("DIRCLED", dircledpars)){
+
+      double x(0.),y(0.),z(0.);
+
+      int FDTH = -1;
+      vector<int> FDTHs = {}; 
+      for (int par_index = 1; par_index <= 6; par_index++)
+      {
+	 int passed_FDTH = dircledpars[par_index];
+	 if (passed_FDTH && 0 < passed_FDTH && passed_FDTH < 7)
+            FDTHs.push_back(dircledpars[par_index]);
+      }
+      int NumFDTHs = int(FDTHs.size());
+      double rand0 = G4UniformRand();
+      for (int FDTH_index = 0; FDTH_index < NumFDTHs; FDTH_index++)
+      {
+         if (rand0 <= (FDTH_index+1)*(1./NumFDTHs))
+	 {
+	    FDTH = FDTHs[FDTH_index]; break;
+	 }
+	 else
+	    continue;
+      }
+
+      switch (FDTH)
+      {
+         case 1:
+         x = DIRC_LED_OBCN_FDTH_X;
+         y = DIRC_LED_OBCN_FDTH1_Y;
+         z = DIRC_LED_OBCN_FDTH_Z;
+         break;
+
+	 case 2:
+         x = DIRC_LED_OBCN_FDTH_X;
+         y = DIRC_LED_OBCN_FDTH2_Y;
+         z = DIRC_LED_OBCN_FDTH_Z;
+	 break;
+
+	 case 3:
+         x = DIRC_LED_OBCN_FDTH_X;
+         y = DIRC_LED_OBCN_FDTH3_Y;
+         z = DIRC_LED_OBCN_FDTH_Z;
+	 break;
+
+         case 4:
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH4_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+         break;
+
+	 case 5:
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH5_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+	 break;
+
+	 case 6:
+         x = DIRC_LED_OBCS_FDTH_X;
+         y = DIRC_LED_OBCS_FDTH6_Y;
+         z = DIRC_LED_OBCS_FDTH_Z;
+	 break;
+	
+	 default:
+	 break;
+      }
+
+      //z -= 0.5*cm;
+      double theta_range = 12.5; // in degrees
+      double inclination_wrt_bars_deg = 0.;//negative->away from 3-segment mirror; positive->towards 3-segment mirror
+      double angle_towards_center_deg = 0.;//bending angle for the two feedthroughs on the sides towards the center 
+
+      if (x > 0.)
+         inclination_wrt_bars_deg *= -1.;
+      if (FDTH == 3 || FDTH == 4)
+         angle_towards_center_deg *= -1.;
+      if (FDTH == 2 || FDTH == 5)
+         angle_towards_center_deg = 0.;
+
+      G4ThreeVector vec(0,0,1);
+      double rand1 = G4UniformRand();
+      double rand2 = G4UniformRand();
+
+      double costheta = -1. + rand1 * (std::cos((180.-theta_range) * M_PI / 180.) + 1.);
+
+      double rand3 = G4UniformRand();
+      double theta_to_set = acos(costheta);
+      if (rand3 < 0.5)
+         theta_to_set = 2*M_PI - theta_to_set;
+
+      vec.setTheta(theta_to_set);
+      vec.setPhi(2*M_PI*rand2);
+      vec.rotateY(inclination_wrt_bars_deg*deg);
+      vec.rotateX(angle_towards_center_deg*deg);
+/*
+      //For square diffuser case
+      double theta_range = 25.; // in degrees
+      double diffuser_X = 1.697 * cm;
+      double diffuser_Y = 1.697 * cm;
+      double inclination_wrt_bars_deg = -6.;
+
+      G4ThreeVector vec(0,0,-1.);
+      double rand1 = G4UniformRand();
+      double rand2 = G4UniformRand();
+      double a = 2.* tan(theta_range*M_PI/180.);
+      vec.setX((rand1-0.5)*a);
+      vec.setY((rand2-0.5)*a);
+      vec.setZ(-1.);
+
+      double diffuser_offset_x = diffuser_X/2. - diffuser_X * G4UniformRand();
+      double diffuser_offset_y = diffuser_Y/2. - diffuser_Y * G4UniformRand();
+
+      G4ThreeVector diffuser_offset_vec(diffuser_offset_x,diffuser_offset_y,0.);
+      diffuser_offset_vec.rotateY(inclination_wrt_bars_deg*deg);
+
+      x += diffuser_offset_vec.x();
+      y += diffuser_offset_vec.y();
+      z += diffuser_offset_vec.z();
+
+*/
+
+      // time smearing from LED pulse shape 
+      double t_rise = 0.84;
+      double t_FWHM = 1.5;
+
+      double t_range_LED = t_rise + t_FWHM;
+      double t_rand1 = G4UniformRand();
+      double t_rand2 = G4UniformRand();
+      double t_LEDShape = t_rand1 * t_range_LED;
+
+      double pulse_val = -1.;
+      while (t_rand2 > pulse_val)
+      {
+         t_rand1 = G4UniformRand();
+         t_rand2 = G4UniformRand();
+         t_LEDShape = t_rand1 * t_range_LED;
+
+         if (0.<= t_LEDShape && t_LEDShape < t_rise)
+            pulse_val = 1./t_rise * t_LEDShape;
+         else if (t_rise <= t_LEDShape && t_LEDShape < t_FWHM)
+	    pulse_val = 1.;
+         else if (t_FWHM <= t_LEDShape && t_LEDShape < t_range_LED)
+	    pulse_val = -1./t_rise * t_LEDShape + 1./t_rise * t_range_LED;
+	 else 
+	    pulse_val = 0.;
+
+	 if (t_rand2 <= pulse_val)
+	    break;
+      }
+      double DeltaT_LED = t_LEDShape;
+
+
+      // delay from LED feedthrough cables
+      double DeltaT_CableDelay = 0.;
+      if (FDTH == 2 || FDTH == 5)
+	 DeltaT_CableDelay = 10.;
+      if (FDTH == 3 || FDTH == 6)
+	 DeltaT_CableDelay = 20.;
+
+
+      DeltaT = DeltaT_LED + DeltaT_CableDelay;
+
+      G4ThreeVector pos_vec(x,y,z);
+      thetap = vec.theta();
+      phip = vec.phi();
+      fParticleGun->SetParticlePosition(pos_vec);
+
+   }
+
    G4ThreeVector mom(p * sin(thetap) * cos(phip),
                      p * sin(thetap) * sin(phip),
                      p * cos(thetap));
    fParticleGun->SetParticleMomentum(mom);
-   fParticleGun->SetParticleTime(0);
+   fParticleGun->SetParticleTime(0.+DeltaT);
 
    // Set the event number and fire the gun
    anEvent->SetEventID(++fEventCount);

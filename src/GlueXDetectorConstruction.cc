@@ -380,9 +380,12 @@ void GlueXDetectorConstruction::ConstructSDandField()
          }
          iter->second->SetSensitiveDetector(dircHandler);
       }
-      else if (volname == "FWM1" || volname == "FWM2" || volname == "FTMR" ||
-               volname == "TSM1" || volname == "TSM2" || volname == "TSM3" ||
-               volname == "FSM1" || volname == "FSM2" || volname == "OWDG" ||
+      else if (volname == "WM1N" || volname == "WM2N" || volname == "WM1S" || volname == "WM2S" ||
+	       volname == "FTMN" || volname == "FTMS" ||
+               volname == "TM1N" || volname == "TM2N" || volname == "TM3N" ||
+               volname == "TM1S" || volname == "TM2S" || volname == "TM3S" ||
+               volname == "SM1N" || volname == "SM2N" || volname == "SM1S" || volname == "SM2S" ||
+               volname == "OWDG" ||
                (volname(0,1)(0) == 'A' && volname(0,1)(1) == 'G') )
       {
          if (dircHandler == 0) {
