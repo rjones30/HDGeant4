@@ -33,6 +33,7 @@ double GlueXPhotonBeamGenerator::fBeamBucketPeriod = 4. * ns;
 double GlueXPhotonBeamGenerator::fBeamStartZ = -24 * m;
 double GlueXPhotonBeamGenerator::fBeamDiameter = 0.5 * cm;
 double GlueXPhotonBeamGenerator::fBeamVelocity = 2.99792e8 * m/s;
+double GlueXPhotonBeamGenerator::fBeamOffset[2] = {0,0};
 
 ImportanceSampler GlueXPhotonBeamGenerator::fCoherentPDFx; 
 ImportanceSampler GlueXPhotonBeamGenerator::fIncoherentPDFlogx;
@@ -485,6 +486,8 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    colx += BEAM_BOX_SIZE * (G4UniformRand() - 0.5);
    coly += BEAM_BOX_SIZE * (G4UniformRand() - 0.5);
 #endif
+   colx += fBeamOffset[0];
+   coly += fBeamOffset[1];
    G4ThreeVector vtx(colx, coly, fBeamStartZ);
    if (fForceFixedPolarization) {
       polarization = fFixedPolarization;
@@ -543,6 +546,8 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    G4PrimaryParticle *velectron = new G4PrimaryParticle(ve, vpx, vpy, vpz);
    double colvx = radx + colDist * thxBeam;
    double colvy = rady + colDist * thyBeam;
+   colvx += fBeamOffset[0];
+   colvy += fBeamOffset[1];
    G4ThreeVector vvtx(colvx, colvy, fBeamStartZ);
    G4PrimaryVertex *vvertex = new G4PrimaryVertex(vvtx, tvtx);
    vvertex->SetPrimary(velectron);
