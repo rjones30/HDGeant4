@@ -366,6 +366,9 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       double colDiam = ((beampars[5] > 0)? beampars[5] : 0.0034) * m;
       double beamEmit = ((beampars[6] > 0)? beampars[6] : 2.5e-9) * m;
       double radThick = ((beampars[7] > 0)? beampars[7] : 20e-6) * m;
+      double spotRMS = ((beampars[8] > 0)? beampars[8] : 5e-4) * m;
+      double spotX = ((beampars[9] != 0)? beampars[9] : 0) * m;
+      double spotY = ((beampars[10] != 0)? beampars[10] : 0) * m;
 
       if (beamE0 == 0) {
          G4cerr << "GlueXPrimaryGeneratorAction error: "
@@ -388,7 +391,9 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
       fCobremsGeneration->setCollimatorDiameter(colDiam/m);
       fCobremsGeneration->setBeamEmittance(beamEmit/(m*radian));
       fCobremsGeneration->setTargetThickness(radThick/m);
+      fCobremsGeneration->setCollimatorSpotrms(spotRMS/m);
       fPhotonBeamGenerator = new GlueXPhotonBeamGenerator(fCobremsGeneration);
+      fPhotonBeamGenerator->setBeamOffset(spotX, spotY);
 
       std::map<int, double> bgratepars;
       std::map<int, double> bggatepars;
