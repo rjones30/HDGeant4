@@ -106,14 +106,14 @@ GlueXSensitiveDetectorSTC::GlueXSensitiveDetectorSTC(const G4String& name)
          STRAIGHT_ATTENUATION_B[k] /= cm;
          BENDNOSE_ATTENUATION_B[k] /= cm;
       }
-      jcalib->Get("START_COUNTER/propagation_speed", values);
+      jcalib->Get("START_COUNTER/propagation_time_corr", values);
       for (unsigned int k=0; k < values.size(); ++k) {
-         STRAIGHT_PROPAGATION_A[k] = values[k].at("SC_STRAIGHT_PROPAGATION_A");
-         STRAIGHT_PROPAGATION_B[k] = values[k].at("SC_STRAIGHT_PROPAGATION_B");
-         BEND_PROPAGATION_A[k] = values[k].at("SC_BEND_PROPAGATION_A");
-         BEND_PROPAGATION_B[k] = values[k].at("SC_BEND_PROPAGATION_B");
-         NOSE_PROPAGATION_A[k] = values[k].at("SC_NOSE_PROPAGATION_A");
-         NOSE_PROPAGATION_B[k] = values[k].at("SC_NOSE_PROPAGATION_B");
+         STRAIGHT_PROPAGATION_A[k] = values[k].at("a");
+         STRAIGHT_PROPAGATION_B[k] = values[k].at("b");
+         BEND_PROPAGATION_A[k] = values[k].at("c");
+         BEND_PROPAGATION_B[k] = values[k].at("d");
+         NOSE_PROPAGATION_A[k] = values[k].at("e");
+         NOSE_PROPAGATION_B[k] = values[k].at("f");
          // A factors are in units of ns, B factors are ns/cm
          STRAIGHT_PROPAGATION_A[k] *= ns;
          STRAIGHT_PROPAGATION_B[k] *= ns/cm;
@@ -286,6 +286,13 @@ G4bool GlueXSensitiveDetectorSTC::ProcessHits(G4Step* step,
          return false;
       }
 
+printf("HHH %f %f %f, ", x[0], x[1], x[2]);
+printf("%f %f %f, ", xlocal[0], xlocal[1], xlocal[2]);
+printf("%f %f %f %d\n", dpath, t, tcorr, sindex);
+printf("      %f %f %f %f %f %f\n",
+	    STRAIGHT_PROPAGATION_A[sindex], STRAIGHT_PROPAGATION_B[sindex],
+	    BEND_PROPAGATION_A[sindex], BEND_PROPAGATION_B[sindex],
+	    NOSE_PROPAGATION_A[sindex], NOSE_PROPAGATION_B[sindex]);
       
       // Add the hit to the hits vector, maintaining strict time ordering
 
