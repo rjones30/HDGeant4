@@ -47,6 +47,7 @@ class GlueXSensitiveDetectorDIRC : public G4VSensitiveDetector
   std::vector<GlueXHitDIRCWob> fHitsWob;
   std::vector<GlueXHitDIRCPmt> fHitsPmt;
   int fLutId;
+  bool fLED;
   
   std::map<G4LogicalVolume*, int> fVolumeTable;
   

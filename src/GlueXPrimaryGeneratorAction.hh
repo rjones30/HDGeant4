@@ -146,6 +146,10 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    double DIRC_LUT_X[48], DIRC_BAR_Y[48];
    double DIRC_LUT_Z;
    double DIRC_QZBL_DY, DIRC_QZBL_DZ, DIRC_OWDG_DZ;
+   double DIRC_LED_OBCS_FDTH_X, DIRC_LED_OBCS_FDTH_Z, DIRC_LED_OBCN_FDTH_X, DIRC_LED_OBCN_FDTH_Z;
+   double DIRC_LED_OBCN_FDTH1_Y, DIRC_LED_OBCN_FDTH2_Y, DIRC_LED_OBCN_FDTH3_Y;
+   double DIRC_LED_OBCS_FDTH4_Y, DIRC_LED_OBCS_FDTH5_Y, DIRC_LED_OBCS_FDTH6_Y;
+
 };
 
 inline G4ParticleDefinition *GlueXPrimaryGeneratorAction::GetParticle(int PDGtype)

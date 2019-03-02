@@ -72,6 +72,14 @@ GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const G4String& name)
   else {
     fLutId = 100;
   }
+  std::map<int, int> dircledpars;
+  if (user_opts->Find("DIRCLED", dircledpars)){
+    fLED = true;
+  }
+  else {
+    fLED = false;
+  }
+
 }
 
     GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const GlueXSensitiveDetectorDIRC &src)
@@ -161,9 +169,13 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
   }
 
   // wedge and mirrors volumes
-  if (volname == "FWM1" || volname == "FWM2" || volname == "FTMR" ||
-      volname == "TSM1" || volname == "TSM2" || volname == "TSM3" ||
-      volname == "FSM1" || volname == "FSM2" || volname == "OWDG" ||
+
+  if (volname == "WM1N" || volname == "WM2N" || volname == "WM1S" || volname == "WM2S" ||
+      volname == "FTMN" || volname == "FTMS" ||
+      volname == "TM1N" || volname == "TM2N" || volname == "TM3N" ||
+      volname == "TM1S" || volname == "TM2S" || volname == "TM3S" ||
+      volname == "SM1N" || volname == "SM2N" || volname == "SM1S" || volname == "SM2S" ||
+      volname == "OWDG" ||
       (volname(0,1)(0) == 'A' && volname(0,1)(1) == 'G') )
   {
 
@@ -189,21 +201,21 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
         else if(fabs(localNormal.z()+0.86)<0.01)
           mid=4;
       }
-      if (volname == "FSM1")
+      if (volname == "SM1N" || volname == "SM1S")
         mid = 5;
-      if (volname == "FSM2")
+      if (volname == "SM2N" || volname == "SM2S")
         mid = 6;
-      if (volname == "FWM1")
+      if (volname == "WM1N" || volname == "WM1S")
         mid = 7;
-      if (volname == "FWM2")
+      if (volname == "WM2N" || volname == "WM2S")
         mid = 8;
-      if (volname == "FTMR")
+      if (volname == "FTMN" || volname == "FTMS")
         mid = 0;
-      if (volname == "TSM1")
+      if (volname == "TM1N" || volname == "TM1S")
         mid=91;
-      if (volname == "TSM2")
+      if (volname == "TM2N" || volname == "TM2S")
         mid=92;
-      if (volname == "TSM3")
+      if (volname == "TM3N" || volname == "TM3S")
         mid=93;
       if ((volname(0,1)(0) == 'A' && volname(0,1)(1) == 'G'))
         mid=100;
@@ -313,7 +325,9 @@ G4bool GlueXSensitiveDetectorDIRC::ProcessHits(G4Step* step,
 
 void GlueXSensitiveDetectorDIRC::EndOfEvent(G4HCofThisEvent*)
 {
-  if ((fHitsBar.size() == 0 && !(fLutId<48)) || fHitsPmt.size() == 0 || fHitsWob.size() == 0) {
+  if ((fHitsBar.size() == 0 && !(fLutId<48) && !fLED) || (fHitsBar.size() == 0 && !fLED) || fHitsPmt.size() == 0 || (fHitsWob.size() == 0 && !fLED))
+  {
+  
     fHitsBar.clear();
     fHitsPmt.clear();
     fHitsWob.clear();

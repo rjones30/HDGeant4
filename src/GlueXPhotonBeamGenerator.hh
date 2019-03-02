@@ -43,6 +43,7 @@ class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
    static double fBeamStartZ;
    static double fBeamDiameter;
    static double fBeamVelocity;
+   static double fBeamOffset[2];
 
    static ImportanceSampler fCoherentPDFx; 
    static ImportanceSampler fIncoherentPDFlogx;
@@ -66,6 +67,13 @@ class GlueXPhotonBeamGenerator: public G4VPrimaryGenerator
    }
    static double getBeamVelocity() {
       return fBeamVelocity;
+   }
+   static void setBeamOffset(double x, double y) {
+      fBeamOffset[0] = x;
+      fBeamOffset[1] = y;
+   }
+   static double getBeamOffset(int i) {
+      return fBeamOffset[i];
    }
    static double getRFreferencePlaneZ(int runno=0);
    static double getBeamBucketPeriod(int runno=0);
