@@ -180,7 +180,7 @@ void GlueXPhysicsList::ConstructProcess()
 
 #if USING_DIRACXX
    // Add a process for TPOL beam photon pair conversion process
-   fBeamConversion = new GlueXBeamConversionProcess("TPOL beam conversion");
+   fBeamConversion = new GlueXBeamConversionProcess("TPolBeamConversion");
 #endif
 
    // create the special cuts processes and register them
@@ -584,7 +584,7 @@ void GlueXPhysicsList::SelectActiveProcesses(G4int verbosity)
       }
    }
    if (fOptions->Find("CKOV", flags)) {
-      if (flags.find(1) != flags.end() || flags[1] != 0) {
+      if (flags.find(1) == flags.end() || flags[1] != 0) {
          DoCerenkovRadiation(1);
          if (verbosity > 0) {
             G4cout << "*** Cerenkov radiation enabled for charged particles."
@@ -593,7 +593,7 @@ void GlueXPhysicsList::SelectActiveProcesses(G4int verbosity)
       }
    }
    if (fOptions->Find("LABS", flags)) {
-      if (flags.find(1) != flags.end() || flags[1] != 0) {
+      if (flags.find(1) == flags.end() || flags[1] != 0) {
          DoOpticalAbsorption(1);
          if (verbosity > 0) {
             G4cout << "*** Light absorption enabled for optical photons."
@@ -622,12 +622,12 @@ void GlueXPhysicsList::DoProcessReordering()
    G4VProcess *paraWorld=0;
    for (int j=0; j < procs->size(); ++j) {
       std::string procname((*procs)[j]->GetProcessName());
-      if (procname.substr(0, 15) == "Parallel World ") {
+      if (procname.substr(0, 13) == "ParallelWorld") {
          paraWorld = (*procs)[j];
       }
    }
    if (paraWorld == 0) {
-      G4cerr << "Parallel World process not found, cannot continue!"
+      G4cerr << "ParallelWorld process not found, cannot continue!"
              << G4endl;
       exit(1);
    }
