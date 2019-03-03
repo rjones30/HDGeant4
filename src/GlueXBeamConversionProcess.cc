@@ -88,6 +88,14 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
 
    fPaircohPDF.Pcut = 60;
    fTripletPDF.Pcut = 15;
+
+   if (verboseLevel > 0) {
+       G4cout << GetProcessName() << " is created " << G4endl
+	      << "    Stop beam before converter? "
+	      << (fStopBeamBeforeConverter? "yes" : "no") << G4endl
+	      << "    Stop beam after converter? "
+	      << (fStopBeamAfterConverter? "yes" : "no") << G4endl;
+   }
 }
 
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(
@@ -156,6 +164,12 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       vertex->SetPrimary(photon);
       eventinfo->AddPrimaryVertex(*vertex);
       eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
+
+      if (verboseLevel > 0) {
+         G4cout << "GlueXBeamConversionProcess: beam particle stopped"
+                << " before converter, stored in ouptut primary vertex."
+                << G4endl;
+      }
    }
    else if (fStopBeamAfterConverter) {
       double tvtx = step.GetPreStepPoint()->GetGlobalTime();
@@ -164,15 +178,26 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       G4ThreeVector pol = step.GetPreStepPoint()->GetPolarization();
       eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
       GenerateBeamPairConversion(step);
+
+      if (verboseLevel > 0) {
+         G4cout << "GlueXBeamConversionProcess: beam particle stopped"
+                << " at converter exit, pair conversion forced."
+                << G4endl;
+      }
    }
    else {
       GenerateBeamPairConversion(step);
+
+      if (verboseLevel > 0) {
+         G4cout << "GlueXBeamConversionProcess: beam particle stopped"
+                << " unexpectedly, pair conversion forced. But WHY?"
+                << G4endl;
+      }
    }
    pParticleChange->ProposeTrackStatus(fStopAndKill);
    eventinfo->SetKeepEvent(1);
    return pParticleChange;
 }
-
 
 void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
 {

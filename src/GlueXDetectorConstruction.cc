@@ -549,7 +549,7 @@ int GlueXDetectorConstruction::GetParallelWorldCount() const
 G4String GlueXDetectorConstruction::GetParallelWorldName(int paraIndex) const
 {
    std::stringstream worldStr;
-   worldStr << "Parallel World " << paraIndex;
+   worldStr << "ParallelWorld" << paraIndex;
    return worldStr.str();
 }
 
