@@ -201,7 +201,7 @@ G4bool GlueXSensitiveDetectorFCAL::ProcessHits(G4Step* step,
          // Apply effective response corrections, depending on particle type
          int pmass = track->GetDynamicParticle()->GetMass();
          if (pmass < 1 * MeV) { // must be one of e+,e-,gamma
-            dEcorr *= 0.985;
+            dEcorr *= 0.977;
          }
          else {
             double gamma = Ein / pmass; // nothing massless here
