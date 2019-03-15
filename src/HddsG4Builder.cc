@@ -298,7 +298,7 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
       std::vector<double> rInner;
       std::vector<double> rOuter;
       double zlast = -1e30;
-      double zeps = 1e-5;
+      double zeps = 0;
       for (unsigned int p = 0; p < planeList->getLength(); p++)
       {
          double ri, ro, zl;
@@ -345,7 +345,7 @@ int HddsG4Builder::createSolid(DOMElement* el, Refsys& ref)
       std::vector<double> rInner;
       std::vector<double> rOuter;
       double zlast = -1e30;
-      double zeps = 1e-5;
+      double zeps = 0;
       for (unsigned int p = 0; p < planeList->getLength(); p++)
       {
          double ri, ro, zl;
