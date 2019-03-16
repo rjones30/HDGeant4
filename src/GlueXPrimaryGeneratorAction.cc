@@ -803,14 +803,20 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
          }
       }
       double z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
-      fPrimaryGenerator->SetParticlePosition(G4ThreeVector(x,y,z));
       double ttag = GlueXPhotonBeamGenerator::GenerateTriggerTime(anEvent);
       double trel = (z - fRFreferencePlaneZ) / beamVelocity;
+      fPrimaryGenerator->SetParticlePosition(G4ThreeVector(x,y,z));
       fPrimaryGenerator->SetParticleTime(trel + ttag);
       fPrimaryGenerator->GeneratePrimaryVertex(anEvent);
       GlueXUserEventInformation *eventinfo;
       eventinfo = (GlueXUserEventInformation*)anEvent->GetUserInformation();
       if (eventinfo) {
+         // The above-assigned vertex coordinates and time are advisory to 
+         // GeneratePrimaryVertex, and may have been overridden by values
+         // read from the input MC event record.
+         G4PrimaryVertex *vertex = anEvent->GetPrimaryVertex();
+         trel = (vertex->GetZ0() - fRFreferencePlaneZ) / beamVelocity;
+         ttag = vertex->GetT0() - trel;
          double E = eventinfo->GetBeamPhotonEnergy();
          GlueXPhotonBeamGenerator::GenerateTaggerHit(anEvent, E, ttag);
       }
