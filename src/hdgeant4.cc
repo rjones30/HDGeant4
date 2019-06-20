@@ -91,14 +91,24 @@ int main(int argc,char** argv)
    }
    if (run_number == 0) {
       std::map<int, int> runno_opts;
+      std::map<int, std::string> infile_opts;
       if (opts.Find("RUNNO", runno_opts) || opts.Find("RUNG", runno_opts)) {
          run_number = runno_opts[1];
       }
-      else {
-         G4cerr << "Warning - "
-                << "no run number specified in control.in, "
-                << "default value of 0 assumed." << G4endl;
-         run_number = 0;
+      else if (opts.Find("INFILE", infile_opts) ||
+               opts.Find("INFI", infile_opts))
+     {
+         std::ifstream fin(infile_opts[1].c_str());
+         if (!fin.is_open()) {
+            G4cerr << "Input error: Unable to open HDDM input file: "
+                   << infile_opts[1] << G4endl;
+            exit(-1);
+         }
+         hddm_s::istream ifs(fin);
+         hddm_s::HDDM record;
+         while (record.getPhysicsEvents().size() == 0) 
+            ifs >> record;
+         run_number = record.getPhysicsEvents()(0).getRunNo();
       }
    }
 
