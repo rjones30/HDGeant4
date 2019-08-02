@@ -8,6 +8,7 @@
 #include <GlueXUserOptions.hh>
 #include <GlueXDetectorConstruction.hh>
 #include <GlueXUserActionInitialization.hh>
+#include <GlueXUserEventInformation.hh>
 #include <GlueXPrimaryGeneratorAction.hh>
 #include <GlueXPhysicsList.hh>
 #include <GlueXTimer.hh>
@@ -138,6 +139,7 @@ int main(int argc,char** argv)
          G4Random::setTheSeeds(seed);
       }
    }
+   GlueXUserEventInformation::SetStartingSeeds(G4Random::getTheSeeds());
 
    // Declare our G4VSteppingVerbose implementation
    G4VSteppingVerbose::SetInstance(new GlueXSteppingVerbose());
