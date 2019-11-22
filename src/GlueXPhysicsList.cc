@@ -253,7 +253,7 @@ void GlueXPhysicsList::ConstructProcess()
          else
             continue;
       }
-      else if (particleName == "muon-" || particleName == "muon+") {
+      else if (particleName == "mu-" || particleName == "mu+") {
          if (KEcut_muon > 0) {
             G4UserLimits *mlimits = new G4UserLimits();
             mlimits->SetUserMaxTime(tcut);
