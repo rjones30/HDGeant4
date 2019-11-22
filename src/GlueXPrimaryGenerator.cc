@@ -14,6 +14,7 @@
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "GlueXUserEventInformation.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4UnitsTable.hh"
 #include "G4RunManager.hh"
 
 #include <HDDM/hddm_s.hpp>
@@ -115,7 +116,10 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
 #endif
          }
          else {
-            G4cerr << "Unknown particle found in input MC record, "
+            G4cerr << "=== WARNING in GlueXPrimaryGeneratorAction::"
+                      "GeneratePrimaryVertex ==="
+                   << G4endl
+                   << "   Unknown particle found in input MC record, "
                    << "geant3 type " << g3type 
                    << ", PDG type " << pdgtype
                    << ", failing over to geantino!"
@@ -129,6 +133,23 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          double Etot = momentum.getE() * GeV;
          vertex->SetPrimary(new G4PrimaryParticle(part, px, py, pz, Etot));
          event_info->SetGlueXTrackID(++Nprimaries, trackId);
+         double mass = sqrt(Etot*Etot - px*px - py*py - pz*pz);
+         if (fabs(mass - part->GetPDGMass()) > mass * 1e-4) {
+            G4cerr << "=== WARNING in GlueXPrimaryGeneratorAction::"
+                      "GeneratePrimaryVertex ==="
+                   << G4endl
+                   << "   " << part->GetParticleName()
+                   << " found in input MC record, "
+                   << "geant3 type " << g3type 
+                   << ", PDG type " << pdgtype
+                   << " has unphysical mass: "
+                   << G4endl
+                   << "   expected " << G4BestUnit(part->GetPDGMass(), "Energy")
+                   << ", found " << G4BestUnit(mass, "Energy")
+                   << ", difference "
+                   << G4BestUnit(mass - part->GetPDGMass(), "Energy")
+                   << G4endl;
+         }
       }
       event->AddPrimaryVertex(vertex);
    }
