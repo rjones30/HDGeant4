@@ -105,7 +105,7 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          int g3type = it_product->getType();
          int pdgtype = it_product->getPdgtype();
          G4ParticleDefinition *part;
-         if (pdgtype > 0 && pdgtype < 999999) {
+         if (pdgtype > 0) {
             part = GlueXPrimaryGeneratorAction::GetParticle(pdgtype);
          }
          else if (g3type > 0) {
