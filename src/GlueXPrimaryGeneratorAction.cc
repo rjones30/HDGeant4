@@ -12,6 +12,8 @@
 
 #include "G4Event.hh"
 #include "G4ParticleTable.hh"
+#include "G4ProcessManager.hh"
+#include "G4IonTable.hh"
 #include "G4SystemOfUnits.hh"
 #include "Randomize.hh"
 
@@ -1160,4 +1162,33 @@ double GlueXPrimaryGeneratorAction::GetMassPDG(int PDGtype)
 double GlueXPrimaryGeneratorAction::GetMass(int Geant3Type)
 {
    return GetMassPDG(ConvertGeant3ToPdg(Geant3Type));
+}
+
+G4ParticleDefinition *GlueXPrimaryGeneratorAction::GetParticle(int PDGtype)
+{
+   G4ParticleDefinition *p = fParticleTable->FindParticle(PDGtype);
+   if (p==0) {
+      if (PDGtype > 1000000000) {
+         p = fParticleTable->GetIonTable()->GetIon(PDGtype);
+      }
+      else {
+         G4cout << "unknown particle type " << PDGtype
+                << ", substituting geantino in its place!"
+                << G4endl;
+         p = fParticleTable->FindParticle("geantino");
+      }
+   }
+   return p;
+}
+
+G4ParticleDefinition *GlueXPrimaryGeneratorAction::GetParticle(const G4String &name)
+{
+   G4ParticleDefinition *p = fParticleTable->FindParticle(name);
+   if (p==0) {
+      G4cout << "unknown particle type " << name
+             << ", substituting geantino in its place!"
+             << G4endl;
+      p = fParticleTable->FindParticle("geantino");
+   }
+   return p;
 }
