@@ -116,7 +116,7 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
 #endif
          }
          else {
-            G4cerr << "=== WARNING in GlueXPrimaryGeneratorAction::"
+            G4cerr << "=== WARNING in GlueXPrimaryGenerator::"
                       "GeneratePrimaryVertex ==="
                    << G4endl
                    << "   Unknown particle found in input MC record, "
@@ -131,11 +131,12 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          double py = momentum.getPy() * GeV;
          double pz = momentum.getPz() * GeV;
          double Etot = momentum.getE() * GeV;
-         vertex->SetPrimary(new G4PrimaryParticle(part, px, py, pz, Etot));
+         G4PrimaryParticle *pp = new G4PrimaryParticle(part, px, py, pz, Etot);
+         vertex->SetPrimary(pp);
          event_info->SetGlueXTrackID(++Nprimaries, trackId);
          double mass = sqrt(Etot*Etot - px*px - py*py - pz*pz);
-         if (fabs(mass - part->GetPDGMass()) > mass * 1e-4) {
-            G4cerr << "=== WARNING in GlueXPrimaryGeneratorAction::"
+         if (fabs(mass - part->GetPDGMass()) > mass * 1e-3) {
+            G4cerr << "=== WARNING in GlueXPrimaryGenerator::"
                       "GeneratePrimaryVertex ==="
                    << G4endl
                    << "   " << part->GetParticleName()
