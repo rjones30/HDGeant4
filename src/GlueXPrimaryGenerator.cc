@@ -134,8 +134,10 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          G4PrimaryParticle *pp = new G4PrimaryParticle(part, px, py, pz, Etot);
          vertex->SetPrimary(pp);
          event_info->SetGlueXTrackID(++Nprimaries, trackId);
-         double mass = sqrt(Etot*Etot - px*px - py*py - pz*pz);
-         if (fabs(mass - part->GetPDGMass()) > mass * 1e-3) {
+         double mass = part->GetPDGMass();
+         double Eexpected = sqrt(mass*mass + px*px + py*py + pz*pz);
+         if (fabs(Eexpected - Etot) > Etot * 1e-3) {
+            double minv = sqrt(Etot*Etot - px*px - py*py - pz*pz);
             G4cerr << "=== WARNING in GlueXPrimaryGenerator::"
                       "GeneratePrimaryVertex ==="
                    << G4endl
@@ -145,10 +147,10 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
                    << ", PDG type " << pdgtype
                    << " has unphysical mass: "
                    << G4endl
-                   << "   expected " << G4BestUnit(part->GetPDGMass(), "Energy")
-                   << ", found " << G4BestUnit(mass, "Energy")
+                   << "   expected " << G4BestUnit(mass, "Energy")
+                   << ", found " << G4BestUnit(minv, "Energy")
                    << ", difference "
-                   << G4BestUnit(mass - part->GetPDGMass(), "Energy")
+                   << G4BestUnit(mass - minv, "Energy")
                    << G4endl;
          }
       }
