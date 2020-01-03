@@ -129,13 +129,15 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
          hddm_s::Momentum &momentum = it_product->getMomentum();
          double px = momentum.getPx() * GeV;
          double py = momentum.getPy() * GeV;
-         double pz = momentum.getPz() * GeV;
-         double Etot = momentum.getE() * GeV;
+         double pz =  momentum.getPz() * GeV;
+	 double mass1 = part->GetPDGMass();
+	 double p = sqrt(px*px + py*py + pz*pz);
+         double Etot = sqrt(mass1*mass1 + p*p);
          G4PrimaryParticle *pp = new G4PrimaryParticle(part, px, py, pz, Etot);
          vertex->SetPrimary(pp);
          event_info->SetGlueXTrackID(++Nprimaries, trackId);
-         double mass = sqrt(Etot*Etot - px*px - py*py - pz*pz);
-         if (fabs(mass - part->GetPDGMass()) > mass * 1e-3) {
+         double mass2 = sqrt(Etot*Etot - p*p);
+         if (fabs(mass1 - mass2) > mass2 * 1e-3) {
             G4cerr << "=== WARNING in GlueXPrimaryGenerator::"
                       "GeneratePrimaryVertex ==="
                    << G4endl
@@ -145,10 +147,10 @@ void GlueXPrimaryGenerator::GeneratePrimaryVertex(G4Event *event)
                    << ", PDG type " << pdgtype
                    << " has unphysical mass: "
                    << G4endl
-                   << "   expected " << G4BestUnit(part->GetPDGMass(), "Energy")
-                   << ", found " << G4BestUnit(mass, "Energy")
+                   << "   expected " << G4BestUnit(mass1, "Energy")
+                   << ", found " << G4BestUnit(mass2, "Energy")
                    << ", difference "
-                   << G4BestUnit(mass - part->GetPDGMass(), "Energy")
+                   << G4BestUnit(mass2 - mass1, "Energy")
                    << G4endl;
          }
       }
