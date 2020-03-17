@@ -21,7 +21,7 @@
 #include <JANA/JApplication.h>
 
 // Scale factors to match reconstructed to generated
-double GlueXSensitiveDetectorFCAL::SHOWER_ENERGY_SCALE_FACTOR =  0.976;
+double GlueXSensitiveDetectorFCAL::SHOWER_ENERGY_SCALE_FACTOR =  1.0;
 double GlueXSensitiveDetectorFCAL::MIP_ENERGY_SCALE_FACTOR = 1.35;
 
 // Cutoff on the total number of allowed hits
