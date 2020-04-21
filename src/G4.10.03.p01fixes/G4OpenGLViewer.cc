@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-// $Id: G4OpenGLViewer.cc 101714 2016-11-22 08:53:13Z gcosmo $
+// $Id: G4OpenGLViewer.cc 94428 2015-11-16 12:40:02Z gcosmo $
 //
 // 
 // Andrew Walkden  27th March 1996
@@ -66,7 +66,6 @@
 
 #include <sstream>
 #include <string>
-#include <iomanip>
 
 #include <GL/glu.h>
 
@@ -204,12 +203,9 @@ void G4OpenGLViewer::InitializeGLView ()
   }
 #endif
   
-  if (fWinSize_x == 0) {
-    fWinSize_x = fVP.GetWindowSizeHintX();
-  }
-  if (fWinSize_y == 0) {
-    fWinSize_y = fVP.GetWindowSizeHintY();
-  }
+
+  fWinSize_x = fVP.GetWindowSizeHintX();
+  fWinSize_y = fVP.GetWindowSizeHintY();
 
   glClearColor (0.0, 0.0, 0.0, 0.0);
   glClearDepth (1.0);
@@ -232,11 +228,6 @@ void G4OpenGLViewer::InitializeGLView ()
 
 void G4OpenGLViewer::ClearView () {
   ClearViewWithoutFlush();
-
-  if(!isFramebufferReady()) {
-    return;
-  }
-
   glFlush();
 }
 
@@ -244,9 +235,11 @@ void G4OpenGLViewer::ClearView () {
 void G4OpenGLViewer::ClearViewWithoutFlush () {
   // Ready for clear ?
   // See : http://lists.apple.com/archives/mac-opengl/2012/Jul/msg00038.html
-  if(!isFramebufferReady()) {
-    return;
-  }
+#if GL_EXT_framebuffer_object
+//  if ( glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_UNDEFINED) {
+//    return;
+//  }
+#endif
   
   glClearColor (background.GetRed(),
                 background.GetGreen(),
@@ -391,30 +384,31 @@ void G4OpenGLViewer::SetView () {
   // Light position is "true" light direction, so must come after gluLookAt.
   glLightfv (GL_LIGHT0, GL_POSITION, lightPosition);
 
-  // The idea is to use back-to-back clipping planes.  This can cut an object
-  // down to just a few pixels, which can make it difficult to see.  So, for
-  // now, comment this out and use the generic (Boolean) method, via
-  // G4VSolid* G4OpenGLSceneHandler::CreateSectionSolid ()
-  // { return G4VSceneHandler::CreateSectionSolid(); }
-//  if (fVP.IsSection () ) {  // pair of back to back clip planes.
-//    const G4Plane3D& sp = fVP.GetSectionPlane ();
-//    double sArray[4];
-//    sArray[0] = sp.a();
-//    sArray[1] = sp.b();
-//    sArray[2] = sp.c();
-//    sArray[3] = sp.d() + radius * 1.e-05;
-//    glClipPlane (GL_CLIP_PLANE0, sArray);
-//    glEnable (GL_CLIP_PLANE0);
-//    sArray[0] = -sp.a();
-//    sArray[1] = -sp.b();
-//    sArray[2] = -sp.c();
-//    sArray[3] = -sp.d() + radius * 1.e-05;
-//    glClipPlane (GL_CLIP_PLANE1, sArray);
-//    glEnable (GL_CLIP_PLANE1);
-//  } else {
-//    glDisable (GL_CLIP_PLANE0);
-//    glDisable (GL_CLIP_PLANE1);
-//  }
+  // OpenGL no longer seems to reconstruct clipped edges, so, when the
+  // BooleanProcessor is up to it, abandon this and use generic
+  // clipping in G4OpenGLSceneHandler::CreateSectionPolyhedron.  Also,
+  // force kernel visit on change of clipping plane in
+  // G4OpenGLStoredViewer::CompareForKernelVisit.
+  //if (fVP.IsSection () ) {  // pair of back to back clip planes.
+  if (false) {  // pair of back to back clip planes.
+    const G4Plane3D& sp = fVP.GetSectionPlane ();
+    double sArray[4];
+    sArray[0] = sp.a();
+    sArray[1] = sp.b();
+    sArray[2] = sp.c();
+    sArray[3] = sp.d() + radius * 1.e-05;
+    glClipPlane (GL_CLIP_PLANE0, sArray);
+    glEnable (GL_CLIP_PLANE0);
+    sArray[0] = -sp.a();
+    sArray[1] = -sp.b();
+    sArray[2] = -sp.c();
+    sArray[3] = -sp.d() + radius * 1.e-05;
+    glClipPlane (GL_CLIP_PLANE1, sArray);
+    glEnable (GL_CLIP_PLANE1);
+  } else {
+    glDisable (GL_CLIP_PLANE0);
+    glDisable (GL_CLIP_PLANE1);
+  }
 
   // What we call intersection of cutaways is easy in OpenGL.  You
   // just keep cutting.  Unions are more tricky - you have to have
@@ -528,6 +522,7 @@ std::vector < G4OpenGLViewerPickMap* > G4OpenGLViewer::GetPickDetails(GLdouble x
 {
   std::vector < G4OpenGLViewerPickMap* > pickMapVector;
   
+  std::ostringstream oss;
   const G4int BUFSIZE = 512;
   GLuint selectBuffer[BUFSIZE];
   glSelectBuffer(BUFSIZE, selectBuffer);
@@ -580,6 +575,7 @@ std::vector < G4OpenGLViewerPickMap* > G4OpenGLViewer::GetPickDetails(GLdouble x
       p++;
 #endif
       for (GLuint j = 0; j < nnames; ++j) {
+        oss.clear();
         GLuint name = *p++;
         pickMap->setHitNumber(i);
         pickMap->setSubHitNumber(j);
@@ -591,7 +587,6 @@ std::vector < G4OpenGLViewerPickMap* > G4OpenGLViewer::GetPickDetails(GLdouble x
 	  if(attHolder && attHolder->GetAttDefs().size()) {
 	    for (size_t iAtt = 0;
 		 iAtt < attHolder->GetAttDefs().size(); ++iAtt) {
-              std::ostringstream oss;
 	      oss << G4AttCheck(attHolder->GetAttValues()[iAtt],
                                 attHolder->GetAttDefs()[iAtt]);
               pickMap->addAttributes(oss.str());
@@ -796,32 +791,6 @@ bool G4OpenGLViewer::isGl2psWriting() {
 }
 
 
-G4bool G4OpenGLViewer::isFramebufferReady() {
-  bool check = false;
-#ifdef G4VIS_BUILD_OPENGLQT_DRIVER
-  check = true;
-#endif
-#ifdef G4VIS_BUILD_OPENGLX_DRIVER
-  check = false;
-#endif
-#ifdef G4VIS_BUILD_OPENGLXM_DRIVER
-  check = false;
-#endif
-#ifdef G4VIS_BUILD_OPENGLWIN32_DRIVER
-  check = false;
-#endif
-
-#if GL_ARB_framebuffer_object
-  if (check) {
-//    if ( glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_UNDEFINED) {
-//      return false;
-//    }
-  }
-#endif
-    return true;
-}
-
-
 /* Draw Gl2Ps text if needed
  */
 void G4OpenGLViewer::DrawText(const G4Text& g4text)
@@ -927,8 +896,8 @@ bool G4OpenGLViewer::printGl2PS() {
 
   // no need to redraw at each new primitive for printgl2PS
   G4OpenGLSceneHandler& oglSceneHandler = dynamic_cast<G4OpenGLSceneHandler&>(fSceneHandler);
-  G4OpenGLSceneHandler::FlushAction originalFlushAction = oglSceneHandler.GetFlushAction();
-  oglSceneHandler.SetFlushAction(G4OpenGLSceneHandler::never);
+  G4int drawInterval = oglSceneHandler.GetEventsDrawInterval();
+  oglSceneHandler.SetEventsDrawInterval(1000); // some big value but not too big to not crash memory
 
   if (!fGL2PSAction) return false;
 
@@ -997,7 +966,7 @@ bool G4OpenGLViewer::printGl2PS() {
   fWinSize_x = X;
   fWinSize_y = Y;
 
-  oglSceneHandler.SetFlushAction(originalFlushAction);
+  oglSceneHandler.SetEventsDrawInterval(drawInterval);
 
   // Reset for next time (useful is size change)
   //  fPrintSizeX = 0;
@@ -1102,7 +1071,7 @@ std::string G4OpenGLViewer::getRealPrintFilename() {
   if (fExportFilenameIndex != -1) {
     temp += std::string("_");
     std::ostringstream os;
-    os << std::setw(4) << std::setfill('0') << fExportFilenameIndex;
+    os << fExportFilenameIndex;
     std::string nb_str = os.str();
     temp += nb_str;
   }
@@ -1357,9 +1326,9 @@ bool G4OpenGLViewer::setExportImageFormat(std::string format, bool quiet) {
 void G4OpenGLViewer::g4GluPickMatrix(GLdouble x, GLdouble y, GLdouble width, GLdouble height,
                      GLint viewport[4])
   {
-    GLdouble mat[16];
-    GLdouble sx, sy;
-    GLdouble tx, ty;
+    GLfloat mat[16];
+    GLfloat sx, sy;
+    GLfloat tx, ty;
     
     sx = viewport[2] / width;
     sy = viewport[3] / height;
@@ -1385,7 +1354,7 @@ void G4OpenGLViewer::g4GluPickMatrix(GLdouble x, GLdouble y, GLdouble width, GLd
     M(3, 3) = 1.0;
 #undef M
     
-    glMultMatrixd(mat);
+    glMultMatrixf(mat);
 }
 
 
@@ -1401,9 +1370,9 @@ void G4OpenGLViewer::g4GluLookAt( GLdouble eyex, GLdouble eyey, GLdouble eyez,
                         centerz,
                         GLdouble upx, GLdouble upy, GLdouble upz )
 {
-	GLdouble mat[16];
-	GLdouble x[3], y[3], z[3];
-	GLdouble mag;
+	GLfloat mat[16];
+	GLfloat x[3], y[3], z[3];
+	GLfloat mag;
   
 	/* Make rotation matrix */
   
@@ -1470,10 +1439,10 @@ void G4OpenGLViewer::g4GluLookAt( GLdouble eyex, GLdouble eyey, GLdouble eyez,
 	M(3, 2) = 0.0;
 	M(3, 3) = 1.0;
 #undef M
-	glMultMatrixd(mat);
+	glMultMatrixf(mat);
   
 	/* Translate Eye to Origin */
-	glTranslated(-eyex, -eyey, -eyez);
+	glTranslatef(-eyex, -eyey, -eyez);
 }
 
 void G4OpenGLViewer::g4GlOrtho (GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar) {
@@ -1551,6 +1520,9 @@ G4String G4OpenGLViewerPickMap::print() {
   bool seen = false;
   for (int world = tmanager->GetNoWorlds() - 1; world >= 0; --world) {
     G4Navigator *navigator = tmanager->GetNavigator(iter[world]);
+    if (navigator->GetWorldVolume() == 0) {
+       continue;
+    }
     G4VPhysicalVolume *pvol = navigator->
                               LocateGlobalPointAndSetup(fCoordinates,0,false);
     if (!pvol)
