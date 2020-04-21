@@ -1335,7 +1335,8 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
 
         if ( calcNorm ) 
         {
-          *n         = G4ThreeVector(p.x()/fRMax,p.y()/fRMax,0) ;
+          *n = G4ThreeVector(p.x(), p.y(), 0) ;
+          n->setMag(1) ;
           *validNorm = true ;
         }
         return snxt = 0 ; // Leaving by rmax immediately
@@ -1383,7 +1384,8 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
           {
             if (calcNorm)
             {
-              *n = G4ThreeVector(p.x()/fRMax,p.y()/fRMax,0) ;
+              *n = G4ThreeVector(p.x(), p.y(), 0) ;
+              n->setMag(1) ;
               *validNorm = true ;
             }
             return snxt = 0.0;
@@ -1407,7 +1409,8 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
         {
           if (calcNorm)
           {
-            *n = G4ThreeVector(p.x()/fRMax,p.y()/fRMax,0) ;
+            *n = G4ThreeVector(p.x(), p.y(), 0) ;
+            n->setMag(1) ;
             *validNorm = true ;
           }
           return snxt = 0.0;
@@ -1572,7 +1575,8 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
         //
         xi = p.x() + snxt*v.x() ;
         yi = p.y() + snxt*v.y() ;
-        *n = G4ThreeVector(xi/fRMax,yi/fRMax,0) ;
+        *n = G4ThreeVector(xi, yi, 0) ;
+        n->setMag(1) ;
         *validNorm = true ;
         break ;
 
@@ -1583,7 +1587,8 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
       case kSPhi:
         if ( fDPhi <= pi )
         {
-          *n         = G4ThreeVector(sinSPhi,-cosSPhi,0) ;
+          *n = G4ThreeVector(sinSPhi, -cosSPhi, 0) ;
+          n->setMag(1) ;
           *validNorm = true ;
         }
         else
@@ -1595,7 +1600,8 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
       case kEPhi:
         if (fDPhi <= pi)
         {
-          *n = G4ThreeVector(-sinEPhi,cosEPhi,0) ;
+          *n = G4ThreeVector(-sinEPhi, cosEPhi, 0) ;
+          n->setMag(1) ;
           *validNorm = true ;
         }
         else
@@ -1605,12 +1611,12 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
         break ;
 
       case kPZ:
-        *n         = G4ThreeVector(0,0,1) ;
+        *n = G4ThreeVector(0,0,1) ;
         *validNorm = true ;
         break ;
 
       case kMZ:
-        *n         = G4ThreeVector(0,0,-1) ;
+        *n = G4ThreeVector(0,0,-1) ;
         *validNorm = true ;
         break ;
 

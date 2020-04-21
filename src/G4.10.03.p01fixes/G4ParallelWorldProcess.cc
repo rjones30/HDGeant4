@@ -151,6 +151,12 @@ void G4ParallelWorldProcess::StartTracking(G4Track* trk)
   {
     G4StepPoint* realWorldPostStepPoint = trk->GetStep()->GetPostStepPoint();
     SwitchMaterial(realWorldPostStepPoint);
+    G4StepPoint *realWorldPreStepPoint = trk->GetStep()->GetPreStepPoint();
+    SwitchMaterial(realWorldPreStepPoint);
+    G4double velocity = trk->CalculateVelocity();
+    realWorldPostStepPoint->SetVelocity(velocity);
+    realWorldPreStepPoint->SetVelocity(velocity);
+    trk->SetVelocity(velocity);
   }
   *(fpHyperStep->GetPreStepPoint()) = *(fpHyperStep->GetPostStepPoint());
 }
