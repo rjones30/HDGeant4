@@ -30,7 +30,6 @@
 #include "G4HadronElasticPhysics.hh"
 #include "G4NeutronTrackingCut.hh"
 
-#include "G4DataQuestionaire.hh"
 #include "G4HadronPhysicsQGSP_FTFP_BERT.hh"
 #include "G4OpticalProcessIndex.hh"
 
@@ -61,7 +60,6 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
       exit(-1);
    }
 
-   G4DataQuestionaire it(photon);
    if (verbosity > 0) {
       G4cout << "<<< GlueX Physics List simulation engine: "
              << "modeled after Geant4 QGSP_FTFP_BERT 4.0"
