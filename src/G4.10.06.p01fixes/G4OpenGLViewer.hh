@@ -66,6 +66,15 @@ class G4OpenGLViewerPickMap {
     fAttributes.push_back(att);
   }
 
+#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
+  inline void setPickCoordinates3D(const G4ThreeVector &v) {
+    fCoordinates = v;
+  }
+  inline G4ThreeVector getPickCoordinates3D() {
+    return fCoordinates;
+  }
+#endif
+
 
   inline G4String getName() {
     return fName;
@@ -94,6 +103,9 @@ class G4OpenGLViewerPickMap {
   G4int fSubHitNumber;
   G4int fPickName;
   std::vector <G4String > fAttributes;
+#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
+  G4ThreeVector fCoordinates;
+#endif
 
 };
 
