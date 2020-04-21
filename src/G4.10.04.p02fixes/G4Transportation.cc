@@ -794,7 +794,7 @@ G4Transportation::StartTracking(G4Track* aTrack)
 
   // ChordFinder reset internal state
   //
-  if( DoesGlobalFieldExist() )
+  if( fFieldPropagator )
   {
      fFieldPropagator->ClearPropagatorState();   
        // Resets all state of field propagator class (ONLY)
