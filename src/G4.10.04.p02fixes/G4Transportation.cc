@@ -104,12 +104,12 @@ G4Transportation::G4Transportation( G4int verbosity )
     fThresholdTrials( 10 ), 
     fNoLooperTrials( 0 ),
     fSumEnergyKilled( 0.0 ), fMaxEnergyKilled( 0.0 ), 
-    fShortStepOptimisation( false ) // Old default: true (=fast short steps)
+    fShortStepOptimisation( false ), // Old default: true (=fast short steps)
+    fVerboseLevel( verbosity )
 {
   // set Process Sub Type
   SetProcessSubType(static_cast<G4int>(TRANSPORTATION));
   pParticleChange= &fParticleChange;   // Required to conform to G4VProcess 
-  SetVerboseLevel(verbosity);
 
   G4TransportationManager* transportMgr ; 
 
@@ -132,7 +132,7 @@ G4Transportation::G4Transportation( G4int verbosity )
     // Points to (G4VTouchable*) 0
 
 #ifdef G4VERBOSE
-  if( verboseLevel > 0) 
+  if( fVerboseLevel > 0) 
   { 
      G4cout << " G4Transportation constructor> set fShortStepOptimisation to "; 
      if ( fShortStepOptimisation )  G4cout << "true"  << G4endl;
@@ -145,7 +145,7 @@ G4Transportation::G4Transportation( G4int verbosity )
 
 G4Transportation::~G4Transportation()
 {
-  if( (verboseLevel > 0) && (fSumEnergyKilled > 0.0 ) )
+  if( (fVerboseLevel > 0) && (fSumEnergyKilled > 0.0 ) )
   { 
     G4cout << " G4Transportation: Statistics for looping particles " << G4endl;
     G4cout << "   Sum of energy of loopers killed: " <<  fSumEnergyKilled << G4endl;
@@ -182,9 +182,12 @@ AlongStepGetPhysicalInteractionLength( const G4Track&  track,
   *selection = CandidateForSelection ;
 
   fFirstStepInVolume= fNewTrack || fLastStepInVolume;
+  // G4cout << "  Transport::AlongStep GPIL:  1st-step= "  << fFirstStepInVolume << "  newTrack= " << fNewTrack << " fLastStep-in-Vol= "  << fLastStepInVolume << G4endl;
   fLastStepInVolume= false;
   fNewTrack = false;
 
+  fParticleChange.ProposeFirstStepInVolume(fFirstStepInVolume);
+  
   // Get initial Energy/Momentum of the track
   //
   const G4DynamicParticle*    pParticle  = track.GetDynamicParticle() ;
@@ -324,8 +327,11 @@ AlongStepGetPhysicalInteractionLength( const G4Track&  track,
      // For insurance, could set it again
      // chargeState.SetPDGSpin(pParticleDef->GetPDGSpin() );   // Provisionally in same object
 
-     G4EquationOfMotion* equationOfMotion = fFieldPropagator->GetCurrentEquationOfMotion();
+     G4EquationOfMotion* equationOfMotion = 
+     (fFieldPropagator->GetChordFinder()->GetIntegrationDriver()->GetStepper())
+     ->GetEquationOfMotion();
 
+//     equationOfMotion->SetChargeMomentumMass( particleCharge,
      equationOfMotion->SetChargeMomentumMass( chargeState,
                                               momentumMagnitude,
                                               restMass);
@@ -412,7 +418,7 @@ AlongStepGetPhysicalInteractionLength( const G4Track&  track,
           no_inexact_steps++;
           // Possible statistics keeping here ...
         }
-        if( verboseLevel > 1 )
+        if( fVerboseLevel > 1 )
         {
           if( std::fabs(startEnergy- endEnergy) > perThousand * endEnergy )
           {
@@ -430,7 +436,7 @@ AlongStepGetPhysicalInteractionLength( const G4Track&  track,
                       << "     Ending   E= " << std::setw(12) << endEnergy   / MeV << " MeV " << G4endl;       
                G4cout << " Energy has been corrected -- however, review"
                       << " field propagation parameters for accuracy."  << G4endl;
-               if( (verboseLevel > 2 ) || (no_warnings<4) || (no_large_ediff == warnModulo * moduloFactor) )
+               if( (fVerboseLevel > 2 ) || (no_warnings<4) || (no_large_ediff == warnModulo * moduloFactor) )
                {
                  G4cout << " These include EpsilonStepMax(/Min) in G4FieldManager "
                         << " which determine fractional error per step for integrated quantities. " << G4endl
@@ -448,7 +454,7 @@ AlongStepGetPhysicalInteractionLength( const G4Track&  track,
                }
             }
           }
-        }  // end of if (verboseLevel)
+        }  // end of if (fVerboseLevel)
 
         // Correct the energy for fields that conserve it
         //  This - hides the integration error
@@ -532,7 +538,7 @@ G4VParticleChange* G4Transportation::AlongStepDoIt( const G4Track& track,
   fParticleChange.SetMomentumChanged(fMomentumChanged) ;
 
   fParticleChange.ProposePolarization(fTransportEndSpin);
-
+  
   G4double deltaTime = 0.0 ;
 
   // Calculate  Lab Time of Flight (ONLY if field Equations used it!)
@@ -589,7 +595,7 @@ G4VParticleChange* G4Transportation::AlongStepDoIt( const G4Track& track,
         if( endEnergy > fMaxEnergyKilled) { fMaxEnergyKilled= endEnergy; }
 
 #ifdef G4VERBOSE
-        if( (verboseLevel > 1) && 
+        if( (fVerboseLevel > 1) && 
             ( endEnergy > fThreshold_Warning_Energy )  )
         { 
           G4cout << " G4Transportation is killing track that is looping or stuck "
@@ -607,7 +613,7 @@ G4VParticleChange* G4Transportation::AlongStepDoIt( const G4Track& track,
       {
         fNoLooperTrials ++; 
 #ifdef G4VERBOSE
-        if( (verboseLevel > 2) )
+        if( (fVerboseLevel > 2) )
         {
           G4cout << "   G4Transportation::AlongStepDoIt(): Particle looping -  "
                  << "   Number of trials = " << fNoLooperTrials 
@@ -788,7 +794,7 @@ G4Transportation::StartTracking(G4Track* aTrack)
 
   // ChordFinder reset internal state
   //
-  if( fFieldPropagator )
+  if( DoesGlobalFieldExist() )
   {
      fFieldPropagator->ClearPropagatorState();   
        // Resets all state of field propagator class (ONLY)

@@ -41,7 +41,6 @@
 
 #include "G4SteppingVerbose.hh"
 #include "G4SteppingManager.hh"
-#include "G4ForceCondition.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4VSensitiveDetector.hh"    // Include from 'hits/digi'
 #include "G4StepStatus.hh"    // Include from 'tracking'
@@ -89,19 +88,16 @@ void G4SteppingVerbose::AtRestDoItInvoked()
      G4cout << " **List of AtRestDoIt invoked:" << G4endl;
      for(size_t np=0; np < MAXofAtRestLoops; np++){
        size_t npGPIL = MAXofAtRestLoops-np-1;
-       if( (*fSelectedAtRestDoItVector)[npGPIL] > 0 ){
+       if( (*fSelectedAtRestDoItVector)[npGPIL] == 2 ){
 	       npt++;                
 	       ptProcManager = (*fAtRestDoItVector)[np];
-           int cond = (*fSelectedPostStepDoItVector)[npGPIL];
 	       G4cout << "   # " << npt << " : " 
 	              << ptProcManager->GetProcessName() 
-                  << ptProcManager->GetProcessName()
-                  << ((cond == Forced)? " (Forced)" :
-                      (cond == NotForced)? " (NotForced)" :
-                      (cond == Conditionally)? " (Conditionally)" :
-                      (cond == ExclusivelyForced)? " (ExclusivelyForced)" :
-                      (cond == StronglyForced)? " (StronglyForced)" : "")
-                  << G4endl;
+	              << " (Forced)" << G4endl;
+       } else if ( (*fSelectedAtRestDoItVector)[npGPIL] == 1 ){
+	       npt++;                
+	       ptProcManager = (*fAtRestDoItVector)[np];
+	       G4cout << "   # " << npt << " : "  << ptProcManager->GetProcessName() << G4endl;
        }
      }
      
@@ -206,19 +202,16 @@ void G4SteppingVerbose::PostStepDoItAllDone()
 
         for(size_t np=0; np < MAXofPostStepLoops; np++){
            size_t npGPIL = MAXofPostStepLoops-np-1;
-   // This PostStepDoIt is really forced to invoke, anyway.
-           if( (*fSelectedPostStepDoItVector)[npGPIL] > 0){
+           if( (*fSelectedPostStepDoItVector)[npGPIL] == 2){
              npt++;
              ptProcManager = (*fPostStepDoItVector)[np];
-             int cond = (*fSelectedPostStepDoItVector)[npGPIL];
              G4cout << "      " << npt << ") "
                     << ptProcManager->GetProcessName()
-                    << ((cond == Forced)? " (Forced)" :
-                        (cond == NotForced)? " (NotForced)" :
-                        (cond == Conditionally)? " (Conditionally)" :
-                        (cond == ExclusivelyForced)? " (ExclusivelyForced)" :
-                        (cond == StronglyForced)? " (StronglyForced)" : "")
-                    << G4endl;
+                    << " (Forced)" << G4endl;
+           } else if ( (*fSelectedPostStepDoItVector)[npGPIL] == 1){
+             npt++;
+             ptProcManager = (*fPostStepDoItVector)[np];
+             G4cout << "      " << npt << ") " << ptProcManager->GetProcessName() << G4endl;
            }
         }
 

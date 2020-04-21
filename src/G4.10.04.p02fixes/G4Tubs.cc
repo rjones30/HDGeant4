@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-// $Id: G4Tubs.cc 104316 2017-05-24 13:04:23Z gcosmo $
+// $Id: G4Tubs.cc 105148 2017-07-14 08:35:13Z gcosmo $
 //
 // 
 // class G4Tubs
@@ -209,7 +209,7 @@ void G4Tubs::ComputeDimensions(       G4VPVParameterisation* p,
 //
 // Get bounding box
 
-void G4Tubs::BoundingLimits(G4ThreeVector& pMin, G4ThreeVector& pMax) const
+void G4Tubs::Extent(G4ThreeVector& pMin, G4ThreeVector& pMax) const
 {
   G4double rmin = GetInnerRadius();
   G4double rmax = GetOuterRadius();
@@ -242,8 +242,7 @@ void G4Tubs::BoundingLimits(G4ThreeVector& pMin, G4ThreeVector& pMax) const
             << GetName() << " !"
             << "\npMin = " << pMin
             << "\npMax = " << pMax;
-    G4Exception("G4Tubs::BoundingLimits()", "GeomMgt0001",
-                JustWarning, message);
+    G4Exception("G4Tubs::Extent()", "GeomMgt0001", JustWarning, message);
     DumpInfo();
   }
 }
@@ -262,7 +261,7 @@ G4bool G4Tubs::CalculateExtent( const EAxis              pAxis,
   G4bool exist;
 
   // Get bounding box
-  BoundingLimits(bmin,bmax);
+  Extent(bmin,bmax);
 
   // Check bounding box
   G4BoundingEnvelope bbox(bmin,bmax);
@@ -1278,8 +1277,7 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
 
         if ( calcNorm ) 
         {
-          *n = G4ThreeVector(p.x(), p.y(), 0) ;
-          n->setMag(1) ;
+          *n         = G4ThreeVector(p.x()/fRMax,p.y()/fRMax,0) ;
           *validNorm = true ;
         }
         return snxt = 0 ; // Leaving by rmax immediately
@@ -1327,8 +1325,7 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
           {
             if (calcNorm)
             {
-              *n = G4ThreeVector(p.x(), p.y(), 0) ;
-              n->setMag(1) ;
+              *n = G4ThreeVector(p.x()/fRMax,p.y()/fRMax,0) ;
               *validNorm = true ;
             }
             return snxt = 0.0;
@@ -1352,8 +1349,7 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
         {
           if (calcNorm)
           {
-            *n = G4ThreeVector(p.x(), p.y(), 0) ;
-            n->setMag(1) ;
+            *n = G4ThreeVector(p.x()/fRMax,p.y()/fRMax,0) ;
             *validNorm = true ;
           }
           return snxt = 0.0;
@@ -1518,8 +1514,7 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
         //
         xi = p.x() + snxt*v.x() ;
         yi = p.y() + snxt*v.y() ;
-        *n = G4ThreeVector(xi, yi, 0) ;
-        n->setMag(1) ;
+        *n = G4ThreeVector(xi/fRMax,yi/fRMax,0) ;
         *validNorm = true ;
         break ;
 
@@ -1531,7 +1526,6 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
         if ( fDPhi <= pi )
         {
           *n         = G4ThreeVector(sinSPhi,-cosSPhi,0) ;
-          n->setMag(1) ;
           *validNorm = true ;
         }
         else
@@ -1544,7 +1538,6 @@ G4double G4Tubs::DistanceToOut( const G4ThreeVector& p,
         if (fDPhi <= pi)
         {
           *n = G4ThreeVector(-sinEPhi,cosEPhi,0) ;
-          n->setMag(1) ;
           *validNorm = true ;
         }
         else

@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-// $Id: G4PhysicalVolumeModel.cc 106122 2017-09-13 12:51:53Z gcosmo $
+// $Id: G4PhysicalVolumeModel.cc 101035 2016-11-04 08:48:17Z gcosmo $
 //
 // 
 // John Allison  31st December 1997.
@@ -134,7 +134,7 @@ void G4PhysicalVolumeModel::CalculateExtent ()
        false,  // Density culling.
        0.,     // Density (not relevant if density culling false).
        true,   // Cull daughters of opaque mothers.
-       24);    // No of sides (not relevant for this operation).
+       72);    // No of sides (not relevant for this operation).
     fpMP = &mParams;
     DescribeYourselfTo (bsScene);
     G4double radius = bsScene.GetRadius();
@@ -508,65 +508,6 @@ void G4PhysicalVolumeModel::DescribeAndDescend
   // 6) The user has asked for all further traversing to be aborted...
   if (fAbort) thisToBeDrawn = false;
 
-#ifdef BYPASS_DRAWING_CLIPPED_VOLUMES
-
-  // Check if a view clipping operation cuts this volume from the scene
-
-  bool thisToBeBypassed = false;
-  G4VSolid* pIntersector = fpMP->GetSectionSolid();
-  G4VSolid* pSubtractor = fpMP->GetCutawaySolid();
-  if (fpClippingSolid) {
-    switch (fClippingMode) {
-     case subtraction:
-       pSubtractor = fpClippingSolid;
-       break;
-     case intersection:
-       pIntersector = fpClippingSolid;
-       break;
-    }
-  }
-
-  G4DisplacedSolid *pClipper;
-  if ((pClipper = dynamic_cast<G4DisplacedSolid*>(pIntersector)))
-  {
-    G4AffineTransform clipAT(pClipper->GetTransform());
-    G4AffineTransform currAT(fpCurrentTransform->getRotation().inverse(),
-                             fpCurrentTransform->getTranslation());
-    G4AffineTransform combAT;
-    combAT.Product(currAT,clipAT);
-    G4DisplacedSolid pClipped("temporary_to_clip",pSol,combAT);
-    G4VisExtent clipper(pClipper->GetConstituentMovedSolid()->GetExtent());
-    G4VisExtent clipped(pClipped.GetExtent());
-    thisToBeBypassed = (clipper.GetXmax() < clipped.GetXmin())
-                    || (clipper.GetXmin() > clipped.GetXmax())
-                    || (clipper.GetYmax() < clipped.GetYmin())
-                    || (clipper.GetYmin() > clipped.GetYmax())
-                    || (clipper.GetZmax() < clipped.GetZmin())
-                    || (clipper.GetZmin() > clipped.GetZmax());
-  }
-
-  if ((pClipper = dynamic_cast<G4DisplacedSolid*>(pSubtractor)))
-  {
-    G4AffineTransform clipAT(pClipper->GetTransform());
-    G4AffineTransform currAT(fpCurrentTransform->getRotation().inverse(),
-                             fpCurrentTransform->getTranslation());
-    G4AffineTransform combAT;
-    combAT.Product(currAT,clipAT);
-    G4DisplacedSolid pClipped("temporary_to_clip",pSol,combAT);
-    G4VisExtent clipper(pClipper->GetConstituentMovedSolid()->GetExtent());
-    G4VisExtent clipped(pClipped.GetExtent());
-    thisToBeBypassed = (clipper.GetXmax() > clipped.GetXmax())
-                    && (clipper.GetXmin() < clipped.GetXmin())
-                    && (clipper.GetYmax() > clipped.GetYmax())
-                    && (clipper.GetYmin() < clipped.GetYmin())
-                    && (clipper.GetZmax() > clipped.GetZmax())
-                    && (clipper.GetZmin() < clipped.GetZmin());
-  }
-
-  thisToBeDrawn = thisToBeDrawn && (! thisToBeBypassed);
-
-#endif
-
   // Record thisToBeDrawn in path...
   fFullPVPath.back().SetDrawn(thisToBeDrawn);
 
@@ -602,11 +543,7 @@ void G4PhysicalVolumeModel::DescribeAndDescend
 
   // First, reasons that do not depend on culling policy...
   G4int nDaughters = pLV->GetNoDaughters();
-#ifdef BYPASS_DRAWING_CLIPPED_VOLUMES
-  G4bool daughtersToBeDrawn = ! thisToBeBypassed;
-#else
   G4bool daughtersToBeDrawn = true;
-#endif
   // 1) There are no daughters...
   if (!nDaughters) daughtersToBeDrawn = false;
   // 2) We are at the limit if requested depth...
@@ -703,7 +640,7 @@ void G4PhysicalVolumeModel::DescribeSolid
     else
       G4Polyhedron::SetNumberOfRotationSteps(fpMP->GetNoOfSides());
     const G4Polyhedron* pOriginal = pSol->GetPolyhedron();
-    //G4Polyhedron::ResetNumberOfRotationSteps();
+    G4Polyhedron::ResetNumberOfRotationSteps();
 
     if (!pOriginal) {
 
@@ -783,7 +720,6 @@ G4bool G4PhysicalVolumeModel::Validate (G4bool warn)
     transportationManager->GetWorldsIterator();
   for (size_t i = 0; i < nWorlds; ++i, ++iterWorld) {
     G4VPhysicalVolume* world = (*iterWorld);
-    if (!world) break; // This can happen if geometry has been cleared/destroyed.
     // The idea now is to seek a PV with the same name and copy no
     // in the hope it's the same one!!
     G4PhysicalVolumeModel searchModel (world);

@@ -46,8 +46,7 @@ typedef HEPVis::SbPlane HVPlane3D;
 #define INITIAL_SIZE 200
 #define CRAZY_POINT  HVPoint3D(-10.e+6, -10.e+6, -10.e+6)
 //#define GRANULARITY  10.e+5;
-//#define GRANULARITY  10.e+5  //G.Barrand : rm the trailing ;
-#define GRANULARITY  1.e+9   //G.Barrand : rm the trailing ;
+#define GRANULARITY  10.e+5  //G.Barrand : rm the trailing ;
 
 #define SWAP(A,B) w = A; A = B; B = w
 
@@ -326,8 +325,6 @@ class BooleanProcessor {
   void   modifyReference(int iface, int i1, int i2, int iref);
   void   triangulateFace(int iface);
   HepPolyhedron createPolyhedron();
-  bool   isInside(HVPoint3D &point, FaceList &poly);
-  void   dump(FaceList &poly);
 
  public:
   //G.Barrand : BooleanProcessor() {}
@@ -520,8 +517,7 @@ void BooleanProcessor::takePolyhedron(const HepPolyhedron & p,
     for (i=0; i<nnode; i++) { point += nodes[iNodes[i]].v; }
     if (nnode > 1) point *= (1./nnode);
     //G.Barrand : faces.back().plane = HVPlane3D(n.unit(), point);
-    //faces.back().plane = HVPlane3D(n, point); //G.Barrand
-    faces.back().plane = HVPlane3D(n.unit(), point);
+    faces.back().plane = HVPlane3D(n, point); //G.Barrand
 
     //   S E T   R E F E R E N C E   T O   T H E   N E X T   F A C E
 
@@ -1329,10 +1325,9 @@ void BooleanProcessor::assemblePolyhedra()
       iedge = edges[iedge].inext;
     }
     iface = faces[i].inext;
-    //unsuitable_faces.remove(i);
+    unsuitable_faces.remove(i);
   }
 
-#ifdef MOD_PONCE
   //G.Barrand : begin
   /* From S.Ponce
    At last, there is a problem in the assemblePolyhedra method. At least, I
@@ -1360,133 +1355,6 @@ void BooleanProcessor::assemblePolyhedra()
   one of the solid should simply be ignored.
   */
   //G.Barrand : end
-#else
-  //R.T.Jones : begin
-  /*  If there are faces left on the unknown_faces list, it is presumed to
-   *  be because the boolean operation was requested between volumes whose
-   *  faces never intersect.  What to do in this case depends on type of
-   *  operation, and whether the two volumes are non-overlapping or if one
-   *  of the two volumes lies completely inside the other.  Listed below 
-   *  is the result that should be returned in each case.
-   *   
-   *    1. Does first vertex of the operand volume lie inside the original?
-   *       a. yes : case (operation)
-   *                 SUBTRACTION : return all faces, both volumes
-   *                 INTERSECTION : return faces of operand volume
-   *                 UNION : return faces of the original volume
-   *       b. no : continue
-   *    2. Does first vertex of the original volume lie inside the operand?
-   *       a. yes : case (operation)
-   *                 SUBTRACTION : return null polyhedron
-   *                 INTERSECTION : return faces of original volume
-   *                 UNION : return faces of the operand volume
-   *       b. no : case (operation)
-   *                SUBTRACTION : return original polyhedron
-   *                INTERSECTION : return null polyhedron
-   *                UNION : return all faces, both volumes
-   */
-
-  int icand = unknown_faces.front();
-  if (icand > 0) {
-    bool accept_cand = false;
-    bool accept_left = false;
-    int ileft = unsuitable_faces.front();
-    if (ileft == 0) ileft = result_faces.front();
-    int iedge = faces[ileft].iedges[0];
-    int inode = edges[iedge].i1;
-    if (isInside(nodes[inode].v,unknown_faces)) {
-      switch (operation) {
-       case OP_SUBTRACTION :
-        accept_cand = true;
-        accept_left = true;
-        break;
-       case OP_INTERSECTION :
-        accept_cand = false;
-        accept_left = true;
-        break;
-       case OP_UNION :
-        accept_cand = true;
-        accept_left = false;
-      }
-    }
-    else {
-      iedge = faces[icand].iedges[0];
-      inode = edges[iedge].i1;
-      if (isInside(nodes[inode].v,unsuitable_faces)) {
-        switch (operation) {
-         case OP_SUBTRACTION :
-          accept_cand = false;
-          accept_left = false;
-          break;
-         case OP_INTERSECTION :
-          accept_cand = true;
-          accept_left = false;
-          break;
-         case OP_UNION :
-          accept_cand = false;
-          accept_left = true;
-        }
-      }
-      else if (isInside(nodes[inode].v,result_faces)) {
-        switch (operation) {
-         case OP_SUBTRACTION :
-          accept_cand = true;
-          accept_left = false;
-          break;
-         case OP_INTERSECTION :
-          accept_cand = true;
-          accept_left = false;
-          break;
-         case OP_UNION :
-          accept_cand = false;
-          accept_left = false;
-        }
-      }
-      else {
-        switch (operation) {
-         case OP_SUBTRACTION :
-          accept_cand = true;
-          accept_left = false;
-          break;
-         case OP_INTERSECTION :
-          accept_cand = false;
-          accept_left = false;
-          break;
-         case OP_UNION :
-          accept_cand = true;
-          accept_left = true;
-        }
-      }
-    }
-    iface = unknown_faces.front();
-    while (iface > 0) {
-      i = iface;
-      iface = faces[i].inext;
-      unknown_faces.remove(i);
-      if (accept_cand) {
-        faces[i].inew = ORIGINAL_FACE;
-        result_faces.push_back(i);
-      }
-      else {
-        faces[i].inew = UNSUITABLE_FACE;
-      }
-    }
-    iface = unsuitable_faces.front();
-    while (iface > 0) {
-      i = iface;
-      iface = faces[i].inext;
-      unsuitable_faces.remove(i);
-      if (accept_left) {
-        faces[i].inew = ORIGINAL_FACE;
-        result_faces.push_back(i);
-      }
-      else {
-        faces[i].inew = UNSUITABLE_FACE;
-      }
-    }
-  }
-  //R.T.Jones : end
-#endif
 }
 
 inline void
@@ -2575,83 +2443,3 @@ void BooleanProcessor::dump() {//G.Barrand
            << G4endl;
   }
 }
-
-bool BooleanProcessor::isInside(HVPoint3D &point, FaceList &poly)
-{
- // Test whether point is inside or outside the polyhedron enclosed by poly.
- // The algorithm assumes that the faces of poly completely enclose one or
- // more 3D volumes, each of which has finite extent.
-
-#define EPSILON 1e-6
-#define TWOPI 6.28318530717959
-#define PI 3.14159265358979
-#define PRINCIPAL_VALUE(x) ( ( (x) < -PI )? (x) + TWOPI : \
-                             ( (x) >  PI )? (x) - TWOPI : (x) )
-
-   int inout = 0;
-   double lowDist = 1e200;
-   int iface = poly.front();
-   while (iface != 0) {
-      HVNormal3D normal = faces[iface].plane.normal();
-      if (fabs(normal[2]) > EPSILON) {
-         double dphi[4];
-         HVPoint3D vertex;
-         for (int n=0; n < 4; ++n) {
-            int iedge = faces[iface].iedges[n];
-            if (iedge == 0) {
-               dphi[n] = dphi[n-1];
-               break;
-            }
-            int inode = edges[iedge].i1;
-            vertex = nodes[inode].v;
-            vertex -= point;
-            dphi[n] = vertex.phi();
-         }
-         double phi0 = dphi[0];
-         dphi[0] -= dphi[3];
-         dphi[3] -= dphi[2];
-         dphi[2] -= dphi[1];
-         dphi[1] -= phi0;
-         dphi[0] = PRINCIPAL_VALUE(dphi[0]);
-         dphi[1] = PRINCIPAL_VALUE(dphi[1]);
-         dphi[2] = PRINCIPAL_VALUE(dphi[2]);
-         dphi[3] = PRINCIPAL_VALUE(dphi[3]);
-         int sign = (dphi[0] < 0)? -1 : (dphi[0] > 0)? +1 :
-                    (dphi[1] < 0)? -1 : (dphi[1] > 0)? +1 :
-                    (dphi[2] < 0)? -1 : (dphi[2] > 0)? +1 :
-                    (dphi[3] < 0)? -1 : (dphi[3] > 0)? +1 : 0;
-         if ( (sign != 0) && (dphi[1]*sign >= 0) &&
-              (dphi[2]*sign >= 0) && (dphi[3]*sign >= 0) )
-         {
-            double z0 = (vertex[0] * normal[0] +
-                         vertex[1] * normal[1] +
-                         vertex[2] * normal[2]) / normal[2];
-            if (z0 >= 0 && z0 < lowDist) {
-               inout = (normal[2] > 0)? 1 : -1;
-               lowDist = z0;
-            }
-         }
-      }
-      iface = faces[iface].inext;
-   }
-   return (inout == 1);
-}
-
-void BooleanProcessor::dump(FaceList &list)
-{
-   int count = 0;
-   int iface = list.front();
-   while (iface > 0) {
-      iface = faces[iface].inext;
-      ++count;
-   }
-   G4cout << "FaceList has " << count << " elements in chain: ";
-   iface = list.front();
-   while (iface > 0) {
-      G4cout << iface;
-      iface = faces[iface].inext;
-      if (iface) G4cout << ",";
-   }
-   G4cout << "." << std::endl;
-}
-

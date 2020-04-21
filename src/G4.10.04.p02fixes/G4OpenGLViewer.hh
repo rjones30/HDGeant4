@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-// $Id: G4OpenGLViewer.hh 103926 2017-05-03 13:43:27Z gcosmo $
+// $Id: G4OpenGLViewer.hh 101714 2016-11-22 08:53:13Z gcosmo $
 //
 // 
 // Andrew Walkden  27th March 1996
@@ -66,15 +66,6 @@ class G4OpenGLViewerPickMap {
     fAttributes.push_back(att);
   }
 
-#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
-  inline void setPickCoordinates3D(const G4ThreeVector &v) {
-    fCoordinates = v;
-  }
-  inline G4ThreeVector getPickCoordinates3D() {
-    return fCoordinates;
-  }
-#endif
-
 
   inline G4String getName() {
     return fName;
@@ -103,9 +94,6 @@ class G4OpenGLViewerPickMap {
   G4int fSubHitNumber;
   G4int fPickName;
   std::vector <G4String > fAttributes;
-#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
-  G4ThreeVector fCoordinates;
-#endif
 
 };
 
@@ -165,7 +153,7 @@ protected:
   void ResizeGLView();
   void ResizeWindow(unsigned int, unsigned int);
   virtual G4String Pick(GLdouble x, GLdouble y);
-  const std::vector < G4OpenGLViewerPickMap* > & GetPickDetails(GLdouble x, GLdouble y);
+  std::vector < G4OpenGLViewerPickMap* > GetPickDetails(GLdouble x, GLdouble y);
   virtual void CreateFontLists () {}
   void rotateScene (G4double dx, G4double dy);
   void rotateSceneToggle (G4double dx, G4double dy);

@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-// $Id: G4OpenGLStoredSceneHandler.cc 108544 2018-02-16 09:47:30Z gcosmo $
+// $Id: G4OpenGLStoredSceneHandler.cc 99312 2016-09-13 09:47:18Z gcosmo $
 //
 // 
 // Andrew Walkden  10th February 1997
@@ -290,9 +290,6 @@ G4bool G4OpenGLStoredSceneHandler::AddPrimitivePreambleInternal(const G4Visible&
     if (pLVModel)
       // Logical volume model - don't re-use.
       goto end_of_display_list_reuse_test;
-    if (pViewer->fVP.IsSection() || pViewer->fVP.IsCutaway())
-      // sections and cutaways generate unique views of each model instance
-      goto end_of_display_list_reuse_test;
     // If part of the geometry hierarchy, i.e., from a
     // G4PhysicalVolumeModel, check if a display list already exists for
     // this solid, re-use it if possible.  We could be smarter, and
@@ -419,6 +416,7 @@ end_of_display_list_reuse_test:
       glNewList (fDisplayListId, GL_COMPILE);
     }
   } else {  // Out of memory (or being used when display lists not required).
+    glDrawBuffer (GL_FRONT);
     glPushMatrix();
     G4OpenGLTransform3D oglt (fObjectTransformation);
     glMultMatrixd (oglt.GetGLMatrix ());
