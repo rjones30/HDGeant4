@@ -60,7 +60,7 @@ class GlueXPhysicsList: public G4VModularPhysicsList
 #endif
    G4OpticalPhysics *fOpticalPhysics;
 
-#ifndef G4VERSION_10_04_OR_LATER
+#ifndef G4VERSION_10_03_OR_LATER
    // This member function gets introduced into base class
    // G4VUserPhysicsList in release Geant4.10.03, but until
    // we abandon ability to build under previous releases,
