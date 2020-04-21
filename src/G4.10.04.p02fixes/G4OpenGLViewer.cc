@@ -584,7 +584,6 @@ const std::vector < G4OpenGLViewerPickMap* > & G4OpenGLViewer::GetPickDetails(GL
       glGetDoublev(GL_PROJECTION_MATRIX,proj);
       glGetIntegerv(GL_VIEWPORT,view);
       gluUnProject(x,y,(zmin+zmax)/2,model,proj,view,&gx[0],&gx[1],&gx[2]);
-      pickMap->setPickCoordinates3D(G4ThreeVector(gx[0],gx[1],gx[2]));
 #else
       // This bit of debug code or...
       //GLuint zmin = *p++;
@@ -608,6 +607,9 @@ const std::vector < G4OpenGLViewerPickMap* > & G4OpenGLViewer::GetPickDetails(GL
 	      oss << G4AttCheck(attHolder->GetAttValues()[iAtt],
                                 attHolder->GetAttDefs()[iAtt]);
               G4OpenGLViewerPickMap* pickMap = new G4OpenGLViewerPickMap();
+#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
+              pickMap->setPickCoordinates3D(G4ThreeVector(gx[0],gx[1],gx[2]));
+#endif
 //              G4cout
 //              << "i,j, attHolder->GetAttDefs().size(): "
 //              << i << ',' << j
