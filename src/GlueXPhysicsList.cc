@@ -364,7 +364,7 @@ void GlueXPhysicsList::ListActiveProcesses()
              << G4endl;
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          G4cout << "     " << (*pvec)[nproc]->GetProcessName() << " : "
                 << ((pman->GetProcessActivation(nproc) == 0)? "no" : "yes")
                 << " ( ";
@@ -387,7 +387,7 @@ void GlueXPhysicsList::DoMultipleScattering(G4int flag)
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          if ((*pvec)[nproc]->GetProcessName() == "msc") {
             pman->SetProcessActivation(nproc, flag);
          }
@@ -403,7 +403,7 @@ void GlueXPhysicsList::DoBremsstrahlung(G4int flag)
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          if ((*pvec)[nproc]->GetProcessName().contains("Brems")) {
             pman->SetProcessActivation(nproc, flag);
          }
@@ -419,7 +419,7 @@ void GlueXPhysicsList::DoComptonScattering(G4int flag)
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          if ((*pvec)[nproc]->GetProcessName() == "compt") {
             pman->SetProcessActivation(nproc, flag);
          }
@@ -435,7 +435,7 @@ void GlueXPhysicsList::DoIonizationEnergyLoss(G4int flag)
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          if ((*pvec)[nproc]->GetProcessName().contains("Ioni")) {
             pman->SetProcessActivation(nproc, flag);
          }
@@ -451,7 +451,7 @@ void GlueXPhysicsList::DoPairConversion(G4int flag)
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          if ((*pvec)[nproc]->GetProcessName() == "conv") {
             pman->SetProcessActivation(nproc, flag);
          }
@@ -467,7 +467,7 @@ void GlueXPhysicsList::DoParticleDecay(G4int flag)
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          if ((*pvec)[nproc]->GetProcessName() == "Decay") {
             pman->SetProcessActivation(nproc, flag);
          }
@@ -483,7 +483,7 @@ void GlueXPhysicsList::DoHadronicInteractions(G4int flag)
       G4String particleName = particle->GetParticleName();
       G4ProcessManager *pman = particle->GetProcessManager();
       G4ProcessVector *pvec = pman->GetProcessList();
-      for (int nproc=0; nproc < pvec->size(); ++nproc) {
+      for (int nproc=0; nproc < (int)pvec->size(); ++nproc) {
          if ((*pvec)[nproc]->GetProcessName().contains("Inelastic") ||
              (*pvec)[nproc]->GetProcessName().contains("hadElastic") ||
              (*pvec)[nproc]->GetProcessName().contains("CaptureAtRest") ||
@@ -623,7 +623,7 @@ void GlueXPhysicsList::CheckProcessOrdering()
              << " in order of execution:" << std::endl;
    G4ProcessManager *mgr = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
    G4ProcessVector *procs = mgr->GetPostStepProcessVector(typeDoIt);
-   for (int j=0; j < procs->size(); ++j) {
+   for (int j=0; j < (int)procs->size(); ++j) {
       std::cout << j << ": " << (*procs)[j]->GetProcessName() << std::endl;
    }
 }
@@ -634,7 +634,7 @@ void GlueXPhysicsList::DoProcessReordering()
    G4ProcessManager *mgr = G4OpticalPhoton::OpticalPhoton()->GetProcessManager();
    G4ProcessVector *procs = mgr->GetPostStepProcessVector(typeDoIt);
    G4VProcess *paraWorld=0;
-   for (int j=0; j < procs->size(); ++j) {
+   for (int j=0; j < (int)procs->size(); ++j) {
       std::string procname((*procs)[j]->GetProcessName());
       if (procname.substr(0, 13) == "ParallelWorld") {
          paraWorld = (*procs)[j];
