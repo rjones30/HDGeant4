@@ -24,7 +24,7 @@
 // ********************************************************************
 //
 //
-// $Id: G4OpenGLStoredSceneHandler.cc 87695 2014-12-17 09:35:24Z gcosmo $
+// $Id: G4OpenGLStoredSceneHandler.cc 99312 2016-09-13 09:47:18Z gcosmo $
 //
 // 
 // Andrew Walkden  10th February 1997
@@ -50,6 +50,12 @@
 #include "G4AttHolder.hh"
 
 #include <typeinfo>
+
+G4int G4OpenGLStoredSceneHandler::fSceneIdCount = 0;
+
+G4int  G4OpenGLStoredSceneHandler::fDisplayListId = 0;
+G4bool G4OpenGLStoredSceneHandler::fMemoryForDisplayLists = true;
+G4int  G4OpenGLStoredSceneHandler::fDisplayListLimit = 50000;
 
 G4OpenGLStoredSceneHandler::PO::PO():
   fDisplayListId(0),
@@ -199,7 +205,9 @@ G4bool G4OpenGLStoredSceneHandler::AddPrimitivePreamble(const G4Polyhedron& visi
 
 G4bool G4OpenGLStoredSceneHandler::AddPrimitivePreambleInternal(const G4Visible& visible, bool isMarker, bool isPolyline)
 {
-  const G4Colour& c = GetColour (visible);
+// Get applicable vis attributes for all primitives.
+  fpVisAttribs = fpViewer->GetApplicableVisAttributes(visible.GetVisAttributes());
+  const G4Colour& c = GetColour ();
   G4double opacity = c.GetAlpha ();
 
   G4bool transparency_enabled = true;
@@ -356,10 +364,8 @@ end_of_display_list_reuse_test:
       TO to(fDisplayListId, fObjectTransformation);
       if (isPicking) to.fPickName = fPickName;
       to.fColour = c;
-      const G4VisAttributes* pVA =
-	fpViewer->GetApplicableVisAttributes(visible.GetVisAttributes());
-      to.fStartTime = pVA->GetStartTime();
-      to.fEndTime = pVA->GetEndTime();
+      to.fStartTime = fpVisAttribs->GetStartTime();
+      to.fEndTime = fpVisAttribs->GetEndTime();
       to.fMarkerOrPolyline = isMarkerOrPolyline;
       fTOList.push_back(to);
       // For transient objects, colour, transformation, are kept in
@@ -626,10 +632,5 @@ void G4OpenGLStoredSceneHandler::ClearTransientStore ()
   }
 }
 
-G4int G4OpenGLStoredSceneHandler::fSceneIdCount = 0;
-
-G4int  G4OpenGLStoredSceneHandler::fDisplayListId = 0;
-G4bool G4OpenGLStoredSceneHandler::fMemoryForDisplayLists = true;
-G4int  G4OpenGLStoredSceneHandler::fDisplayListLimit = 50000;
 
 #endif
