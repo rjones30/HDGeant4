@@ -24,7 +24,6 @@
 // ********************************************************************
 //
 //
-// $Id: G4OpenGLViewer.cc 107329 2017-11-08 16:41:26Z gcosmo $
 //
 // 
 // Andrew Walkden  27th March 1996
@@ -33,7 +32,7 @@
 #ifdef G4VIS_BUILD_OPENGL_DRIVER
 
 #include "G4ios.hh"
-#include "G4SystemOfUnits.hh"
+#include <CLHEP/Units/SystemOfUnits.h>
 #include "G4OpenGLViewer.hh"
 #include "G4OpenGLSceneHandler.hh"
 #include "G4OpenGLTransform3D.hh"
@@ -74,24 +73,6 @@ background (G4Colour(0.,0.,0.)),
 transparency_enabled (true),
 antialiasing_enabled (false),
 haloing_enabled (false),
-fStartTime(-DBL_MAX),
-fEndTime(DBL_MAX),
-fFadeFactor(0.),
-fDisplayHeadTime(false),
-fDisplayHeadTimeX(-0.9),
-fDisplayHeadTimeY(-0.9),
-fDisplayHeadTimeSize(24.),
-fDisplayHeadTimeRed(0.),
-fDisplayHeadTimeGreen(1.),
-fDisplayHeadTimeBlue(1.),
-fDisplayLightFront(false),
-fDisplayLightFrontX(0.),
-fDisplayLightFrontY(0.),
-fDisplayLightFrontZ(0.),
-fDisplayLightFrontT(0.),
-fDisplayLightFrontRed(0.),
-fDisplayLightFrontGreen(1.),
-fDisplayLightFrontBlue(0.),
 fRot_sens(1.),
 fPan_sens(0.01),
 fWinSize_x(0),
@@ -1221,8 +1202,8 @@ void G4OpenGLViewer::rotateSceneThetaPhi(G4double dx, G4double dy)
     delta_theta = dx * fRot_sens;
   }    
   
-  delta_alpha *= deg;
-  delta_theta *= deg;
+  delta_alpha *= CLHEP::deg;
+  delta_theta *= CLHEP::deg;
   
   new_vp = std::cos(delta_alpha) * vp + std::sin(delta_alpha) * zprime;
   
