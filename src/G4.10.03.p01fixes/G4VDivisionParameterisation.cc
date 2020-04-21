@@ -40,7 +40,6 @@
 #include "G4ReflectedSolid.hh"
 #include "G4GeometryTolerance.hh"
 #include "G4AutoDelete.hh"
-#include "G4AutoLock.hh"
 
 const G4int G4VDivisionParameterisation::verbose = 5;
 G4ThreadLocal G4RotationMatrix* G4VDivisionParameterisation::fRot = 0;
@@ -90,43 +89,13 @@ void
 G4VDivisionParameterisation::
 ChangeRotMatrix( G4VPhysicalVolume *physVol, G4double rotZ ) const
 {
-  static G4Mutex myMutex = G4MUTEX_INITIALIZER;
-  static std::map<int,std::map<void*,void*> > frotTable;
-
-  G4RotationMatrix *frot;
-  int threadId = G4Threading::G4GetThreadId();
-  if (threadId < 0) {
-    frot = physVol->GetRotation();
+  if (!fRot)
+  {
+    fRot = new G4RotationMatrix();
+    G4AutoDelete::Register(fRot);
   }
-  else {
-    G4AutoLock barrier(&myMutex);
-    frot = (G4RotationMatrix*)frotTable[threadId][physVol];
-    if (frot == 0) {
-      frot = new G4RotationMatrix();
-      physVol->SetRotation(frot);
-      frotTable[threadId][physVol] = frot;
-    }
-  }
-  *frot = G4RotationMatrix();
-  frot->rotateZ( rotZ );
-
-#if 0
-  G4AutoLock barrier(&myMutex);
-  static std::map<void*,void*> frot2physVol;
-  static std::map<void*,int> frot2threadId;
-  if (frot2physVol[frot] == 0) {
-    frot2physVol[frot] = physVol;
-    frot2threadId[frot] = threadId;
-  }
-  else if (frot2physVol[frot] != physVol || frot2threadId[frot] != threadId) {
-    G4cerr << "Hot diggitty dog!" << G4endl;
-    G4cerr << "  bad frot = " << frot << G4endl;
-    G4cerr << "  bad physVol = " << physVol << " =?= " << frot2physVol[frot] << G4endl;
-    G4cerr << "  bad threadId = " << threadId << " =?= " << frot2threadId[frot] << G4endl;
-    frot2physVol[frot] = physVol;
-    frot2threadId[frot] = threadId;
-  }
-#endif
+  fRot->rotateZ( rotZ );
+  physVol->SetRotation(fRot);
 }
 
 //--------------------------------------------------------------------------

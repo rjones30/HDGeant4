@@ -39,12 +39,6 @@
 #include "G4OpenGLTransform3D.hh"
 #include "G4OpenGL2PSAction.hh"
 
-#include "G4TransportationManager.hh"
-#include "G4Navigator.hh"
-#include "G4Material.hh"
-#include "G4FieldManager.hh"
-#include "G4Field.hh"
-
 #include "G4Scene.hh"
 #include "G4VisExtent.hh"
 #include "G4LogicalVolume.hh"
@@ -66,8 +60,6 @@
 
 #include <sstream>
 #include <string>
-
-#include <GL/glu.h>
 
 G4OpenGLViewer::G4OpenGLViewer (G4OpenGLSceneHandler& scene):
 G4VViewer (scene, -1),
@@ -500,20 +492,9 @@ G4String G4OpenGLViewer::Pick(GLdouble x, GLdouble y)
   if (pickMap.size() == 0) {
     txt += "Too many hits.  Zoom in to reduce overlaps.";;
   } else {
-#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
-    G4ThreeVector xlast;
-    for (unsigned int a = 0; a < pickMap.size(); a++) {
-      G4ThreeVector x = pickMap[a]->getPickCoordinates3D();
-      if (!x.isNear(xlast, 0.001 * cm)) {
-        txt += pickMap[a]->print();
-        xlast = x;
-      }
-    }
-#else
     for (unsigned int a=0; a< pickMap.size(); a++) {
       txt += pickMap[a]->print();
     }
-#endif
   }
   return txt;
 }
@@ -550,21 +531,6 @@ std::vector < G4OpenGLViewerPickMap* > G4OpenGLViewer::GetPickDetails(GLdouble x
     for (GLint i = 0; i < hits; ++i) {
       G4OpenGLViewerPickMap* pickMap = new G4OpenGLViewerPickMap();
       GLuint nnames = *p++;
-#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
-      double zmin = *p++;
-      double zmax = *p++;
-      zmin /= (1LL << 32) - 1.0;
-      zmax /= (1LL << 32) - 1.0;
-      double model[16];
-      double proj[16];
-      GLint view[4];
-      double gx[4];
-      glGetDoublev(GL_MODELVIEW_MATRIX,model);
-      glGetDoublev(GL_PROJECTION_MATRIX,proj);
-      glGetIntegerv(GL_VIEWPORT,view);
-      gluUnProject(x,y,(zmin+zmax)/2,model,proj,view,&gx[0],&gx[1],&gx[2]);
-      pickMap->setPickCoordinates3D(G4ThreeVector(gx[0],gx[1],gx[2]));
-#else
       // This bit of debug code or...
       //GLuint zmin = *p++;
       //GLuint zmax = *p++;
@@ -573,7 +539,6 @@ std::vector < G4OpenGLViewerPickMap* > G4OpenGLViewer::GetPickDetails(GLdouble x
       // ...just increment the pointer
       p++;
       p++;
-#endif
       for (GLuint j = 0; j < nnames; ++j) {
         oss.clear();
         GLuint name = *p++;
@@ -1510,75 +1475,6 @@ void G4OpenGLViewer::setVboDrawer(G4OpenGLVboDrawer* drawer) {
 G4String G4OpenGLViewerPickMap::print() {
   std::ostringstream txt;
 
-#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
-  G4TransportationManager *tmanager =
-                      G4TransportationManager::GetTransportationManager();
-  std::vector<G4VPhysicalVolume*>::iterator iter = 
-                                            tmanager->GetWorldsIterator();
-  G4FieldManager *fieldmgr = 0;
-  bool warning = false;
-  bool seen = false;
-  for (int world = tmanager->GetNoWorlds() - 1; world >= 0; --world) {
-    G4Navigator *navigator = tmanager->GetNavigator(iter[world]);
-    if (navigator->GetWorldVolume() == 0) {
-       continue;
-    }
-    G4VPhysicalVolume *pvol = navigator->
-                              LocateGlobalPointAndSetup(fCoordinates,0,false);
-    if (!pvol)
-      continue;
-    G4LogicalVolume *lvol = pvol->GetLogicalVolume();
-    if (!lvol)
-      continue;
-    G4Material *mat = lvol->GetMaterial();
-    if (fieldmgr == 0) {
-      fieldmgr = lvol->GetFieldManager();
-    }
-    else if (fieldmgr != lvol->GetFieldManager()) {
-      txt << "ERROR - field manager inconsistency found in world " << world
-          << std::endl;
-      warning = true;
-    }
-    if (warning || (mat != 0 && !seen)) {
-      G4TouchableHistory *hist = navigator->CreateTouchableHistory();
-      std::ostringstream pvpath;
-      pvpath << "/" << navigator->GetWorldVolume()->GetName() << ":0";
-      for (int depth = hist->GetHistoryDepth() - 1; depth >= 0; --depth) {
-        pvpath << "/" << hist->GetVolume(depth)->GetName()
-               << ":" << hist->GetVolume(depth)->GetCopyNo();
-      }
-   
-      txt << "(" << fCoordinates[0] / cm 
-          << "," << fCoordinates[1] / cm
-          << "," << fCoordinates[2] / cm << ")"
-          << " found in " << pvol->GetName() << " copy " << pvol->GetCopyNo()
-          << " of " << lvol->GetName() << " with " << std::endl
-          << "   complete path: " << pvpath.str() << std::endl
-          << "   layer " << world << " material: " 
-          << ((mat)? mat->GetName() : "0") << std::endl;
-      if (fieldmgr) {
-        const G4Field *fld = fieldmgr->GetDetectorField();
-        if (fld) {
-          double Bfld[3];
-          double xglob[4] = {fCoordinates[0],fCoordinates[1],fCoordinates[2],0};
-          fld->GetFieldValue(xglob,Bfld);
-          txt << "   magnetic field (Tesla): "
-              << Bfld[0] / tesla << "," 
-              << Bfld[1] / tesla << "," 
-              << Bfld[2] / tesla << std::endl;
-        }
-        else {
-          txt << "   magnetic field: UNDEFINED" << std::endl;
-        }
-      }
-      else {
-        txt << "   magnetic field: null" << std::endl;
-      }
-      seen = true;
-    }
-  }
-
-#else
   txt << fName;
 
   txt << "Hit: " << fHitNumber << ", Sub-hit: " << fSubHitNumber << ", PickName: " << fPickName << "\n";
@@ -1586,7 +1482,6 @@ G4String G4OpenGLViewerPickMap::print() {
   for (unsigned int a=0; a<fAttributes.size(); a++) {
     txt << fAttributes[a] << "\n";
   }
-#endif
   return txt.str();
 }
 
