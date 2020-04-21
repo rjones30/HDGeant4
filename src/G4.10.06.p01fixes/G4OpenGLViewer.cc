@@ -492,7 +492,7 @@ G4String G4OpenGLViewer::Pick(GLdouble x, GLdouble y)
     for (unsigned int a = 0; a < pickMap.size(); a++) {
       if (pickMap[a]->getAttributes().size() > 0) {
         G4ThreeVector x = pickMap[a]->getPickCoordinates3D();
-        if (!x.isNear(xlast, 0.001 * cm)) {
+        if (!x.isNear(xlast, 0.001 * CLHEP::cm)) {
           txt += pickMap[a]->print();
           xlast = x;
         }
@@ -1588,9 +1588,9 @@ G4String G4OpenGLViewerPickMap::print() {
                << ":" << hist->GetVolume(depth)->GetCopyNo();
       }
    
-      txt << "(" << fCoordinates[0] / cm 
-          << "," << fCoordinates[1] / cm
-          << "," << fCoordinates[2] / cm << ")"
+      txt << "(" << fCoordinates[0] / CLHEP::cm 
+          << "," << fCoordinates[1] / CLHEP::cm
+          << "," << fCoordinates[2] / CLHEP::cm << ")"
           << " found in " << pvol->GetName() << " copy " << pvol->GetCopyNo()
           << " of " << lvol->GetName() << " with " << std::endl
           << "   complete path: " << pvpath.str() << std::endl
@@ -1603,9 +1603,9 @@ G4String G4OpenGLViewerPickMap::print() {
           double xglob[4] = {fCoordinates[0],fCoordinates[1],fCoordinates[2],0};
           fld->GetFieldValue(xglob,Bfld);
           txt << "   magnetic field (Tesla): "
-              << Bfld[0] / tesla << "," 
-              << Bfld[1] / tesla << "," 
-              << Bfld[2] / tesla << std::endl;
+              << Bfld[0] / CLHEP::tesla << "," 
+              << Bfld[1] / CLHEP::tesla << "," 
+              << Bfld[2] / CLHEP::tesla << std::endl;
         }
         else {
           txt << "   magnetic field: UNDEFINED" << std::endl;

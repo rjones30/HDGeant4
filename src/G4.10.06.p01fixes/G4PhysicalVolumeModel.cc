@@ -806,7 +806,7 @@ void G4PhysicalVolumeModel::DescribeSolid
                                      pars.Rmax);
     }
 
-    const G4Polyhedron* pOriginal = pSol->GetPolyhedron();
+    const G4Polyhedron* pOriginalPolyhedron = pSol->GetPolyhedron();
     //G4Polyhedron::ResetNumberOfRotationSteps();
 
     if (!pOriginalPolyhedron) {
