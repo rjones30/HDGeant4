@@ -172,7 +172,8 @@ int main(int argc,char** argv)
    }
    runManager.SetUserInitialization(geometry);
 
-#if REDUCE_OPTIMIZATION_OF_CDC
+#if G4VERSION_NUMBER >= 1030
+# if REDUCE_OPTIMIZATION_OF_CDC
    // Save some time at startup by reducing the level
    // of optimization of the CDC geometry
    G4LogicalVolumeStore *volumes = G4LogicalVolumeStore::GetInstance();
@@ -180,6 +181,7 @@ int main(int argc,char** argv)
    if (logvol) {
       logvol->SetSmartless(0.5);
    }
+# endif
 #endif
 
    // Physics process initialization

@@ -25,6 +25,7 @@
 #include "GlueXSensitiveDetectorPS.hh"
 #include "GlueXSensitiveDetectorTPOL.hh"
 
+#include "G4Version.hh"
 #include "G4LogicalVolume.hh"
 #include "G4PVPlacement.hh"
 #include "G4SDManager.hh"
@@ -468,7 +469,7 @@ void GlueXDetectorConstruction::CloneF()
             // First time we see this FM, let's clone and remember...
 
             G4ChordFinder *cfinder = masterFM->GetChordFinder();
-#if G4VERSION_10_04_OR_LATER
+#if G4VERSION_NUMBER >= 1040
             G4VIntegrationDriver *midriver = cfinder->GetIntegrationDriver();
             double stepMinimum = 1e-2;
 #else
