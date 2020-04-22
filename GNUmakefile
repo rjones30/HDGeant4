@@ -26,7 +26,6 @@ CPPFLAGS += -I./src/G4debug
 CPPFLAGS += -I$(HALLD_RECON_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
-CPPFLAGS += -I/usr/include/Qt
 CPPFLAGS += $(shell python-config --includes)
 CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
 CPPFLAGS += -DUSE_SSE2 -std=c++11
@@ -45,13 +44,11 @@ CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
 #CPPFLAGS += -DDEBUG_PLACEMENT
 #CPPFLAGS += -DDEBUG_SECTIONPLANE
 #CPPFLAGS += -DDEBUG_SECTIONPLANE_ZAVE
-#CPPFLAGS += -DG4VERSION_10_04_OR_LATER=1
+CPPFLAGS += -DG4VERSION_10_04_OR_LATER=1
+CPPFLAGS += -DG4VERSION_10_03_OR_LATER=1
 ifneq (, $(wildcard $(HALLD_RECON_HOME)/src/libraries/DIRC/DDIRCPmtHit.*))
 	CPPFLAGS += -DDIRCTRUTHEXTRA
 endif
-
-# If you want to build against Geant4.10.03 or greater, you will need this line uncommented
-#CPPFLAGS += -DG4VUSERPHYSICSLIST_HAS_GETPARTICLEITERATOR
 
 G4LIB_USE_GDML = 1
 CPPVERBOSE = 1
@@ -63,7 +60,7 @@ G4fixes_sources := $(wildcard src/G4fixes/*.cc)
 G4debug_sources := $(wildcard src/G4debug/*.cc)
 HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/hddsCommon.cpp
 
-ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer
+ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer -ltbb
 
 DANALIBS = -L$(HALLD_RECON_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lTRD -lDIRC -lFCAL \
