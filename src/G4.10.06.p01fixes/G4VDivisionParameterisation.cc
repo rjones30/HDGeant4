@@ -23,7 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// G4VDivisionParameterisation implementation
+//
+// $Id: G4VDivisionParameterisation.cc 92625 2015-09-09 12:34:07Z gcosmo $
+//
+// class G4VDivisionParameterisation Implementation file
 //
 // 26.05.03 - P.Arce, Initial version
 // 08.04.04 - I.Hrivnacova, Implemented reflection
@@ -39,7 +42,7 @@
 #include "G4AutoDelete.hh"
 
 const G4int G4VDivisionParameterisation::verbose = 5;
-G4ThreadLocal G4RotationMatrix* G4VDivisionParameterisation::fRot = nullptr;
+G4ThreadLocal G4RotationMatrix* G4VDivisionParameterisation::fRot = 0;
 
 //--------------------------------------------------------------------------
 G4VDivisionParameterisation::
@@ -47,7 +50,8 @@ G4VDivisionParameterisation( EAxis axis, G4int nDiv,
                              G4double step, G4double offset,
                              DivisionType divType, G4VSolid* motherSolid )
   : faxis(axis), fnDiv( nDiv), fwidth(step), foffset(offset),
-    fDivisionType(divType), fmotherSolid( motherSolid )
+    fDivisionType(divType), fmotherSolid( motherSolid ), fReflectedSolid(false),
+    fDeleteSolid(false), theVoluFirstCopyNo(1), fhgap(0.)
 {
 #ifdef G4DIVDEBUG
   if (verbose >= 1)
@@ -64,7 +68,7 @@ G4VDivisionParameterisation( EAxis axis, G4int nDiv,
 //--------------------------------------------------------------------------
 G4VDivisionParameterisation::~G4VDivisionParameterisation()
 {
-  if (fDeleteSolid)  { delete fmotherSolid; }
+  if (fDeleteSolid) delete fmotherSolid;
 }
 
 //--------------------------------------------------------------------------
@@ -83,9 +87,9 @@ ComputeSolid( const G4int i, G4VPhysicalVolume* pv )
 //--------------------------------------------------------------------------
 void
 G4VDivisionParameterisation::
-ChangeRotMatrix( G4VPhysicalVolume* physVol, G4double rotZ ) const
+ChangeRotMatrix( G4VPhysicalVolume *physVol, G4double rotZ ) const
 {
-  if (fRot == nullptr)
+  if (!fRot)
   {
     fRot = new G4RotationMatrix();
     G4AutoDelete::Register(fRot);
@@ -170,12 +174,8 @@ void G4VDivisionParameterisation::CheckNDivAndWidth( G4double maxPar )
 G4double G4VDivisionParameterisation::OffsetZ() const
 {
   // take into account reflection in the offset
-
   G4double offset = foffset;
-  if (fReflectedSolid)
-  {
-    offset = GetMaxParameter() - fwidth*fnDiv - foffset;
-  }
+  if (fReflectedSolid) offset = GetMaxParameter() - fwidth*fnDiv - foffset; 
 
   return offset;
 }  
