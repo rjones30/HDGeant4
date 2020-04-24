@@ -873,9 +873,11 @@ void G4PhysicalVolumeModel::DescribeSolid
 
       if (pResultantPolyhedron) {
         // Finally, draw polyhedron...
-        sceneHandler.BeginPrimitives(theAT);
+        //sceneHandler.BeginPrimitives(theAT);
+        sceneHandler.PreAddSolid (theAT, *pVisAttribs);
         sceneHandler.AddPrimitive(*pResultantPolyhedron);
-        sceneHandler.EndPrimitives();
+        sceneHandler.PostAddSolid ();
+        //sceneHandler.EndPrimitives();
       }
 
       delete pResultantSolid;
