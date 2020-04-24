@@ -24,12 +24,13 @@
 // ********************************************************************
 //
 //
+// $Id: G4OpenGLViewer.hh 103926 2017-05-03 13:43:27Z gcosmo $
 //
 // 
 // Andrew Walkden  27th March 1996
 // OpenGL viewer - opens window, hard copy, etc.
 
-#if defined (G4VIS_BUILD_OPENGL_DRIVER) || defined (G4VIS_USE_OPENGL)
+#ifdef G4VIS_BUILD_OPENGL_DRIVER
 
 #ifndef G4OPENGLVIEWER_HH
 #define G4OPENGLVIEWER_HH
@@ -65,15 +66,6 @@ class G4OpenGLViewerPickMap {
     fAttributes.push_back(att);
   }
 
-#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
-  inline void setPickCoordinates3D(const G4ThreeVector &v) {
-    fCoordinates = v;
-  }
-  inline G4ThreeVector getPickCoordinates3D() {
-    return fCoordinates;
-  }
-#endif
-
 
   inline G4String getName() {
     return fName;
@@ -102,9 +94,6 @@ class G4OpenGLViewerPickMap {
   G4int fSubHitNumber;
   G4int fPickName;
   std::vector <G4String > fAttributes;
-#ifdef LAYERED_GEOMETRY_PICKING_EXTENSIONS
-  G4ThreeVector fCoordinates;
-#endif
 
 };
 
@@ -220,6 +209,16 @@ protected:
     transparency_enabled,   //is alpha blending enabled?
     antialiasing_enabled,   //is antialiasing enabled?
     haloing_enabled;        //is haloing enabled for wireframe?
+  G4double fStartTime, fEndTime;  // Time range (e.g., for trajectory steps).
+  G4double fFadeFactor;  // 0: no fade; 1: maximum fade with time within range.
+  G4bool fDisplayHeadTime;  // Display head time (fEndTime) in 2D text.
+  G4double fDisplayHeadTimeX, fDisplayHeadTimeY;  // 2D screen coords.
+  G4double fDisplayHeadTimeSize;  // Screen size.
+  G4double fDisplayHeadTimeRed, fDisplayHeadTimeGreen, fDisplayHeadTimeBlue;
+  G4bool fDisplayLightFront;// Display light front at head time originating at
+  G4double fDisplayLightFrontX, fDisplayLightFrontY, fDisplayLightFrontZ,
+    fDisplayLightFrontT;
+  G4double fDisplayLightFrontRed, fDisplayLightFrontGreen, fDisplayLightFrontBlue;
   G4OpenGL2PSAction* fGL2PSAction;
 
   G4double     fRot_sens;        // Rotation sensibility in degrees
@@ -263,7 +262,7 @@ private :
   
 #ifdef G4OPENGL_VERSION_2
 public:
-#if defined (G4VIS_BUILD_OPENGLWT_DRIVER) || defined (G4VIS_USE_OPENGLWT)
+#ifdef G4VIS_BUILD_OPENGLWT_DRIVER
   inline Wt::WGLWidget::Program getShaderProgram() {
     return fShaderProgram;
   }
@@ -286,19 +285,19 @@ public:
   inline GLuint getShaderViewModelMatrix() {
     return fmvMatrixUniform;
   }
-#endif // G4VIS_BUILD_OPENGLWT_DRIVER
+#endif
 
 protected :
   
   // define the keyword shader to handle it in a better way for OpenGL and WebGL
-#if defined (G4VIS_BUILD_OPENGLWT_DRIVER) || defined (G4VIS_USE_OPENGLWT)
+#ifdef G4VIS_BUILD_OPENGLWT_DRIVER
 #define Shader Wt::WGLWidget::Shader
 #else
 #define Shader GLuint
-#endif // G4VIS_BUILD_OPENGLWT_DRIVER
-
+#endif
+  
   // define some attributes and variables for OpenGL and WebGL
-#if defined (G4VIS_BUILD_OPENGLWT_DRIVER) || defined (G4VIS_USE_OPENGLWT)
+#ifdef G4VIS_BUILD_OPENGLWT_DRIVER
   Wt::WGLWidget::Program fShaderProgram;
   
   // Program and related variables
@@ -320,8 +319,8 @@ protected :
   GLuint fmvMatrixUniform;
   GLuint fnMatrixUniform;
   GLuint ftMatrixUniform;
-#endif // G4VIS_BUILD_OPENGLWT_DRIVER
-
+#endif
+  
 #endif
 };
 
