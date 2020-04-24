@@ -833,11 +833,7 @@ G4Transportation::StartTracking(G4Track* aTrack)
 
   // ChordFinder reset internal state
   //
-#ifdef HEAD
   if( fFieldPropagator && fAnyFieldExists )     
-#else
-  if( fFieldPropagator )
-#endif
   {
      fFieldPropagator->ClearPropagatorState();   
        // Resets all state of field propagator class (ONLY) including safety

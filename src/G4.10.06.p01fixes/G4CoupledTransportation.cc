@@ -973,11 +973,7 @@ G4CoupledTransportation::StartTracking(G4Track* aTrack)
 
   // ChordFinder reset internal state
   //
-#ifdef HEAD
   if( fFieldPropagator && fAnyFieldExists )
-#else
-  if( fFieldPropagator )
-#endif
   {
      fFieldPropagator->ClearPropagatorState();   
        // Resets safety values, in case of overlaps.  
