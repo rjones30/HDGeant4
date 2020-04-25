@@ -821,6 +821,8 @@ void G4PhysicalVolumeModel::DescribeSolid
 
     } else {
 
+      G4Polyhedron resultant(*pOriginalPolyhedron);
+      G4VisAttributes resultantVisAttribs(*pVisAttribs);
       G4VSolid* pResultantSolid = 0;
 
       if (fpClippingSolid) {
@@ -855,7 +857,9 @@ void G4PhysicalVolumeModel::DescribeSolid
           "WARNING: G4PhysicalVolumeModel::DescribeSolid: resultant polyhedron for"
           "\n  solid \"" << pSol->GetName() <<
           "\" not defined due to error during Boolean processing."
+	      "\n  Original will be drawn in red."
           << G4endl;
+	    resultantVisAttribs.SetColour(G4Colour::Red());
       } else {
         // It seems that if the sectioning solid does not intersect the
         // original solid the Boolean Processor returns the original
@@ -863,21 +867,23 @@ void G4PhysicalVolumeModel::DescribeSolid
         // Check the number of facets, etc. If same, ignore.
         // What we need from the Boolean Processor is a null pointer or a
         // null polyhedron. It seems to return the original or a copy of it.
-        if (pResultantPolyhedron->GetNoFacets() == pOriginalPolyhedron->GetNoFacets())
+        //if (pResultantPolyhedron->GetNoFacets() == pOriginalPolyhedron->GetNoFacets())
           // This works in most cases but I still get a box in test202 with
           // /vis/viewer/set/sectionPlane on 0 0 0 m 0.1 0.1 1
-        {
-          pResultantPolyhedron = nullptr;
-        }
+        //{
+        //  pResultantPolyhedron = nullptr;
+        //}
+        resultant = *pResultantPolyhedron;
       }
 
-      if (pResultantPolyhedron) {
+      //if (pResultantPolyhedron)
+      {
         // Finally, draw polyhedron...
-        //sceneHandler.BeginPrimitives(theAT);
-        sceneHandler.PreAddSolid (theAT, *pVisAttribs);
-        sceneHandler.AddPrimitive(*pResultantPolyhedron);
-        sceneHandler.PostAddSolid ();
-        //sceneHandler.EndPrimitives();
+        resultant.SetVisAttributes(resultantVisAttribs);
+        sceneHandler.BeginPrimitives(theAT);
+        //sceneHandler.AddPrimitive(*pResultantPolyhedron);
+        sceneHandler.AddPrimitive(resultant);
+        sceneHandler.EndPrimitives();
       }
 
       delete pResultantSolid;

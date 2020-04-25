@@ -101,6 +101,10 @@ void G4SteppingVerbose::AtRestDoItInvoked()
                       (cond == ExclusivelyForced)? " (ExclusivelyForced)" :
                       (cond == StronglyForced)? " (StronglyForced)" : "")
                   << G4endl;
+       } else if ( (*fSelectedAtRestDoItVector)[npGPIL] == 1 ){
+	       npt++;                
+	       ptProcManager = (*fAtRestDoItVector)[np];
+	       G4cout << "   # " << npt << " : "  << ptProcManager->GetProcessName() << G4endl;
        }
      }
      
@@ -218,6 +222,10 @@ void G4SteppingVerbose::PostStepDoItAllDone()
                         (cond == ExclusivelyForced)? " (ExclusivelyForced)" :
                         (cond == StronglyForced)? " (StronglyForced)" : "")
                     << G4endl;
+           } else if ( (*fSelectedPostStepDoItVector)[npGPIL] == 1){
+             npt++;
+             ptProcManager = (*fPostStepDoItVector)[np];
+             G4cout << "      " << npt << ") " << ptProcManager->GetProcessName() << G4endl;
            }
         }
 

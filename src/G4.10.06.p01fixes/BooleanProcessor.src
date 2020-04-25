@@ -2144,6 +2144,13 @@ HepPolyhedron BooleanProcessor::execute(int op,
     { -31,  23, -17}
   };           
 
+/*
+  G4cerr << "BooleanProcessor::execute : ++++++++++++++++++++++"
+            << a.getName().getString()
+            << b.getName().getString()
+            << G4endl;
+*/
+
   //   I N I T I A T E   P R O C E S S O R
 
   processor_error = 0;

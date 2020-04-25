@@ -48,7 +48,8 @@ G4VDivisionParameterisation( EAxis axis, G4int nDiv,
                              G4double step, G4double offset,
                              DivisionType divType, G4VSolid* motherSolid )
   : faxis(axis), fnDiv( nDiv), fwidth(step), foffset(offset),
-    fDivisionType(divType), fmotherSolid( motherSolid )
+    fDivisionType(divType), fmotherSolid( motherSolid ), fReflectedSolid(false),
+    fDeleteSolid(false), theVoluFirstCopyNo(1), fhgap(0.)
 {
 #ifdef G4DIVDEBUG
   if (verbose >= 1)
@@ -86,6 +87,15 @@ void
 G4VDivisionParameterisation::
 ChangeRotMatrix( G4VPhysicalVolume* physVol, G4double rotZ ) const
 {
+#ifdef KEEP_STANDARD_LIBRARY_BUSTED_PHI_DIVISION_BEHAVIOR
+  if (fRot == nullptr)
+  {
+    fRot = new G4RotationMatrix();
+    G4AutoDelete::Register(fRot);
+  }
+  fRot->rotateZ( rotZ );
+  physVol->SetRotation(fRot);
+#else
   static G4Mutex myMutex = G4MUTEX_INITIALIZER;
   static std::map<int,std::map<void*,void*> > frotTable;
 
@@ -106,7 +116,7 @@ ChangeRotMatrix( G4VPhysicalVolume* physVol, G4double rotZ ) const
   *frot = G4RotationMatrix();
   frot->rotateZ( rotZ );
 
-#if 0
+# if 0
   G4AutoLock barrier(&myMutex);
   static std::map<void*,void*> frot2physVol;
   static std::map<void*,int> frot2threadId;
@@ -122,6 +132,7 @@ ChangeRotMatrix( G4VPhysicalVolume* physVol, G4double rotZ ) const
     frot2physVol[frot] = physVol;
     frot2threadId[frot] = threadId;
   }
+# endif
 #endif
 }
 
