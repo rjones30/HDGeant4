@@ -43,6 +43,8 @@
 #include "G4BoundingExtentScene.hh"
 #include "G4PhysicalVolumeSearchScene.hh"
 #include "G4TransportationManager.hh"
+#include "G4Polycone.hh"
+#include "G4Polyhedra.hh"
 #include "G4Polyhedron.hh"
 #include "HepPolyhedronProcessor.h"
 #include "G4AttDefStore.hh"
@@ -572,6 +574,65 @@ void G4PhysicalVolumeModel::DescribeAndDescend
   // 6) The user has asked for all further traversing to be aborted...
   if (fAbort) thisToBeDrawn = false;
 
+#ifdef BYPASS_DRAWING_CLIPPED_VOLUMES
+
+  // Check if a view clipping operation cuts this volume from the scene
+
+  bool thisToBeBypassed = false;
+  G4VSolid* pIntersector = fpMP->GetSectionSolid();
+  G4VSolid* pSubtractor = fpMP->GetCutawaySolid();
+  if (fpClippingSolid) {
+    switch (fClippingMode) {
+     case subtraction:
+       pSubtractor = fpClippingSolid;
+       break;
+     case intersection:
+       pIntersector = fpClippingSolid;
+       break;
+    }
+  }
+
+  G4DisplacedSolid *pClipper;
+  if ((pClipper = dynamic_cast<G4DisplacedSolid*>(pIntersector)))
+  {
+    G4AffineTransform clipAT(pClipper->GetTransform());
+    G4AffineTransform currAT(fpCurrentTransform->getRotation().inverse(),
+                             fpCurrentTransform->getTranslation());
+    G4AffineTransform combAT;
+    combAT.Product(currAT,clipAT);
+    G4DisplacedSolid pClipped("temporary_to_clip",pSol,combAT);
+    G4VisExtent clipper(pClipper->GetConstituentMovedSolid()->GetExtent());
+    G4VisExtent clipped(pClipped.GetExtent());
+    thisToBeBypassed = (clipper.GetXmax() < clipped.GetXmin())
+                    || (clipper.GetXmin() > clipped.GetXmax())
+                    || (clipper.GetYmax() < clipped.GetYmin())
+                    || (clipper.GetYmin() > clipped.GetYmax())
+                    || (clipper.GetZmax() < clipped.GetZmin())
+                    || (clipper.GetZmin() > clipped.GetZmax());
+  }
+
+  if ((pClipper = dynamic_cast<G4DisplacedSolid*>(pSubtractor)))
+  {
+    G4AffineTransform clipAT(pClipper->GetTransform());
+    G4AffineTransform currAT(fpCurrentTransform->getRotation().inverse(),
+                             fpCurrentTransform->getTranslation());
+    G4AffineTransform combAT;
+    combAT.Product(currAT,clipAT);
+    G4DisplacedSolid pClipped("temporary_to_clip",pSol,combAT);
+    G4VisExtent clipper(pClipper->GetConstituentMovedSolid()->GetExtent());
+    G4VisExtent clipped(pClipped.GetExtent());
+    thisToBeBypassed = (clipper.GetXmax() > clipped.GetXmax())
+                    && (clipper.GetXmin() < clipped.GetXmin())
+                    && (clipper.GetYmax() > clipped.GetYmax())
+                    && (clipper.GetYmin() < clipped.GetYmin())
+                    && (clipper.GetZmax() > clipped.GetZmax())
+                    && (clipper.GetZmin() < clipped.GetZmin());
+  }
+
+  thisToBeDrawn = thisToBeDrawn && (! thisToBeBypassed);
+
+#endif
+
   // Record thisToBeDrawn in path...
   fFullPVPath.back().SetDrawn(thisToBeDrawn);
 
@@ -608,7 +669,11 @@ void G4PhysicalVolumeModel::DescribeAndDescend
 
   // First, reasons that do not depend on culling policy...
   G4int nDaughters = pLV->GetNoDaughters();
+#ifdef BYPASS_DRAWING_CLIPPED_VOLUMES
+  G4bool daughtersToBeDrawn = ! thisToBeBypassed;
+#else
   G4bool daughtersToBeDrawn = true;
+#endif
   // 1) There are no daughters...
   if (!nDaughters) daughtersToBeDrawn = false;
   // 2) We are at the limit if requested depth...
@@ -706,8 +771,43 @@ void G4PhysicalVolumeModel::DescribeSolid
 	(pVisAttribs->GetForcedLineSegmentsPerCircle());
     else
       G4Polyhedron::SetNumberOfRotationSteps(fpMP->GetNoOfSides());
+
+    // Special treatment for G4PolyHedra and G4Polycone
+
+    G4Polyhedra *polyhedr = dynamic_cast<G4Polyhedra*>(pSol);
+    G4Polycone *polycone = dynamic_cast<G4Polycone*>(pSol);
+    if (polyhedr) {
+      G4PolyhedraHistorical pars(*polyhedr->GetOriginalParameters());
+      for (int p=1; p < pars.Num_z_planes; ++p) {
+        if (pars.Z_values[p] <= pars.Z_values[p-1])
+          pars.Z_values[p] = pars.Z_values[p] + 1e-3;
+      }
+      G4String visname(pSol->GetName() + "_visual");
+      pSol = new G4Polyhedra(visname, pars.Start_angle, 
+                                      pars.Opening_angle, 
+                                      pars.numSide,
+                                      pars.Num_z_planes,
+                                      pars.Z_values,
+                                      pars.Rmin,
+                                      pars.Rmax);
+    }
+    else if (polycone) {
+      G4PolyconeHistorical pars(*polycone->GetOriginalParameters());
+      for (int p=1; p < pars.Num_z_planes; ++p) {
+        if (pars.Z_values[p] <= pars.Z_values[p-1])
+          pars.Z_values[p] = pars.Z_values[p] + 1e-3;
+      }
+      G4String visname(pSol->GetName() + "_visual");
+      pSol = new G4Polycone(visname, pars.Start_angle, 
+                                     pars.Opening_angle, 
+                                     pars.Num_z_planes,
+                                     pars.Z_values,
+                                     pars.Rmin,
+                                     pars.Rmax);
+    }
+
     const G4Polyhedron* pOriginalPolyhedron = pSol->GetPolyhedron();
-    G4Polyhedron::ResetNumberOfRotationSteps();
+    //G4Polyhedron::ResetNumberOfRotationSteps();
 
     if (!pOriginalPolyhedron) {
 
@@ -721,6 +821,8 @@ void G4PhysicalVolumeModel::DescribeSolid
 
     } else {
 
+      G4Polyhedron resultant(*pOriginalPolyhedron);
+      G4VisAttributes resultantVisAttribs(*pVisAttribs);
       G4VSolid* pResultantSolid = 0;
 
       if (fpClippingSolid) {
@@ -755,7 +857,9 @@ void G4PhysicalVolumeModel::DescribeSolid
           "WARNING: G4PhysicalVolumeModel::DescribeSolid: resultant polyhedron for"
           "\n  solid \"" << pSol->GetName() <<
           "\" not defined due to error during Boolean processing."
+	      "\n  Original will be drawn in red."
           << G4endl;
+	    resultantVisAttribs.SetColour(G4Colour::Red());
       } else {
         // It seems that if the sectioning solid does not intersect the
         // original solid the Boolean Processor returns the original
@@ -763,18 +867,22 @@ void G4PhysicalVolumeModel::DescribeSolid
         // Check the number of facets, etc. If same, ignore.
         // What we need from the Boolean Processor is a null pointer or a
         // null polyhedron. It seems to return the original or a copy of it.
-        if (pResultantPolyhedron->GetNoFacets() == pOriginalPolyhedron->GetNoFacets())
+        //if (pResultantPolyhedron->GetNoFacets() == pOriginalPolyhedron->GetNoFacets())
           // This works in most cases but I still get a box in test202 with
           // /vis/viewer/set/sectionPlane on 0 0 0 m 0.1 0.1 1
-        {
-          pResultantPolyhedron = nullptr;
-        }
+        //{
+        //  pResultantPolyhedron = nullptr;
+        //}
+        resultant = *pResultantPolyhedron;
       }
 
-      if (pResultantPolyhedron) {
+      //if (pResultantPolyhedron)
+      {
         // Finally, draw polyhedron...
+        resultant.SetVisAttributes(resultantVisAttribs);
         sceneHandler.BeginPrimitives(theAT);
-        sceneHandler.AddPrimitive(*pResultantPolyhedron);
+        //sceneHandler.AddPrimitive(*pResultantPolyhedron);
+        sceneHandler.AddPrimitive(resultant);
         sceneHandler.EndPrimitives();
       }
 
