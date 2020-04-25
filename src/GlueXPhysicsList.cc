@@ -69,6 +69,7 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
 
    defaultCutValue = 0.7*CLHEP::mm;  
    SetVerboseLevel(verbosity);
+   DumpCutValuesTable(verbosity);
 
    // Parallel world transportation
    for (int para=1; para <= geometry->GetParallelWorldCount(); ++para) {
