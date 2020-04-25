@@ -404,7 +404,7 @@ void GlueXUserEventInformation::SetRandomSeeds()
    else {
       if (fStartingSeeds) {
          G4Random::setTheSeeds(fStartingSeeds);
-         delete fStartingSeeds;
+         delete [] fStartingSeeds;
          fStartingSeeds = 0;
       }
       const long int *seed = G4Random::getTheSeeds();
