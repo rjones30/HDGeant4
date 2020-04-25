@@ -146,7 +146,8 @@ void G4ExcitationHandler::Initialise()
     theFermiModel->Initialise();
     theEvaporation->InitialiseChannels();
   }
-  //param->Dump();
+  if (1==0)
+    param->Dump();
 }
 
 void G4ExcitationHandler::SetEvaporation(G4VEvaporation* ptr, G4bool flag)
