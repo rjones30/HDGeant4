@@ -67,7 +67,7 @@ int main(int argc,char** argv)
    int interactive_mode = 0;
    int worker_threads = 1;
    int c;
-   while ((c = getopt(argc, argv, "vt:r:")) != -1) {
+   while ((c = getopt(argc, argv, "vit:r:")) != -1) {
       if (c == 'v') {
          use_visualization = 1;
       }
