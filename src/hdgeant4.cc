@@ -224,7 +224,7 @@ int main(int argc,char** argv)
    // one event runs into a fatal error in tracking.
    // The fatal error message is still written to the
    // log, but simulation continues if it can.
-   G4StateManager::GetStateManager()->SetSuppressAbortion(1);
+   G4StateManager::GetStateManager()->SetSuppressAbortion(2);
 
    simtimer.Start();
 
