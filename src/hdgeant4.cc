@@ -25,6 +25,7 @@
 #include <G4Timer.hh>
 #include <G4LogicalVolumeStore.hh>
 #include <G4HadronicProcessStore.hh>
+#include <G4StateManager.hh>
 
 #ifdef G4VIS_USE
 #include <G4VisExecutive.hh>
@@ -218,6 +219,12 @@ int main(int argc,char** argv)
       exit(1);
 #endif
    }
+
+   // Disable abortion of the entire job just because
+   // one event runs into a fatal error in tracking.
+   // The fatal error message is still written to the
+   // log, but simulation continues if it can.
+   G4StateManager::GetStateManager()->SetSuppressAbortion(1);
 
    simtimer.Start();
 
