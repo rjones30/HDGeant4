@@ -220,12 +220,6 @@ int main(int argc,char** argv)
 #endif
    }
 
-   // Disable abortion of the entire job just because
-   // one event runs into a fatal error in tracking.
-   // The fatal error message is still written to the
-   // log, but simulation continues if it can.
-   G4StateManager::GetStateManager()->SetSuppressAbortion(2);
-
    simtimer.Start();
 
    // Start the user interface
@@ -253,6 +247,7 @@ int main(int argc,char** argv)
    else {
       std::map<int, int> trigopt;
       if (opts.Find("TRIG", trigopt) && trigopt[1] > 0) {
+         UImanager->ApplyCommand("/control/suppressAbortion 2");
          std::stringstream command;
          command << "/run/beamOn " << trigopt[1];
          UImanager->ApplyCommand(command.str());
