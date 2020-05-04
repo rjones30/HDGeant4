@@ -76,6 +76,11 @@ std::map<G4String, G4String> process_4letter_abbrev = {
     {"OpBoundary", "boun"},
     {"Cerenkov", "ckov"},
     {"TPolBeamConversion", "trip"},
+    {"GlueX tracking limits for gammas", "cuts"},
+    {"GlueX tracking limits for electrons", "cuts"},
+    {"GlueX tracking limits for muons", "cuts"},
+    {"GlueX tracking limits for protons", "cuts"},
+    {"GlueX tracking limits for neutrons", "cuts"},
     {"User Limit", "user"}
 };
 
