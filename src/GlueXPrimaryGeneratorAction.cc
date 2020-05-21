@@ -1313,6 +1313,16 @@ void GlueXPrimaryGeneratorAction::configure_beam_vertex()
    fBeamvertex.sigma[1] = sqrt(1 / evalue2);
    fBeamvertex.alpha = alpha;
    fBeamvertex_activated = 1;
+
+#ifndef QUIET_CONFIGURE_BEAM_VERTEX
+   G4cout << "Configured beam vertex parameters: (units of cm)" << G4endl
+          << "   sigma_x=" << sqrt(fBeamvertex.var_xx)/cm
+          << "   sigma_y=" << sqrt(fBeamvertex.var_yy)/cm
+          << "   sigma_xy=" << fBeamvertex.var_xy/(cm*cm) << G4endl
+          << "   dxdz=" << fBeamvertex.dxdz
+          << "   dydz=" << fBeamvertex.dydz
+          << "   dz=" << fBeamvertex.length/cm << G4endl;
+#endif
 }
 
 void GlueXPrimaryGeneratorAction::generate_beam_vertex(double v[3])
