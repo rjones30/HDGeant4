@@ -103,8 +103,9 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "bhgen" ))
       {
          fStopBeamAfterTarget = 1;
-         if (genbeampars.size() > 2)
-            fBHpair_mass_min = std::atof(genbeampars[2].c_str())*GeV;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
       }
    }
 
