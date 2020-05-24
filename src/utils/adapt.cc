@@ -24,21 +24,35 @@ TRandom randoms(0);
 void my_randoms(int n, double *u) { randoms.RndmArray(n,u); }
 
 void usage() {
-   std::cout << "Usage: adapt [-o <output_file>] <input1> [<input2> ...]"
-             << std::endl;
+   std::cout << "Usage: adapt [options] <input1> [<input2> ...]" << std::endl
+             << "  where options include" << std::endl
+             << "     -o <output_file> : output filename [adapted.astate]" << std::endl
+             << "     -t <threshold> : sampling threshold [1000]" << std::endl;
    exit(1);
 }
 
 int main(int argc, char **argv)
 {
    int Ndim=0;
+   double threshold=1000;
    std::string outfile("adapted.astate");
    AdaptiveSampler *sampler = 0;
    for (int iarg=1; iarg < argc; ++iarg) {
-      char stropt[999];
-      if (sscanf(argv[iarg], "-o *%s", stropt) > 0) {
+      char stropt[999] = "";
+      int opt;
+      if ((opt = sscanf(argv[iarg], "-o %s", stropt))) {
+         if (opt == EOF)
+            sscanf(argv[++iarg], "%s", stropt);
          outfile = stropt;
          continue;
+      }
+      else if ((opt = sscanf(argv[iarg], "-t %lf", &threshold))) {
+         if (opt == EOF)
+            sscanf(argv[++iarg], "%lf", &threshold);
+         if (threshold > 0)
+            continue;
+         else
+            usage();
       }
       else if (argv[iarg][0] == '-') {
          usage();
@@ -47,11 +61,15 @@ int main(int argc, char **argv)
          FILE *fin = fopen(argv[iarg], "r");
          if (fin) {
             if (fscanf(fin, "fNdim=%d", &Ndim) == 0) {
+               std::cerr << "adapt - invalid data in input file "
+                         << argv[iarg] << std::endl;
                usage();
             }
             sampler = new AdaptiveSampler(Ndim, my_randoms);
          }
          else {
+            std::cerr << "adapt - error opening input file "
+                      << argv[iarg] << std::endl;
             usage();
          }
       }
@@ -65,7 +83,7 @@ int main(int argc, char **argv)
       std::cout << "result = " << result << " +/- " << error << std::endl;
    else
       std::cout << "result unknown" << std::endl;
-   sampler->setAdaptation_sampling_threshold(1000);
+   sampler->setAdaptation_sampling_threshold(threshold);
    int Na = sampler->adapt();
    std::cout << "sampler.adapt() returns " << Na << std::endl;
    sampler->saveState(outfile);
