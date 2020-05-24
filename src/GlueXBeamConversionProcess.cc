@@ -14,6 +14,7 @@
 
 #define VERBOSE_PAIRS_SPLITTING 1
 #define DO_PAIRCOH_IMPORTANCE_SAMPLE 1
+#define USE_ADAPTIVE_SAMPLER 1
 
 // If you set this flag to 1 then all beam photons that reach
 // the TPOL converter target will convert to e+e- pairs inside,
@@ -46,7 +47,7 @@
 void unif01(int n, double *u) { G4Random::getTheEngine()->flatArray(n,u); }
 
 #if USE_ADAPTIVE_SAMPLER
-#include "AdaptiveSampler.cc"
+#include "AdaptiveSampler.hh"
 AdaptiveSampler sampler(5, &unif01);
 #endif
 
@@ -1056,9 +1057,9 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    static int passes = 0;
    ++passes;
    int tens = 1000;
-   while (passes > tens)
+   while (passes >= tens*10)
       tens *= 10;
-   if (passes == tens) {
+   if (passes % tens == 0) {
       std::cout << "sampler reports efficiency " << sampler.getEfficiency()
                 << std::endl;
       sampler.saveState("BHgen.astate");
