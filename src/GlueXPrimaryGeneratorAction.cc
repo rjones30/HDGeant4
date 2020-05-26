@@ -1316,6 +1316,9 @@ void GlueXPrimaryGeneratorAction::configure_beam_vertex()
 
 #ifndef QUIET_CONFIGURE_BEAM_VERTEX
    G4cout << "Configured beam vertex parameters: (units of cm)" << G4endl
+          << "   center x=" << fBeamvertex.x/cm
+          << "   y=" << fBeamvertex.y/cm
+          << "   z=" << fBeamvertex.z/cm << G4endl
           << "   sigma_x=" << sqrt(fBeamvertex.var_xx)/cm
           << "   sigma_y=" << sqrt(fBeamvertex.var_yy)/cm
           << "   sigma_xy=" << fBeamvertex.var_xy/(cm*cm) << G4endl
