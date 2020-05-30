@@ -175,12 +175,14 @@ class AdaptiveSampler {
       long int nhit;
       double sum_wI;
       double sum_wI2;
+      double sum_wI4;
       double *sum_wI2u;
       double subset;
       Cell *subcell[3];
 
       Cell(int dim) : ndim(dim), divAxis(-1), nhit(0),
-                      sum_wI(0), sum_wI2(0), subset(0)
+                      sum_wI(0), sum_wI2(0), sum_wI4(0),
+                      subset(0)
       {
          int dim3 = 1;
          for (int n=0; n < dim; ++n)
@@ -200,6 +202,7 @@ class AdaptiveSampler {
          nhit = src.nhit;
          sum_wI = src.sum_wI;
          sum_wI2 = src.sum_wI2;
+         sum_wI4 = src.sum_wI4;
          sum_wI2u = new double[dim3];
          for (int i=0; i < dim3; ++i) {
             sum_wI2u[i] = src.sum_wI2u[i];
@@ -231,6 +234,7 @@ class AdaptiveSampler {
          nhit = 0;
          sum_wI = 0;
          sum_wI2 = 0;
+         sum_wI4 = 0;
          int dim3 = 1;
          for (int i=0; i < ndim; ++i)
             dim3 *= 3;
@@ -294,6 +298,8 @@ class AdaptiveSampler {
             ofs << "sum_wI=" << sum_wI << std::endl;
          if (sum_wI2 != 0)
             ofs << "sum_wI2=" << sum_wI2 << std::endl;
+         if (sum_wI4 != 0)
+            ofs << "sum_wI4=" << sum_wI4 << std::endl;
          int dim3 = 1;
          for (int i=0; i < ndim; ++i)
             dim3 *= 3;
@@ -328,6 +334,7 @@ class AdaptiveSampler {
          nhit += keyval["nhit"];
          sum_wI += keyval["sum_wI"];
          sum_wI2 += keyval["sum_wI2"];
+         sum_wI4 += keyval["sum_wI4"];
          int dim3 = 1;
          for (int i=0; i < ndim; ++i)
             dim3 *= 3;

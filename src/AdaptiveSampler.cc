@@ -250,6 +250,7 @@ void AdaptiveSampler::feedback(const double *u, double wI)
    cell->sum_wI += wI;
    double wI2 = wI*wI;
    cell->sum_wI2 += wI2;
+   cell->sum_wI4 += wI2*wI2;
    int jbase3 = 0;
    for (int n = fNdim - 1; n >= 0; --n) {
       double i = floor(3 * (u[n] - u0[n]) / (u1[n] - u0[n]));
@@ -364,6 +365,7 @@ int AdaptiveSampler::recursively_update(std::vector<int> index)
                   break;
             }
          }
+         // the mathematical meaning for this new_sum_wI2 and its use for discriminating cells in need of splitting needs further investigation - rtj, 5/28/2020
          new_sum_wI2 = new_sum_wI2 * new_sum_wI2 / dim3;
          double sum_wI2_delta = cell->sum_wI2 - new_sum_wI2;
          if (sum_wI2_delta < 0) {
@@ -515,6 +517,7 @@ double AdaptiveSampler::getEfficiency() const
    double sum_wI2s = 0;
    fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
    if (nhit > 0)
+   // I don't think this formula gives anything conceptually close to an efficiency -rtj, 5/28/2020
       return sum_wI * sum_wI / (sum_wI2 * nhit);
    else
       return 0;
@@ -528,6 +531,7 @@ double AdaptiveSampler::getResult(double *error) const
    double sum_wI2s = 0;
    fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
    if (error) {
+   // I don't think this formula gives anything conceptually close to an efficiency -rtj, 5/25/2020
       double eff = sum_wI * sum_wI / (sum_wI2 * nhit);
       *error = sqrt((1 - eff) * sum_wI2) / nhit;
    }
@@ -651,6 +655,7 @@ double AdaptiveSampler::display_tree(Cell *cell, double subset, int level,
       std::cout << cell->nhit 
                 << " " << cell->sum_wI
                 << " " << cell->sum_wI2
+                << " " << cell->sum_wI4
                 << std::endl;
    }
    return cell->subset;
