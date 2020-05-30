@@ -143,7 +143,7 @@ GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
 {
 #if USE_ADAPTIVE_SAMPLER
    if (sampler_initialized)
-      sampler.saveState("BHgen.astate");
+      sampler.saveState("BHgen_stats.astate");
 #endif
 }
 
@@ -1067,7 +1067,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    if (passes % tens == 0) {
       std::cout << "sampler reports efficiency " << sampler.getEfficiency()
                 << std::endl;
-      sampler.saveState("BHgen.astate");
+      sampler.saveState("BHgen_stats.astate");
    }
 #endif
 
