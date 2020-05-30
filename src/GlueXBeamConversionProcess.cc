@@ -49,6 +49,7 @@ void unif01(int n, double *u) { G4Random::getTheEngine()->flatArray(n,u); }
 #if USE_ADAPTIVE_SAMPLER
 #include "AdaptiveSampler.hh"
 AdaptiveSampler sampler(5, &unif01);
+int sampler_initialized = 0;
 #endif
 
 PairConversionGeneration *GlueXBeamConversionProcess::fPairsGeneration = 0;
@@ -139,7 +140,12 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(
 }
 
 GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
-{}
+{
+#if USE_ADAPTIVE_SAMPLER
+   if (sampler_initialized)
+      sampler.saveState("BHgen.astate");
+#endif
+}
 
 GlueXBeamConversionProcess GlueXBeamConversionProcess::operator=(
                            GlueXBeamConversionProcess &src)
@@ -803,7 +809,6 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 #else
 
 #if USE_ADAPTIVE_SAMPLER
-   static int sampler_initialized = 0;
    if (sampler_initialized == 0) {
       sampler.restoreState("BHgen.astate");
       sampler.setVerbosity(2);
