@@ -149,7 +149,6 @@
 //    each event. In this way, the existing algorithms for sample()
 //    and feedback() still work without modification, and findCell()
 //    is the only thing that needs substantial modification.
-//
 
 #include <assert.h>
 #include <fstream>
