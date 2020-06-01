@@ -60,6 +60,7 @@ class GlueXPrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
    static double GetMass(int Geant3Type);
  
    static const GlueXPrimaryGeneratorAction* GetInstance();
+   static const CobremsGeneration* GetCobremsGeneration();
 
  private:
    static int instanceCount;
