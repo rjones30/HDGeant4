@@ -31,14 +31,15 @@ CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
 CPPFLAGS += -DUSE_SSE2 -std=c++11
 #CPPFLAGS += -I/usr/include/Qt
 #CPPFLAGS += -DLINUX_CPUTIME_PROFILING=1
-#CPPFLAGS += -DCHECK_OVERLAPS_MM=1e-4
+#CPPFLAGS += -DCHECK_OVERLAPS_MM=1e-6
 CPPFLAGS += -DBYPASS_DRAWING_CLIPPED_VOLUMES
 CPPFLAGS += -DLAYERED_GEOMETRY_PICKING_EXTENSIONS
 CPPFLAGS += -DREDUCE_OPTIMIZATION_OF_CDC=1
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
-#CPPFLAGS += -DG4MULTITHREADED
+CPPFLAGS += -DG4MULTITHREADED
+#CPPFLAGS += -DVERBOSE_RANDOMS=1
 #CPPFLAGS += -DFORCE_PARTICLE_TYPE_CHARGED_GEANTINO
 #CPPFLAGS += -DBP_DEBUG
 #CPPFLAGS += -DMOD_SPONCE
@@ -101,7 +102,7 @@ cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
 g4fixes: $(G4TMPDIR)/libG4fixes.so
 
-CXXFLAGS = -g -O0 -fPIC -ftls-model=global-dynamic -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -std=c++11 -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 HDDSDIR := $(G4TMPDIR)/hdds
 G4FIXESDIR := $(G4TMPDIR)/G4fixes
@@ -185,7 +186,7 @@ $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so: $(G4LIBDIR)/libG4fixes.so
 	@rm -f $@
 	@cd g4py/G4fixes && ln -s ../../tmp/*/hdgeant4/libG4fixes.so .
 
-utils: $(G4BINDIR)/beamtree $(G4BINDIR)/genBH
+utils: $(G4BINDIR)/beamtree $(G4BINDIR)/genBH $(G4BINDIR)/adapt
 
 $(G4BINDIR)/beamtree: src/utils/beamtree.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
@@ -193,5 +194,5 @@ $(G4BINDIR)/beamtree: src/utils/beamtree.cc
 $(G4BINDIR)/genBH: src/utils/genBH.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(DANALIBS) $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
 
-diff:
-	diff -q -r ../jlab . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
+$(G4BINDIR)/adapt: src/utils/adapt.cc
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(DANALIBS) $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
