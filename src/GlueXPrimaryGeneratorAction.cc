@@ -491,6 +491,11 @@ const GlueXPrimaryGeneratorAction *GlueXPrimaryGeneratorAction::GetInstance()
    return 0;
 }
 
+const CobremsGeneration *GlueXPrimaryGeneratorAction::GetCobremsGeneration()
+{
+   return fCobremsGeneration;
+}
+
 //--------------------------------------------
 // GeneratePrimaries
 //--------------------------------------------
