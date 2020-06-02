@@ -338,7 +338,7 @@ AdaptiveSampler::Cell *AdaptiveSampler::findCell(double ucell,
       for (i=0; i < 2; i++)
          if (usearch < sel->subcell[i]->ss)
             break;
-      assert (ucell < sel->subcell[i]->ss);
+      assert (usearch < sel->subcell[i]->ss);
       int j = sel->divAxis;
       double du = (u1[j] - u0[j]) / 3;
       u0[j] = u0[j] + du * i;

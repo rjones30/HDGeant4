@@ -333,7 +333,7 @@ class AdaptiveSampler {
             subcell[2]->repartition(wI2s * part[2]/psum, total_wI2s);
          }
       }
-		 int serialize(std::ofstream &ofs) {
+      int serialize(std::ofstream &ofs) {
          ofs << "ndim=" << ndim << std::endl;
          ofs << "divAxis=" << divAxis << std::endl;
          if (nhit != 0)
