@@ -203,7 +203,7 @@ class AdaptiveSampler {
    int recursively_update(std::vector<int> index);
    double display_tree(Cell *cell, double subset, int level, double *u0,
                                                              double *u1);
-   double sum_subsets(const double *u, double *u0, double *u1, int nfixed=0);
+   double sum_subsets(const double *u, int nfixed=0);
 
    // internal weighting tables
 

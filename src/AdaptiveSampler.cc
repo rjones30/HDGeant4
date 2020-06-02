@@ -166,6 +166,8 @@ AdaptiveSampler::AdaptiveSampler(int dim, Uniform01 user_generator)
    fMinimum_sum_wI2_delta(0),
    fNfixed(0)
 {
+   fFixed_u0 = new double[dim];
+   fFixed_u1 = new double[dim];
    fRandom = user_generator;
    fTopCell = new Cell(dim);
    fTopCell->subset = 1;
@@ -177,6 +179,8 @@ AdaptiveSampler::AdaptiveSampler(const AdaptiveSampler &src)
    fNfixed = 0;
    fNdim = src.fNdim;
    fRandom = src.fRandom;
+   fFixed_u0 = new double[fNdim];
+   fFixed_u1 = new double[fNdim];
    fTopCell = new Cell(*src.fTopCell);
    fSampling_threshold = src.fSampling_threshold;
    fEfficiency_target = src.fEfficiency_target;
@@ -187,10 +191,8 @@ AdaptiveSampler::AdaptiveSampler(const AdaptiveSampler &src)
 
 AdaptiveSampler::~AdaptiveSampler()
 {
-   if (fNfixed > 0) {
-      delete [] fFixed_u0;
-      delete [] fFixed_u1;
-   }
+   delete [] fFixed_u0;
+   delete [] fFixed_u1;
    delete fTopCell;
 }
 
@@ -217,34 +219,24 @@ double AdaptiveSampler::sample(double *u, int nfixed)
    return dNu * fTopCell->ss / cell->subset;
 }
 
-double AdaptiveSampler::sum_subsets(const double *u, double *u0, 
-                                    double *u1, int nfixed)
+double AdaptiveSampler::sum_subsets(const double *u, int nfixed)
 {
-   if (nfixed > 0) {
-      if (fNfixed > 0 && fNfixed != nfixed) {
-         delete [] fFixed_u0;
-         delete [] fFixed_u1;
-      }
-      fNfixed = nfixed;
-      fFixed_u0 = new double[fNfixed];
-      fFixed_u1 = new double[fNfixed];
-   }
-   for (int i=0; i < nfixed; ++i) {
-      fFixed_u0[i] = 0;
-      fFixed_u1[i] = 1;
-      u0[i] = 0;
-      u1[i] = 1;
-   }
+   double *u0 = new double[fNdim];
+   double *u1 = new double[fNdim];
+   std::fill(u0, u0 + fNdim, 0);
+   std::fill(u1, u1 + fNdim, 1);
+   std::fill(fFixed_u0, fFixed_u0 + fNdim, 0);
+   std::fill(fFixed_u1, fFixed_u1 + fNdim, 1);
 
    class Branch {
     public:
       Cell *cell;
-      int subcell;
+      int subdiv;
       int ndim;
       double *cell_u0;
       double *cell_u1;
-      Branch(Cell *c, int s, double *u0, double *u1, int nfixed)
-       : cell(c), subcell(s), ndim(nfixed)
+      Branch(Cell *c, int s, double *u0, double *u1, int dim)
+       : cell(c), subdiv(s), ndim(dim)
       {
          cell_u0 = new double[ndim];
          cell_u1 = new double[ndim];
@@ -254,7 +246,7 @@ double AdaptiveSampler::sum_subsets(const double *u, double *u0,
          }
       }
       Branch(const Branch &src)
-       : cell(src.cell), subcell(src.subcell), ndim(src.ndim)
+       : cell(src.cell), subdiv(src.subdiv), ndim(src.ndim)
       {
          cell_u0 = new double[ndim];
          cell_u1 = new double[ndim];
@@ -270,12 +262,12 @@ double AdaptiveSampler::sum_subsets(const double *u, double *u0,
    };
 
    std::vector<Branch> tree;
-   tree.push_back(Branch(fTopCell,0,u0,u1,nfixed));
+   tree.push_back(Branch(fTopCell,0,u0,u1,fNdim));
    double ss = 0;
    while (tree.size() > 0) {
       int diva = tree.back().cell->divAxis;
-      double du = (u1[diva] - u0[diva]) / 3;
       if (diva >= 0 && diva < nfixed) {
+         double du = (u1[diva] - u0[diva]) / 3;
          int s = int((u[diva] - u0[diva]) / du);
          u0[diva] += s * du;
          u1[diva] = u0[diva] + du;
@@ -283,34 +275,36 @@ double AdaptiveSampler::sum_subsets(const double *u, double *u0,
             fFixed_u0[diva] = u0[diva];
          if (u1[diva] < fFixed_u1[diva])
             fFixed_u1[diva] = u1[diva];
-         tree.back().subcell = 3;
+         tree.back().subdiv = 3;
          Cell *c = tree.back().cell->subcell[s];
-         tree.push_back(Branch(c,0,u0,u1,nfixed));
+         tree.push_back(Branch(c,0,u0,u1,fNdim));
       }
       else if (diva >= 0) {
-         int s = tree.back().subcell++;
+         double du = (u1[diva] - u0[diva]) / 3;
+         int s = tree.back().subdiv++;
+         u0[diva] += s * du;
+         u1[diva] = u0[diva] + du;
          Cell *c = tree.back().cell->subcell[s];
-         tree.push_back(Branch(c,0,u0,u1,nfixed));
+         tree.push_back(Branch(c,0,u0,u1,fNdim));
       }
       else {
          ss += tree.back().cell->subset;
          tree.back().cell->ss = ss;
          tree.pop_back();
-         while (tree.size() > 0 && tree.back().subcell == 3) {
+         while (tree.size() > 0 && tree.back().subdiv == 3) {
             tree.back().cell->ss = ss;
             tree.pop_back();
          }
          if (tree.size() > 0) {
-            int s = tree.back().subcell++;
-            Cell *c = tree.back().cell->subcell[s];
-            for (int i=0; i < nfixed; ++i) {
+            for (int i=0; i < fNdim; ++i) {
                u0[i] = tree.back().cell_u0[i];
                u1[i] = tree.back().cell_u1[i];
             }
-            tree.push_back(Branch(c,0,u0,u1,nfixed));
          }
       }
    }
+   delete [] u0;
+   delete [] u1;
    return ss;
 }
 
@@ -322,10 +316,10 @@ AdaptiveSampler::Cell *AdaptiveSampler::findCell(double ucell,
                                                  int nfixed)
 {
    if (fTopCell->ss == 0 || fNfixed != nfixed)
-      sum_subsets(u, u0, u1, nfixed);
+      sum_subsets(u, nfixed);
    for (int i=0; i < nfixed; ++i) {
       if (u[i] < fFixed_u0[i] || u[i] > fFixed_u1[i])
-         sum_subsets(u, u0, u1, nfixed);
+         sum_subsets(u, nfixed);
    }
    
    std::fill(u0, u0 + fNdim, 0);
