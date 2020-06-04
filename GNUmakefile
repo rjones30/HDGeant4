@@ -196,3 +196,6 @@ $(G4BINDIR)/genBH: src/utils/genBH.cc
 
 $(G4BINDIR)/adapt: src/utils/adapt.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(DANALIBS) $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
+
+diff:
+	diff -q -r ../jlab . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"

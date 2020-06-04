@@ -131,7 +131,25 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
 }
 
 GlueXPhysicsList::~GlueXPhysicsList()
-{}
+{
+#if USING_DIRACXX
+   if (fBeamConversion)
+      delete fBeamConversion;
+#endif
+}
+
+void GlueXPhysicsList::ConstructParticle()
+{
+   G4VModularPhysicsList::ConstructParticle();
+#if VERBOSE_PARTICLES
+   GetParticleIterator()->reset();
+   while ( (*GetParticleIterator())() ) {
+      G4ParticleDefinition* particle = GetParticleIterator()->value();
+      G4String particleName = particle->GetParticleName();
+      G4cout << "*** particle type " <<  particleName << G4endl;
+   }
+#endif
+}
 
 void GlueXPhysicsList::ConstructParticle()
 {
