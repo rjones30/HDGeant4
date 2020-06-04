@@ -38,8 +38,7 @@ CPPFLAGS += -DREDUCE_OPTIMIZATION_OF_CDC=1
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
-CPPFLAGS += -DG4MULTITHREADED
-#CPPFLAGS += -DVERBOSE_RANDOMS=1
+#CPPFLAGS += -DG4MULTITHREADED
 #CPPFLAGS += -DFORCE_PARTICLE_TYPE_CHARGED_GEANTINO
 #CPPFLAGS += -DBP_DEBUG
 #CPPFLAGS += -DMOD_SPONCE
@@ -102,7 +101,7 @@ cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
 g4fixes: $(G4TMPDIR)/libG4fixes.so
 
-CXXFLAGS = -std=c++11 -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -g -O0 -fPIC -ftls-model=global-dynamic -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 HDDSDIR := $(G4TMPDIR)/hdds
 G4FIXESDIR := $(G4TMPDIR)/G4fixes
@@ -196,3 +195,6 @@ $(G4BINDIR)/genBH: src/utils/genBH.cc
 
 $(G4BINDIR)/adapt: src/utils/adapt.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(DANALIBS) $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
+
+diff:
+	diff -q -r ../jlab . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
