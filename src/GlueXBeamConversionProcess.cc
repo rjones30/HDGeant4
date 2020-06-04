@@ -142,9 +142,11 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(
 
 GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
 {
+#ifdef USING_DIRACXX
 #if USE_ADAPTIVE_SAMPLER
    if (sampler_initialized)
       sampler.saveState("BHgen_stats.astate");
+#endif
 #endif
 }
 
