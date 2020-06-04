@@ -20,6 +20,8 @@
 
 #include <JANA/JApplication.h>
 
+#define SUPPRESS_LIGHT_BY_HEAVY_PARTICLES 1
+
 #define USE_ENERGY_WEIGHTED_TIMES 1
 
 // Energy rescale factor to match reconstructed to generated
@@ -226,6 +228,24 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
    }
 
    // Post the hit to the hits map, ordered by sector index
+
+#if SUPPRESS_LIGHT_BY_HEAVY_PARTICLES
+   double mass_GeV = track->GetDynamicParticle()->GetMass()/GeV;
+   if (mass_GeV > 0.939) {
+      static std::map<int, int> was_seen;
+      if (was_seen.find(pdgtype) == was_seen.end())  {
+         G4cout << "Notice in GlueXSensitiveDetectorBCAL - "
+                << "particle PDGtype " << pdgtype
+                << ", mass " << mass_GeV << " GeV "
+                << "wants to deposit " << dEsum/MeV << " MeV "
+                << "in the BCAL." << G4endl
+                << "Suppressing this and all future hits "
+                << "by this particle type in the BCAL!"
+                << G4endl;
+      }
+      was_seen[pdgtype]++;
+   } else
+#endif
 
    if (dEsum > 0) {
       int module = GetIdent("module", touch);
