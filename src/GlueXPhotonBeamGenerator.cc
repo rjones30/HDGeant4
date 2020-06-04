@@ -46,6 +46,35 @@ double GlueXPhotonBeamGenerator::fFixedPolarization_phi = 0;
 
 GlueXPseudoDetectorTAG *GlueXPhotonBeamGenerator::fTagger = 0;
 
+#if 0
+#define G4UNIFORM_RANDOM G4UniformRand
+#define G4GAUSSIAN_RANDOM G4RandGauss::shoot
+#else
+#include <sstream>
+double G4UNIFORM_RANDOM() {
+   static int ncalls=0;
+   std::stringstream statefile;
+   statefile << "ranecu_" << ncalls << ".conf";
+   CLHEP::HepRandom::getTheEngine()->saveStatus(statefile.str().c_str());
+   CLHEP::HepRandom::getTheEngine()->showStatus();
+   double value = G4UniformRand();
+   std::cout << "G4UniformRand() call " << ++ncalls
+             << " returns " << value << std::endl;
+   return value;
+}
+double G4GAUSSIAN_RANDOM() {
+   static int ncalls=0;
+   std::stringstream statefile;
+   statefile << "ranecu_" << ncalls << ".conf";
+   CLHEP::HepRandom::getTheEngine()->saveStatus(statefile.str().c_str());
+   CLHEP::HepRandom::getTheEngine()->showStatus();
+   double value = G4RandGauss::shoot();
+   std::cout << "G4RandGauss::shoot() call " << ++ncalls
+             << " returns " << value << std::endl;
+   return value;
+}
+#endif
+
 GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
  : fCobrems(gen)
 {
@@ -289,8 +318,20 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       prepareImportanceSamplingPDFs();
    }
 
-   double phiMosaic = 2*M_PI * G4UniformRand();
-   double rhoMosaic = sqrt(-2 * log(G4UniformRand()));
+   // The GlueXUserEventInformation constructor can set the random number
+   // seeds for this event, so this must happen at here at the top.
+   GlueXUserEventInformation *event_info;
+   if (t0 == 0) {
+      event_info = new GlueXUserEventInformation();
+      anEvent->SetUserInformation(event_info);
+   }
+   else {
+      event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
+   }
+   assert (event_info != 0);
+
+   double phiMosaic = 2*M_PI * G4UNIFORM_RANDOM();
+   double rhoMosaic = sqrt(-2 * log(G4UNIFORM_RANDOM()));
    rhoMosaic *= fCobrems->getTargetCrystalMosaicSpread() * radian;
    double thxMosaic = rhoMosaic * cos(phiMosaic);
    double thyMosaic = rhoMosaic * sin(phiMosaic);
@@ -299,15 +340,15 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    double yemittance = xemittance / 2.5; // nominal, should be checked
    double xspotsize = fCobrems->getCollimatorSpotrms() * m;
    double yspotsize = xspotsize; // nominal, should be checked
-   double phiBeam = 2*M_PI * G4UniformRand();
-   double rhoBeam = sqrt(-2 * log(G4UniformRand()));
+   double phiBeam = 2*M_PI * G4UNIFORM_RANDOM();
+   double rhoBeam = sqrt(-2 * log(G4UNIFORM_RANDOM()));
    double thxBeam = (xemittance / xspotsize) * rhoBeam * cos(phiBeam);
    double thyBeam = (yemittance / yspotsize) * rhoBeam * sin(phiBeam);
 
    double raddz = fCobrems->getTargetThickness() * m;
-   double varMS = fCobrems->Sigma2MS(raddz/m * G4UniformRand());
-   double rhoMS = sqrt(-2 * varMS * log(G4UniformRand()));
-   double phiMS = 2*M_PI * G4UniformRand();
+   double varMS = fCobrems->Sigma2MS(raddz/m * G4UNIFORM_RANDOM());
+   double rhoMS = sqrt(-2 * varMS * log(G4UNIFORM_RANDOM()));
+   double phiMS = 2*M_PI * G4UNIFORM_RANDOM();
    double thxMS = rhoMS * cos(phiMS);
    double thyMS = rhoMS * sin(phiMS);
 
@@ -334,7 +375,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       while (true) {                             // try coherent generation
          ++fCoherentPDFx.Ntested;
 
-         double u = G4UniformRand();
+         double u = G4UNIFORM_RANDOM();
          int i = fCoherentPDFx.search(u);
          double fi = fCoherentPDFx.density[i];
          double ui = fCoherentPDFx.integral[i];
@@ -360,7 +401,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
                    << G4endl;
          }
          fCoherentPDFx.Psum += Pfactor;
-         if (G4UniformRand() * fCoherentPDFx.Pcut > Pfactor) {
+         if (G4UNIFORM_RANDOM() * fCoherentPDFx.Pcut > Pfactor) {
             continue;
          }
          ++fCoherentPDFx.Npassed;
@@ -368,12 +409,12 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
          double freq;
          double fmax = dNcdx / M_PI;
          while (true) {
-            phi = 2*M_PI * G4UniformRand();
+            phi = 2*M_PI * G4UNIFORM_RANDOM();
             freq = fCobrems->Rate_dNcdxdp(x, phi);
-            if (G4UniformRand() * fmax < freq)
+            if (G4UNIFORM_RANDOM() * fmax < freq)
                break;
          }
-         double uq = freq * G4UniformRand();
+         double uq = freq * G4UNIFORM_RANDOM();
          int j = ImportanceSampler::search(uq, fCobrems->fQ2weight);
          theta2 = fCobrems->fQ2theta2[j];
          polarization = fCobrems->Polarization(x, theta2, phi);
@@ -385,7 +426,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       while (true) {                           // try incoherent generation
          ++fIncoherentPDFlogx.Ntested;
 
-         double ux = G4UniformRand();
+         double ux = G4UNIFORM_RANDOM();
          int i = fIncoherentPDFlogx.search(ux);
          double fi = fIncoherentPDFlogx.density[i];
          double ui = fIncoherentPDFlogx.integral[i];
@@ -395,7 +436,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
          double logx = logxi + dlogx / 2 - (ui - ux) / fi;
          x = exp(logx);
          double dNidxdyPDF = fi / x;
-         double uy = G4UniformRand();
+         double uy = G4UNIFORM_RANDOM();
          int j = fIncoherentPDFy.search(uy);
          double fj = fIncoherentPDFy.density[j];
          double uj = fIncoherentPDFy.integral[j];
@@ -425,12 +466,12 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
                    << G4endl;
          }
          fIncoherentPDFlogx.Psum += Pfactor;
-         if (G4UniformRand() * fIncoherentPDFlogx.Pcut > Pfactor) {
+         if (G4UNIFORM_RANDOM() * fIncoherentPDFlogx.Pcut > Pfactor) {
             continue;
          }
          ++fIncoherentPDFlogx.Npassed;
 
-         phi = 2*M_PI * G4UniformRand();
+         phi = 2*M_PI * G4UNIFORM_RANDOM();
          polarization = fCobrems->AbremsPolarization(x, theta2, phi);
          polarization_phi = phi - M_PI / 2;
          break;
@@ -466,7 +507,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    G4ParticleDefinition *part = GlueXPrimaryGeneratorAction::GetParticle("gamma");
    double Emax = fCobrems->getBeamEnergy() * GeV;
    double Erms = fCobrems->getBeamErms() * GeV;
-   double Ebeam = Emax + Erms * G4RandGauss::shoot();
+   double Ebeam = Emax + Erms * G4GAUSSIAN_RANDOM();
    double theta = sqrt(theta2) * electron_mass_c2 / Emax;
    double alphax = thxBeam + thxMS + theta * cos(phi);
    double alphay = thyBeam + thyMS + theta * sin(phi);
@@ -474,17 +515,17 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    double px = pabs * alphax;
    double py = pabs * alphay;
    double pz = sqrt(pabs*pabs - px*px - py*py);
-   double colphi = 2*M_PI * G4UniformRand();
+   double colphi = 2*M_PI * G4UNIFORM_RANDOM();
    double vspotrms = fCobrems->getCollimatorSpotrms() * m;
-   double colrho = vspotrms * sqrt(-2 * log(G4UniformRand()));
+   double colrho = vspotrms * sqrt(-2 * log(G4UNIFORM_RANDOM()));
    double colDist = fCobrems->getCollimatorDistance() * m;
    double radx = colrho * cos(colphi) - colDist * thxBeam;
    double rady = colrho * sin(colphi) - colDist * thyBeam;
    double colx = radx + colDist * alphax;
    double coly = rady + colDist * alphay;
 #if defined BEAM_BOX_SIZE
-   colx += BEAM_BOX_SIZE * (G4UniformRand() - 0.5);
-   coly += BEAM_BOX_SIZE * (G4UniformRand() - 0.5);
+   colx += BEAM_BOX_SIZE * (G4UNIFORM_RANDOM() - 0.5);
+   coly += BEAM_BOX_SIZE * (G4UNIFORM_RANDOM() - 0.5);
 #endif
    colx += fBeamOffset[0];
    coly += fBeamOffset[1];
@@ -503,15 +544,12 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    G4ThreeVector mom(px, py, pz);
 
    // If beam photon is primary particle, use it to initialize event info
-   GlueXUserEventInformation *event_info;
    double targetCenterZ = GlueXPrimaryGeneratorAction::getTargetCenterZ();
    int bg = 1;
    double tvtx;
    if (t0 == 0) {
       tvtx = (vtx[2] - targetCenterZ) / fBeamVelocity;
       tvtx -= GenerateTriggerTime(anEvent);
-      event_info = new GlueXUserEventInformation();
-      anEvent->SetUserInformation(event_info);
       if (fGenerateNotSimulate == 0) {
          event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
       }
@@ -525,8 +563,6 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
          fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
          return;
       }
-      event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
-      assert (event_info != 0);
    }
 
    // Generate new primary for the beam photon
@@ -602,7 +638,7 @@ double GlueXPhotonBeamGenerator::GenerateTriggerTime(const G4Event *event)
       last_run_number = run_number;
    }
    double L1sigmat = GlueXPrimaryGeneratorAction::getL1triggerTimeSigma();
-   double t0 = L1sigmat * G4RandGauss::shoot();
+   double t0 = L1sigmat * G4GAUSSIAN_RANDOM();
    return fBeamBucketPeriod * floor(t0 / fBeamBucketPeriod + 0.5);
 }
 
@@ -629,7 +665,7 @@ void GlueXPhotonBeamGenerator::GenerateRFsync(const G4Event *event)
    // Append a RF sync element to the output record, assuming that
    // GenerateTriggerTime has already been called for this event.
 
-   double tsync = 512*ns * G4UniformRand();
+   double tsync = 512*ns * G4UNIFORM_RANDOM();
    tsync = fBeamBucketPeriod * floor(tsync / fBeamBucketPeriod + 0.5);
    fTagger->addRFsync(event, tsync);
 }
