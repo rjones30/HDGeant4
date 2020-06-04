@@ -151,19 +151,6 @@ void GlueXPhysicsList::ConstructParticle()
 #endif
 }
 
-void GlueXPhysicsList::ConstructParticle()
-{
-   G4VModularPhysicsList::ConstructParticle();
-#if VERBOSE_PARTICLES
-   GetParticleIterator()->reset();
-   while ( (*GetParticleIterator())() ) {
-      G4ParticleDefinition* particle = GetParticleIterator()->value();
-      G4String particleName = particle->GetParticleName();
-      G4cout << "*** particle type " <<  particleName << G4endl;
-   }
-#endif
-}
-
 void GlueXPhysicsList::ConstructProcess()
 {
    // Read special cuts from the user options file
