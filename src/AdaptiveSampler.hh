@@ -4,7 +4,11 @@
 //
 // file: AdaptiveSampler.hh (see AdaptiveSampler.cc for implementation)
 // author: richard.t.jones at uconn.edu
-// version: february 23, 2016
+// original release: february 23, 2016
+//
+// new feature release: may 30,2 2020
+//    - see new note 4 below
+//    - richard.t.jones at uconn.edu
 //
 // usage:
 // 1) Express your Monte Carlo integral in the form
@@ -53,7 +57,7 @@
 //    difference in most practical situations where efficiencies close
 //    to unity are very difficult to achieve.
 //
-// 2) The AdaptiveSampler class generates a sequence of (u,w) pairs
+// 3) The AdaptiveSampler class generates a sequence of (u,w) pairs
 //    which a user application uses to compute the integrand(u_i) whose
 //    sum gives result_IS. If the user feeds back the integrand(u_i) to
 //    AdaptiveSampler, the AdaptiveSampler can use this information to
@@ -91,6 +95,35 @@
 //    double sigma = sqrt((1 - effic) * sum[2]) / sum[0];
 //    std::cout << "result_IS is " << mu << " +/- " << sigma << std::endl;
 //
+// 4) NEW FEATURE: Support for Parametric Models
+//    Prior to this introduction of this new feature, it was assumed that the
+//    user's integrand function wI(u) is a deterministic function of the random
+//    variables u[D]. However this is sometimes not the case in Monte Carlo
+//    integration, where some parameters for a process might be read in from
+//    an external source, and the function wI(u) might change from one event to
+//    the next, depending on the values of those parameters. This can ruin the
+//    convergence the adaptation algorithm, as the variation of the parameters
+//    will be wrongly interpreted as variation of wI(u) with u, leading to cell
+//    adaptation that produces no improvement in the efficiency. To address this
+//    situation, I now allow the user to specify a dimension D of the hypercube
+//    that is larger than the u-space being sampled by sample(), with the extra
+//    dimensions taken up by the parameters. The parameters must be mapped onto
+//    the interval [0,1] and supplied as input to sample() each time it is called.
+//    If parameters are present, they are stored in the first P elements of u[D]
+//    when it is passed to sample(), with their count given by nfixed, the new
+//    last argument to sample(). The default value of nfixed is 0, so code that
+//    is based on earlier versions of AdaptiveSampler will continue to compile
+//    and run as before, without modification.
+//
+//    In summary, if sample() is called with argument nfixed > 0, then the first
+//    nfixed elements of u[D] will not be modified, and only the last N - nfixed
+//    elements will be overwritten with the new hypercube vector for this event.
+//    The user-supplied parameters are treated on the same basis as the variables
+//    that sample() generates: as Monte Carlo integration variables that together
+//    define the integral being estimated. This effectively means that the result
+//    for the integral is an average over the parameters, with the weight in the
+//    parametric average determined externally by the user's parameter generator.
+//    
 
 #include <vector>
 #include <string>
@@ -111,7 +144,7 @@ class AdaptiveSampler {
 
  public:
    // action methods
-   double sample(double *u) const;
+   double sample(double *u, int nfixed=0);
    void feedback(const double *u, double wI);
    void rebalance_tree();
    int adapt();
@@ -155,16 +188,22 @@ class AdaptiveSampler {
    double fMinimum_sum_wI2_delta;
    static int verbosity;
 
+   int fNfixed;
+   double *fFixed_u0;
+   double *fFixed_u1;
+
    class Cell;
    Cell *fTopCell;
 
    Cell *findCell(double ucell, int &depth, 
-                  double *u0, double *u1) const;
+                  double *u0, double *u1,
+                  const double *u, int nfixed=0);
    Cell *findCell(const double *u, int &depth, 
                   double *u0, double *u1) const;
    int recursively_update(std::vector<int> index);
    double display_tree(Cell *cell, double subset, int level, double *u0,
                                                              double *u1);
+   double sum_subsets(const double *u, double *u0, double *u1, int nfixed=0);
 
    // internal weighting tables
 
@@ -175,12 +214,15 @@ class AdaptiveSampler {
       long int nhit;
       double sum_wI;
       double sum_wI2;
+      double sum_wI4;
       double *sum_wI2u;
       double subset;
+      double ss;
       Cell *subcell[3];
 
       Cell(int dim) : ndim(dim), divAxis(-1), nhit(0),
-                      sum_wI(0), sum_wI2(0), subset(0)
+                      sum_wI(0), sum_wI2(0), sum_wI4(0),
+                      subset(0), ss(0)
       {
          int dim3 = 1;
          for (int n=0; n < dim; ++n)
@@ -200,11 +242,13 @@ class AdaptiveSampler {
          nhit = src.nhit;
          sum_wI = src.sum_wI;
          sum_wI2 = src.sum_wI2;
+         sum_wI4 = src.sum_wI4;
          sum_wI2u = new double[dim3];
          for (int i=0; i < dim3; ++i) {
             sum_wI2u[i] = src.sum_wI2u[i];
          }
          subset = src.subset;
+         ss = src.ss;
          if (src.subcell[0] != 0) {
             subcell[0] = new Cell(*src.subcell[0]);
             subcell[1] = new Cell(*src.subcell[1]);
@@ -231,6 +275,7 @@ class AdaptiveSampler {
          nhit = 0;
          sum_wI = 0;
          sum_wI2 = 0;
+         sum_wI4 = 0;
          int dim3 = 1;
          for (int i=0; i < ndim; ++i)
             dim3 *= 3;
@@ -243,19 +288,21 @@ class AdaptiveSampler {
       }
       int sum_stats(long int &net_nhit, double &net_wI, 
                                         double &net_wI2,
+                                        double &net_wI4,
                                         double &net_wI2s) const
       {
          net_nhit += nhit;
          net_wI += sum_wI;
          if (sum_wI2 > 0) {
             net_wI2 += sum_wI2;
+            net_wI4 += sum_wI4;
             net_wI2s += sqrt(sum_wI2);
          }
          int count = 1;
          if (divAxis > -1) {
-            count += subcell[0]->sum_stats(net_nhit, net_wI, net_wI2, net_wI2s);
-            count += subcell[1]->sum_stats(net_nhit, net_wI, net_wI2, net_wI2s);
-            count += subcell[2]->sum_stats(net_nhit, net_wI, net_wI2, net_wI2s);
+            count += subcell[0]->sum_stats(net_nhit, net_wI, net_wI2, net_wI4, net_wI2s);
+            count += subcell[1]->sum_stats(net_nhit, net_wI, net_wI2, net_wI4, net_wI2s);
+            count += subcell[2]->sum_stats(net_nhit, net_wI, net_wI2, net_wI4, net_wI2s);
          }
          return count;
       }
@@ -267,7 +314,8 @@ class AdaptiveSampler {
                long int nhitsum = 0;
                double wIsum = 0;
                double wI2sum = 0;
-               subcell[n]->sum_stats(nhitsum, wIsum, wI2sum, sub_wI2s[n]);
+               double wI4sum = 0;
+               subcell[n]->sum_stats(nhitsum, wIsum, wI2sum, wI4sum, sub_wI2s[n]);
             }
             double subtotal = sub_wI2s[0] + sub_wI2s[1] + sub_wI2s[2];
             double part[3];
@@ -294,6 +342,8 @@ class AdaptiveSampler {
             ofs << "sum_wI=" << sum_wI << std::endl;
          if (sum_wI2 != 0)
             ofs << "sum_wI2=" << sum_wI2 << std::endl;
+         if (sum_wI4 != 0)
+            ofs << "sum_wI4=" << sum_wI4 << std::endl;
          int dim3 = 1;
          for (int i=0; i < ndim; ++i)
             dim3 *= 3;
@@ -328,6 +378,7 @@ class AdaptiveSampler {
          nhit += keyval["nhit"];
          sum_wI += keyval["sum_wI"];
          sum_wI2 += keyval["sum_wI2"];
+         sum_wI4 += keyval["sum_wI4"];
          int dim3 = 1;
          for (int i=0; i < ndim; ++i)
             dim3 *= 3;

@@ -143,7 +143,7 @@ c postconv is only supported at present by HDGeant4.
 cGENBEAM 'postconv'
 
 c Commenting out the following line will disable simulated hits output.
-OUTFILE 'testx.hddm'
+OUTFILE 'test4.hddm'
 
 c Uncomment the following line to turn off geometry optimization. Generally
 c you do NOT want to turn this off. Doing so may result in a significantly
@@ -274,7 +274,7 @@ c if you are only interested in the region of the coherent peak. This
 c minimum is the third field of the BEAM card above. Remember that if
 c you change beamEmin, you also need to change BGRATE to match, as 
 c described above.
-cBGTAGONLY 1
+BGTAGONLY 1
 
 c The following line controls the uncertainty of the event time reference
 c relative to the RF structure of the beam. The event time reference is
@@ -310,7 +310,7 @@ c seeds. The seeds are written to the output HDDM file though so if one
 c uses the output file for input to another invocation of hdgeant(++)
 c then the same seeds will be used. You may check for seeds in the input
 c file using hddm-xml file.hddm | grep random .
-RNDM 1512673414 186493231
+RNDM 3
 
 c The following line controls the cutoffs for tracking of particles.
 c CUTS cutgam cutele cutneu cuthad cutmuo bcute bcutm dcute dcutm ppcutm tofmax
