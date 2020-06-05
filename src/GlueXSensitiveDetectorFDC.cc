@@ -814,9 +814,15 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
                 hiter->q_fC == 0)
             {
                // Use the time from the earlier hit but add the charge
-               (hiter - 1)->q_fC += hiter->q_fC;
-               hits.erase(hiter);
-               --hiter;
+               if (hiter > hits.begin()) {
+                  (hiter - 1)->q_fC += hiter->q_fC;
+                  hits.erase(hiter);
+                  --hiter;
+               }
+               else {
+                  hits.erase(hiter);
+                  hiter = hits.begin();
+               }
             }
             else {
                t_ns = hiter->t_ns;
