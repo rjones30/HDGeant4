@@ -203,6 +203,15 @@ AdaptiveSampler AdaptiveSampler::operator=(const AdaptiveSampler &src)
 
 double AdaptiveSampler::sample(double *u, int nfixed)
 {
+   for (int i=0; i < nfixed; ++i) {
+      if (u[i] < 0 || u[i] >= 1) {
+         std::cerr << "AdaptiveSampler::sample error - "
+                   << "fixed parameter " << i  << " is "
+                   << "outside the allowed interval [0,1), "
+                   << "value is " << u[i] << std::endl;
+         return 0;
+      }
+   }
    int depth;
    double *u0 = new double[fNdim];
    double *u1 = new double[fNdim];
@@ -269,6 +278,7 @@ double AdaptiveSampler::sum_subsets(const double *u, int nfixed)
       if (diva >= 0 && diva < nfixed) {
          double du = (u1[diva] - u0[diva]) / 3;
          int s = int((u[diva] - u0[diva]) / du);
+         assert (s >= 0 && s <= 2);
          u0[diva] += s * du;
          u1[diva] = u0[diva] + du;
          if (u0[diva] > fFixed_u0[diva])
