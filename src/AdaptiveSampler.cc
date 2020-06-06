@@ -225,7 +225,7 @@ double AdaptiveSampler::sample(double *u, int nfixed)
    delete [] u1;
    delete [] uu;
    double dNu = (depth > 0)? pow(1/3., depth) : 1;
-   return dNu * fTopCell->ss / cell->subset;
+   return dNu / cell->subset;
 }
 
 double AdaptiveSampler::sum_subsets(const double *u, int nfixed)
@@ -857,7 +857,6 @@ int AdaptiveSampler::mergeState(const std::string filename)
    fMaximum_cells = keyval.at("fMaximum_cells");
    fEfficiency_target = keyval.at("fEfficiency_target");
    int ncells = fTopCell->deserialize(fin);
-   rebalance_tree();
    return (ncells > 0);
 }
 
