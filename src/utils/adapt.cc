@@ -27,13 +27,15 @@ void usage() {
    std::cout << "Usage: adapt [options] <input1> [<input2> ...]" << std::endl
              << "  where options include" << std::endl
              << "     -o <output_file> : output filename [adapted.astate]" << std::endl
-             << "     -t <threshold> : sampling threshold [1000]" << std::endl;
+             << "     -t <threshold> : sampling threshold [1000]" << std::endl
+             << "     -s : just report statistics, no adaption" << std::endl;
    exit(1);
 }
 
 int main(int argc, char **argv)
 {
    int Ndim=0;
+   int do_adaptation=1;
    double threshold=1000;
    std::string outfile("adapted.astate");
    AdaptiveSampler *sampler = 0;
@@ -53,6 +55,10 @@ int main(int argc, char **argv)
             continue;
          else
             usage();
+      }
+      else if (strncmp(argv[iarg], "-s", 2) == 0) {
+         do_adaptation = 0;
+         continue;
       }
       else if (argv[iarg][0] == '-') {
          usage();
@@ -76,6 +82,8 @@ int main(int argc, char **argv)
       //std::cout << "reading from " << argv[iarg] << std::endl;
       sampler->mergeState(argv[iarg]);
    }
+   if (sampler == 0)
+      usage();
 
    double error;
    double result = sampler->getResult(&error);
@@ -83,9 +91,13 @@ int main(int argc, char **argv)
       std::cout << "result = " << result << " +/- " << error << std::endl;
    else
       std::cout << "result unknown" << std::endl;
-   sampler->setAdaptation_sampling_threshold(threshold);
-   int Na = sampler->adapt();
-   std::cout << "sampler.adapt() returns " << Na << std::endl;
+
+   int Na = 0;
+   if (do_adaptation) {
+      sampler->setAdaptation_sampling_threshold(threshold);
+      Na = sampler->adapt();
+      std::cout << "sampler.adapt() returns " << Na << std::endl;
+   }
    sampler->saveState(outfile);
    sampler->display_tree();
    return (Na == 0);
