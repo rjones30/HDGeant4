@@ -78,7 +78,7 @@ inline void GlueXPseudoDetectorTAG::setRunNo(int runno)
    jcalib->Get("PHOTON_BEAM/hodoscope/endpoint_calib", beam_calib);
    double endpoint_calib = endpoint_energy;
    if (beam_calib.find("TAGGER_CALIB_ENERGY") != beam_calib.end()) {
-      endpoint_calib = beam_calib.at("TAGGER_CALIB_ENERGY");
+      endpoint_calib = beam_calib.at("TAGGER_CALIB_ENERGY")*GeV;
    }
    std::vector<std::map<string, float> > micro_parms;
    jcalib->Get("PHOTON_BEAM/microscope/scaled_energy_range", micro_parms);
