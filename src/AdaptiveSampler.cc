@@ -154,6 +154,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <exception>
 #include "AdaptiveSampler.hh"
 
 int AdaptiveSampler::verbosity = 3;
@@ -897,11 +898,18 @@ int AdaptiveSampler::mergeState(const std::string filename)
                 << std::endl;
       return 0;
    }
-   fNfixed = keyval.at("fNfixed");
-   fSampling_threshold = keyval.at("fSampling_threshold");
-   fMaximum_depth = keyval.at("fMaximum_depth");
-   fMaximum_cells = keyval.at("fMaximum_cells");
-   fEfficiency_target = keyval.at("fEfficiency_target");
+   try {
+      fNfixed = keyval.at("fNfixed");
+      fSampling_threshold = keyval.at("fSampling_threshold");
+      fMaximum_depth = keyval.at("fMaximum_depth");
+      fMaximum_cells = keyval.at("fMaximum_cells");
+      fEfficiency_target = keyval.at("fEfficiency_target");
+   }
+   catch (std::exception e) {
+      std::cerr << "AdaptiveSampler::mergeState warning - "
+                << "required keyword missing in " << filename
+                << std::endl;
+   }
    int ncells = fTopCell->deserialize(fin);
    return (ncells > 0);
 }
