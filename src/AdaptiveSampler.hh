@@ -146,7 +146,7 @@ class AdaptiveSampler {
    // action methods
    double sample(double *u, int nfixed=0);
    void feedback(const double *u, double wI);
-   void rebalance_tree();
+   void optimize_tree();
    int adapt();
    void reset_stats();
 
@@ -154,9 +154,11 @@ class AdaptiveSampler {
    int getNcells() const;
    long int getNsample() const;
    double getWItotal() const;
-   double getWI2total() const;
-   double getEfficiency() const;
-   double getResult(double *error=0) const;
+   double getWI2total(bool optimized=false);
+   double getWI4total(bool optimized=false);
+   double getEfficiency(bool optimized=false);
+   double getResult(double *error=0, double *error_uncertainty=0);
+   double getReweighted(double *error=0, double *error_uncertainty=0);
    double getAdaptation_sampling_threshold() const;
    double getAdaptation_efficiency_target() const;
    int getAdaptation_maximum_depth() const;
@@ -171,12 +173,12 @@ class AdaptiveSampler {
    static void setVerbosity(int verbose);
 
    // persistency methods
-   int saveState(const std::string filename) const;
+   int saveState(const std::string filename, bool optimized=false) const;
    int mergeState(const std::string filename);
    int restoreState(const std::string filename);
 
    // diagnostic methods
-   void display_tree();
+   void display_tree(bool optimized=false);
 
  protected:
    int fNdim;
@@ -201,8 +203,8 @@ class AdaptiveSampler {
    Cell *findCell(const double *u, int &depth, 
                   double *u0, double *u1) const;
    int recursively_update(std::vector<int> index);
-   double display_tree(Cell *cell, double subset, int level, double *u0,
-                                                             double *u1);
+   double display_tree(Cell *cell, double subset, int level,
+                       double *u0, double *u1, bool optimized=false);
    double sum_subsets(const double *u, int nfixed=0);
 
    // internal weighting tables
@@ -210,45 +212,61 @@ class AdaptiveSampler {
    class Cell {
     public:
       int ndim;
+      int n3dim;
       int divAxis;
       long int nhit;
       double sum_wI;
       double sum_wI2;
       double sum_wI4;
+      double sum_wI2s;
       double *sum_wI2u;
       double subset;
       double ss;
+      // optimized transforms of the above statistics
+      long int opt_nhit;
+      // sum_wI is an invariant;
+      double opt_wI2;
+      double opt_wI4;
+      // sum_wI2s is an invariant;
+      // sum_wI2u is not optimized;
+      double opt_subset;
+
       Cell *subcell[3];
 
       Cell(int dim) : ndim(dim), divAxis(-1), nhit(0),
                       sum_wI(0), sum_wI2(0), sum_wI4(0),
-                      subset(0), ss(0)
+                      sum_wI2s(0), subset(0), ss(0),
+                      opt_nhit(0), opt_wI2(0), opt_wI4(0),
+                      opt_subset(0)
       {
-         int dim3 = 1;
+         n3dim = 1;
          for (int n=0; n < dim; ++n)
-            dim3 *= 3;
-         sum_wI2u = new double[dim3];
-         std::fill(sum_wI2u, sum_wI2u + dim3, 0);
+            n3dim *= 3;
+         sum_wI2u = new double[n3dim];
+         std::fill(sum_wI2u, sum_wI2u + n3dim, 0);
          subcell[0] = 0;
          subcell[1] = 0;
          subcell[2] = 0;
       }
       Cell(const Cell &src) {
-         int dim3 = 1;
-         for (int n=0; n < src.ndim; ++n)
-            dim3 *= 3;
          ndim = src.ndim;
+         n3dim = src.n3dim;
          divAxis = src.divAxis;
          nhit = src.nhit;
          sum_wI = src.sum_wI;
          sum_wI2 = src.sum_wI2;
          sum_wI4 = src.sum_wI4;
-         sum_wI2u = new double[dim3];
-         for (int i=0; i < dim3; ++i) {
+         sum_wI2s = src.sum_wI2s;
+         sum_wI2u = new double[n3dim];
+         for (int i=0; i < n3dim; ++i) {
             sum_wI2u[i] = src.sum_wI2u[i];
          }
          subset = src.subset;
          ss = src.ss;
+         opt_nhit = src.opt_nhit;
+         opt_wI2 = src.opt_wI2;
+         opt_wI4 = src.opt_wI4;
+         opt_subset = src.opt_subset;
          if (src.subcell[0] != 0) {
             subcell[0] = new Cell(*src.subcell[0]);
             subcell[1] = new Cell(*src.subcell[1]);
@@ -276,64 +294,73 @@ class AdaptiveSampler {
          sum_wI = 0;
          sum_wI2 = 0;
          sum_wI4 = 0;
-         int dim3 = 1;
-         for (int i=0; i < ndim; ++i)
-            dim3 *= 3;
-         std::fill(sum_wI2u, sum_wI2u + dim3, 0);
+         sum_wI2s = 0;
+         std::fill(sum_wI2u, sum_wI2u + n3dim, 0);
          if (divAxis > -1) {
             subcell[0]->reset_stats();
             subcell[1]->reset_stats();
             subcell[2]->reset_stats();
          }
       }
-      int sum_stats(long int &net_nhit, double &net_wI, 
-                                        double &net_wI2,
-                                        double &net_wI4,
-                                        double &net_wI2s) const
+      int sum_stats(int nfixed=0)
       {
-         net_nhit += nhit;
-         net_wI += sum_wI;
-         if (sum_wI2 > 0) {
-            net_wI2 += sum_wI2;
-            net_wI4 += sum_wI4;
-            net_wI2s += sqrt(sum_wI2);
-         }
          int count = 1;
          if (divAxis > -1) {
-            count += subcell[0]->sum_stats(net_nhit, net_wI, net_wI2, net_wI4, net_wI2s);
-            count += subcell[1]->sum_stats(net_nhit, net_wI, net_wI2, net_wI4, net_wI2s);
-            count += subcell[2]->sum_stats(net_nhit, net_wI, net_wI2, net_wI4, net_wI2s);
+            nhit = 0;
+            sum_wI = 0;
+            sum_wI2 = 0;
+            sum_wI4 = 0;
+            sum_wI2s = 0;
+            for (int n=0; n < 3; ++n) {
+               count += subcell[n]->sum_stats(nfixed);
+               nhit += subcell[n]->nhit;
+               sum_wI += subcell[n]->sum_wI;
+               sum_wI2 += subcell[n]->sum_wI2;
+               sum_wI4 += subcell[n]->sum_wI4;
+               sum_wI2s += subcell[n]->sum_wI2s;
+            }
+         }
+         if (divAxis < nfixed) {
+            sum_wI2s = sqrt(nhit * sum_wI2);
          }
          return count;
       }
-      void repartition(double wI2s, double total_wI2s) {
-         subset = wI2s / total_wI2s;
+      void optimize(int nfixed=0) {
+         // Assume opt_nhit and opt_subset already set upon entry,
+         // task is to assign opt_wI2, opt_wI4 for this cell, and
+         // all opt_* parameters for child nodes in the tree.
          if (divAxis > -1) {
-            double sub_wI2s[3] = {};
-            for (int n=0; n < 3; ++n) {
-               long int nhitsum = 0;
-               double wIsum = 0;
-               double wI2sum = 0;
-               double wI4sum = 0;
-               subcell[n]->sum_stats(nhitsum, wIsum, wI2sum, wI4sum, sub_wI2s[n]);
+            if (divAxis < nfixed) {
+               opt_wI2 = 0;
+               opt_wI4 = 0;
+               for (int n=0; n < 3; ++n) {
+                  subcell[n]->opt_nhit = subcell[n]->nhit;
+                  subcell[n]->opt_subset = opt_subset / 3;
+                  subcell[n]->optimize(nfixed);
+                  opt_wI2 += subcell[n]->opt_wI2;
+                  opt_wI4 += subcell[n]->opt_wI4;
+               }
             }
-            double subtotal = sub_wI2s[0] + sub_wI2s[1] + sub_wI2s[2];
-            double part[3];
-            double psum = 0;
-            for (int n=0; n < 3; ++n) {
-               if (subtotal == 0)
-                  part[n] = subcell[n]->subset / subset;
-               else
-                  part[n] = sub_wI2s[n] / subtotal;
-               part[n] = (part[n] > 1e-3)? part[n] : 1e-3;
-               psum += part[n];
+            else {
+               opt_wI2 = 0;
+               opt_wI4 = 0;
+               for (int n=0; n < 3; ++n) {
+                  double r = subcell[n]->sum_wI2s / sum_wI2s;
+                  subcell[n]->opt_nhit = nhit * r;
+                  subcell[n]->opt_subset = opt_subset * r;
+                  subcell[n]->optimize(nfixed);
+                  opt_wI2 += subcell[n]->opt_wI2;
+                  opt_wI4 += subcell[n]->opt_wI4;
+               }
             }
-            subcell[0]->repartition(wI2s * part[0]/psum, total_wI2s);
-            subcell[1]->repartition(wI2s * part[1]/psum, total_wI2s);
-            subcell[2]->repartition(wI2s * part[2]/psum, total_wI2s);
+         }
+         else {
+            double r = opt_nhit / (nhit + 1e-99);
+            opt_wI2 = sum_wI2 / r;
+            opt_wI4 = sum_wI2 / pow(r,3);
          }
       }
-      int serialize(std::ofstream &ofs) {
+      int serialize(std::ofstream &ofs, bool optimized=false) {
          ofs << "ndim=" << ndim << std::endl;
          ofs << "divAxis=" << divAxis << std::endl;
          if (nhit != 0)
@@ -344,20 +371,20 @@ class AdaptiveSampler {
             ofs << "sum_wI2=" << sum_wI2 << std::endl;
          if (sum_wI4 != 0)
             ofs << "sum_wI4=" << sum_wI4 << std::endl;
-         int dim3 = 1;
-         for (int i=0; i < ndim; ++i)
-            dim3 *= 3;
-         for (int i=0; i < dim3; ++i) {
+         for (int i=0; i < n3dim; ++i) {
             if (sum_wI2u[i] != 0)
                ofs << "sum_wI2u[" << i << "]=" << sum_wI2u[i] << std::endl;
          }
-         ofs << "subset=" << std::setprecision(20) << subset << std::endl;
+         if (optimized)
+            ofs << "subset=" << std::setprecision(20) << opt_subset << std::endl;
+         else
+            ofs << "subset=" << std::setprecision(20) << subset << std::endl;
          ofs << "=" << std::endl;
          int count = 1;
          if (divAxis > -1) {
-            count += subcell[0]->serialize(ofs);
-            count += subcell[1]->serialize(ofs);
-            count += subcell[2]->serialize(ofs);
+            count += subcell[0]->serialize(ofs, optimized);
+            count += subcell[1]->serialize(ofs, optimized);
+            count += subcell[2]->serialize(ofs, optimized);
          }
          return count;
       }
@@ -379,10 +406,7 @@ class AdaptiveSampler {
          sum_wI += keyval["sum_wI"];
          sum_wI2 += keyval["sum_wI2"];
          sum_wI4 += keyval["sum_wI4"];
-         int dim3 = 1;
-         for (int i=0; i < ndim; ++i)
-            dim3 *= 3;
-         for (int i=0; i < dim3; ++i) {
+         for (int i=0; i < n3dim; ++i) {
             std::stringstream key("");
             key << "sum_wI2u[" << i << "]";
             sum_wI2u[i] += keyval[key.str()];

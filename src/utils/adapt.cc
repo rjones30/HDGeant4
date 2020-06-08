@@ -27,7 +27,8 @@ void usage() {
    std::cout << "Usage: adapt [options] <input1> [<input2> ...]" << std::endl
              << "  where options include" << std::endl
              << "     -o <output_file> : output filename [adapted.astate]" << std::endl
-             << "     -t <threshold> : sampling threshold [1000]" << std::endl
+             << "     -t <threshold> : sampling threshold [25]" << std::endl
+             << "     -v <verbosity> : verbosity level [3]" << std::endl
              << "     -s : just report statistics, no adaption" << std::endl;
    exit(1);
 }
@@ -37,6 +38,7 @@ int main(int argc, char **argv)
    int Ndim=0;
    int do_adaptation=1;
    double threshold=1000;
+   int verbosity_level=0;
    std::string outfile("adapted.astate");
    AdaptiveSampler *sampler = 0;
    for (int iarg=1; iarg < argc; ++iarg) {
@@ -55,6 +57,12 @@ int main(int argc, char **argv)
             continue;
          else
             usage();
+      }
+      else if ((opt = sscanf(argv[iarg], "-v %d", &verbosity_level))) {
+         if (opt == EOF)
+            sscanf(argv[++iarg], "%d", &verbosity_level);
+         AdaptiveSampler::setVerbosity(verbosity_level);
+         continue;
       }
       else if (strncmp(argv[iarg], "-s", 2) == 0) {
          do_adaptation = 0;
@@ -86,19 +94,33 @@ int main(int argc, char **argv)
       usage();
 
    double error;
-   double result = sampler->getResult(&error);
-   if (result > 0)
-      std::cout << "result = " << result << " +/- " << error << std::endl;
-   else
-      std::cout << "result unknown" << std::endl;
+   double error_uncertainty;
+   double result = sampler->getResult(&error, &error_uncertainty);
+   if (result > 0) {
+      if (verbosity_level > 0)
+         std::cout << "result = " << result << " +/- " << error
+                   << " +/- " << error_uncertainty << std::endl;
+   }
+   else {
+      if (verbosity_level > 0)
+         std::cout << "result unknown" << std::endl;
+   }
 
    int Na = 0;
    if (do_adaptation) {
       sampler->setAdaptation_sampling_threshold(threshold);
       Na = sampler->adapt();
-      std::cout << "sampler.adapt() returns " << Na << std::endl;
+      if (verbosity_level > 0)
+         std::cout << "sampler.adapt() returns " << Na << std::endl;
+      double new_error;
+      double new_error_uncertainty;
+      double new_result = sampler->getReweighted(&new_error, &new_error_uncertainty);
+      if (verbosity_level > 0)
+         std::cout << "improved result = " << new_result << " +/- "
+                   << new_error << " +/- " << new_error_uncertainty << std::endl;
    }
-   sampler->saveState(outfile);
-   sampler->display_tree();
+   sampler->saveState(outfile, true);
+   if (verbosity_level > 2)
+      sampler->display_tree(true);
    return (Na == 0);
 }
