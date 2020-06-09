@@ -98,11 +98,14 @@ int main(int argc, char **argv)
 
    double error;
    double error_uncertainty;
+   double efficiency = sampler->getEfficiency();
    double result = sampler->getResult(&error, &error_uncertainty);
    if (result > 0) {
       if (verbosity_level > 0)
          std::cout << "result = " << result << " +/- " << error
-                   << " +/- " << error_uncertainty << std::endl;
+                   << " +/- " << error_uncertainty 
+                   << ", efficiency = " << efficiency
+                   << std::endl;
    }
    else {
       if (verbosity_level > 0)
