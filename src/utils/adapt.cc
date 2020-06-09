@@ -93,6 +93,9 @@ int main(int argc, char **argv)
    if (sampler == 0)
       usage();
 
+   if (verbosity_level > 0)
+      std::cout << "sample size N = " << sampler->getNsample() << std::endl;
+
    double error;
    double error_uncertainty;
    double result = sampler->getResult(&error, &error_uncertainty);
