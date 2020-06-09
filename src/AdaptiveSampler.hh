@@ -345,7 +345,7 @@ class AdaptiveSampler {
                opt_wI2 = 0;
                opt_wI4 = 0;
                for (int n=0; n < 3; ++n) {
-                  double r = subcell[n]->sum_wI2s / sum_wI2s;
+                  double r = subcell[n]->sum_wI2s / (sum_wI2s + 1e-99);
                   subcell[n]->opt_nhit = nhit * r;
                   subcell[n]->opt_subset = opt_subset * r;
                   subcell[n]->optimize(nfixed);
@@ -356,8 +356,8 @@ class AdaptiveSampler {
          }
          else {
             double r = opt_nhit / (nhit + 1e-99);
-            opt_wI2 = sum_wI2 / r;
-            opt_wI4 = sum_wI2 / pow(r,3);
+            opt_wI2 = sum_wI2 / (r + 1e-99);
+            opt_wI4 = sum_wI2 / (pow(r,3) + 1e-99);
          }
       }
       int serialize(std::ofstream &ofs, bool optimized=false) {

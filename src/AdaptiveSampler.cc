@@ -683,7 +683,7 @@ double AdaptiveSampler::getEfficiency(bool optimized)
    else if (optimized) {
       optimize_tree();
       return pow(fTopCell->sum_wI, 2) / 
-             (fTopCell->opt_wI2 * fTopCell->opt_nhit);
+             (fTopCell->opt_wI2 * fTopCell->opt_nhit + 1e-99);
    }
    return pow(fTopCell->sum_wI, 2) / 
           (fTopCell->sum_wI2 * fTopCell->nhit);
@@ -719,18 +719,20 @@ double AdaptiveSampler::getReweighted(double *error,
    fTopCell->sum_stats(fNfixed);
    optimize_tree();
    double eff = pow(fTopCell->sum_wI, 2) / 
-                (fTopCell->opt_wI2 * fTopCell->opt_nhit);
+                (fTopCell->opt_wI2 * fTopCell->opt_nhit + 1e-99);
    double result = (eff > 0)? fTopCell->sum_wI / fTopCell->opt_nhit : 0;
    if (error) {
       if (eff > 0)
-         *error = sqrt((1 - eff) * fTopCell->opt_wI2) / fTopCell->opt_nhit;
+         *error = sqrt((1 - eff) * fTopCell->opt_wI2) / 
+                  (fTopCell->opt_nhit + 1e-99);
       else
          *error = 0;
    }
    if (error_uncertainty) {
       if (eff > 0)
          *error_uncertainty = sqrt((1 - eff) / fTopCell->opt_wI2) / 2 *
-                              sqrt(fTopCell->opt_wI4) / fTopCell->opt_nhit;
+                              sqrt(fTopCell->opt_wI4) /
+                              (fTopCell->opt_nhit + 1e-99);
       else
          *error = 0;
    }
