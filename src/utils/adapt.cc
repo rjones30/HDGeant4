@@ -38,7 +38,7 @@ int main(int argc, char **argv)
    int Ndim=0;
    int do_adaptation=1;
    double threshold=1000;
-   int verbosity_level=0;
+   int verbosity_level=3;
    std::string outfile("adapted.astate");
    AdaptiveSampler *sampler = 0;
    for (int iarg=1; iarg < argc; ++iarg) {
@@ -119,8 +119,8 @@ int main(int argc, char **argv)
          std::cout << "improved result = " << new_result << " +/- "
                    << new_error << " +/- " << new_error_uncertainty << std::endl;
    }
-   sampler->saveState(outfile, true);
+   sampler->saveState(outfile, do_adaptation);
    if (verbosity_level > 2)
-      sampler->display_tree(true);
+      sampler->display_tree(do_adaptation);
    return (Na == 0);
 }
