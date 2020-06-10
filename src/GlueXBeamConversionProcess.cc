@@ -26,7 +26,7 @@
 // the LIH2 target will undergo Bethe-Heitler conversion to e+e-
 // pairs inside, otherwise the standard pair conversion
 // probabilities apply.
-#define FORCED_LIH2_BETHE_HEITLER 1
+#define FORCED_LIH2_BETHE_HEITLER 0
 
 #include <G4SystemOfUnits.hh>
 #include "G4Positron.hh"
