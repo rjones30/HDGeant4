@@ -734,7 +734,7 @@ double AdaptiveSampler::getReweighted(double *error,
                               sqrt(fTopCell->opt_wI4) /
                               (fTopCell->opt_nhit + 1e-99);
       else
-         *error = 0;
+         *error_uncertainty = 0;
    }
    return result;
 }

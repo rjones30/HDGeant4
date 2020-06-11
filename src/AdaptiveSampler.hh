@@ -357,7 +357,7 @@ class AdaptiveSampler {
          else {
             double r = opt_nhit / (nhit + 1e-99);
             opt_wI2 = sum_wI2 / (r + 1e-99);
-            opt_wI4 = sum_wI2 / (pow(r,3) + 1e-99);
+            opt_wI4 = sum_wI4 / (pow(r,3) + 1e-99);
          }
       }
       int serialize(std::ofstream &ofs, bool optimized=false) {
