@@ -49,7 +49,7 @@ void unif01(int n, double *u) { G4Random::getTheEngine()->flatArray(n,u); }
 
 #if USE_ADAPTIVE_SAMPLER
 #include "AdaptiveSampler.hh"
-AdaptiveSampler sampler(6, &unif01);
+AdaptiveSampler sampler(6, &unif01, 1);
 int sampler_initialized = 0;
 #endif
 
@@ -865,7 +865,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    double u[6];
    u[0] = kin / E0_GeV;
 #if USE_ADAPTIVE_SAMPLER
-   double weight = sampler.sample(u, 1);
+   double weight = sampler.sample(u);
 #else
    unif01(5, u+1);
    double weight=1;

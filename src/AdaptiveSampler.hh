@@ -137,20 +137,22 @@ using Uniform01 = void (*)(int n, double *randoms);
 
 class AdaptiveSampler {
  public:
-   AdaptiveSampler(int dim, Uniform01 user_generator);
+   AdaptiveSampler(int dim, Uniform01 user_generator, int nfixed=0);
    AdaptiveSampler(const AdaptiveSampler &src);
    ~AdaptiveSampler();
    AdaptiveSampler operator=(const AdaptiveSampler &src);
 
  public:
    // action methods
-   double sample(double *u, int nfixed=0);
+   double sample(double *u);
    void feedback(const double *u, double wI);
    void optimize_tree();
    int adapt();
    void reset_stats();
 
    // getter methods
+   int getNdim() const;
+   int getNfixed() const;
    int getNcells() const;
    long int getNsample() const;
    double getWItotal() const;
@@ -179,9 +181,11 @@ class AdaptiveSampler {
 
    // diagnostic methods
    void display_tree(bool optimized=false);
+   int check_subsets(bool optimized=false);
 
  protected:
    int fNdim;
+   int fNfixed;
    Uniform01 fRandom;
    unsigned int fMaximum_depth;
    unsigned int fMaximum_cells;
@@ -190,22 +194,17 @@ class AdaptiveSampler {
    double fMinimum_sum_wI2_delta;
    static int verbosity;
 
-   int fNfixed;
-   double *fFixed_u0;
-   double *fFixed_u1;
-
    class Cell;
    Cell *fTopCell;
 
    Cell *findCell(double ucell, int &depth, 
                   double *u0, double *u1,
-                  const double *u, int nfixed=0);
+                  const double *u);
    Cell *findCell(const double *u, int &depth, 
                   double *u0, double *u1) const;
    int recursively_update(std::vector<int> index);
    double display_tree(Cell *cell, double subset, int level,
                        double *u0, double *u1, bool optimized=false);
-   double sum_subsets(const double *u, int nfixed=0);
 
    // internal weighting tables
 
@@ -221,7 +220,6 @@ class AdaptiveSampler {
       double sum_wI2s;
       double *sum_wI2u;
       double subset;
-      double ss;
       // optimized transforms of the above statistics
       long int opt_nhit;
       // sum_wI is an invariant;
@@ -233,10 +231,17 @@ class AdaptiveSampler {
 
       Cell *subcell[3];
 
-      Cell(int dim) : ndim(dim), divAxis(-1), nhit(0),
-                      sum_wI(0), sum_wI2(0), sum_wI4(0),
-                      sum_wI2s(0), subset(0), ss(0),
-                      opt_nhit(0), opt_wI2(0), opt_wI4(0),
+      Cell(int dim) : ndim(dim),
+                      divAxis(-1),
+                      nhit(0),
+                      sum_wI(0),
+                      sum_wI2(0),
+                      sum_wI4(0),
+                      sum_wI2s(0),
+                      subset(0),
+                      opt_nhit(0),
+                      opt_wI2(0), 
+                      opt_wI4(0),
                       opt_subset(0)
       {
          n3dim = 1;
@@ -262,7 +267,6 @@ class AdaptiveSampler {
             sum_wI2u[i] = src.sum_wI2u[i];
          }
          subset = src.subset;
-         ss = src.ss;
          opt_nhit = src.opt_nhit;
          opt_wI2 = src.opt_wI2;
          opt_wI4 = src.opt_wI4;
@@ -335,7 +339,7 @@ class AdaptiveSampler {
                opt_wI4 = 0;
                for (int n=0; n < 3; ++n) {
                   subcell[n]->opt_nhit = subcell[n]->nhit;
-                  subcell[n]->opt_subset = opt_subset / 3;
+                  subcell[n]->opt_subset = opt_subset;
                   subcell[n]->optimize(nfixed);
                   opt_wI2 += subcell[n]->opt_wI2;
                   opt_wI4 += subcell[n]->opt_wI4;
@@ -388,7 +392,7 @@ class AdaptiveSampler {
          }
          return count;
       }
-      int deserialize(std::ifstream &ifs) {
+      int deserialize(std::ifstream &ifs, double subset_multiplier=1) {
          std::map<std::string,double> keyval;
          while (true) {
             std::string key;
@@ -411,17 +415,105 @@ class AdaptiveSampler {
             key << "sum_wI2u[" << i << "]";
             sum_wI2u[i] += keyval[key.str()];
          }
-         subset = keyval.at("subset");
+         subset = keyval.at("subset") * subset_multiplier;
          int count = 1;
          if (divAxis > -1) {
+            //subset_multiplier *= (divAxis < 1)? 3 : 1;
             for (int i=0; i < 3; ++i) {
                if (subcell[i] == 0) {
                   subcell[i] = new Cell(ndim);
                }
-               count += subcell[i]->deserialize(ifs);
+               count += subcell[i]->deserialize(ifs, subset_multiplier);
             }
          }
          return count;
+      }
+      int check_subsets(int nfixed, bool optimized=false, std::string id="0") {
+         if (divAxis < 0) {
+            return 0;
+         }
+
+         // test trinomial statistics at each node
+         int warnings = 0;
+         long int Ntot = subcell[0]->nhit + subcell[1]->nhit + subcell[2]->nhit;
+         if (Ntot != nhit) {
+            std::cerr << "Error in Cell::check_subsets - "
+                      << "nhit consistency check #1 failed for cell " << id
+                      << std::endl
+                      << "  split cell nhit=" << nhit
+                      << ", sum of subcell nhit=" << Ntot
+                      << std::endl;
+            return 999;
+         }
+         if (divAxis < nfixed) {
+            if (subcell[0]->subset != subset ||
+                subcell[1]->subset != subset ||
+                subcell[2]->subset != subset)
+            {
+               std::cerr << "Error in Cell::check_subsets - "
+                         << "subset consistency check #1 failed for cell " << id
+                         << std::endl
+                         << "  split fixed cell subset=" << subset
+                         << ", subcell subsets="
+                         << subcell[0]->subset << ","
+                         << subcell[1]->subset << ","
+                         << subcell[2]->subset
+                         << std::endl;
+               return 999;
+            }
+         }
+         else {
+            double subsetsum = subcell[0]->subset + 
+                               subcell[1]->subset +
+                               subcell[2]->subset;
+            if (fabs(subsetsum - subset) > subset * 1e-12) {
+               std::cerr << "Error in Cell::check_subsets - "
+                         << "subset consistency check #2 failed for cell " << id
+                         << std::endl
+                         << "  split cell subset=" << subset
+                         << ", sum of subcell subsets=" << subsetsum
+                         << std::endl;
+               return 999;
+            }
+            for (int i=0; i < 3; ++i) {
+               double p = subcell[i]->subset / (subset + 1e-99);
+               double mu = nhit * p;
+               double sigma = sqrt(nhit * p * (1-p));
+               double p1 = subcell[(i+1)%3]->subset / (subset + 1e-99);
+               double mu1 = nhit * p1;
+               double sigma1 = sqrt(nhit * p1 * (1-p1));
+               double p2 = subcell[(i+2)%3]->subset / (subset + 1e-99);
+               double mu2 = nhit * p2;
+               double sigma2 = sqrt(nhit * p2 * (1-p2));
+               if (fabs(subcell[i]->nhit - mu) > 5 * sigma) {
+                  std::cerr << "Warning in Cell::check_subsets - "
+                            << "nhit - subset mismatch > 5 sigma, cell "
+                            << id << ", subcell " << i 
+                            << " has nhit=" << subcell[i]->nhit
+                            << ", expected " << mu << " +/- " << sigma
+                            << ", " << (subcell[i]->nhit - mu) / sigma
+                            << " sigma!" << std::endl;
+                  std::cerr << "  Other branch of this cell:"
+                            << "  subcell " << (i+1)%3
+                            << " with nhit=" << subcell[(i+1)%3]->nhit
+                            << ", expected " << mu1 << " +/- " << sigma1
+                            << ", " << (subcell[(i+1)%3]->nhit - mu1) / sigma1
+                            << " sigma." << std::endl;
+                  std::cerr << "  Other branch of this cell:"
+                            << "  subcell " << (i+2)%3
+                            << " with nhit=" << subcell[(i+2)%3]->nhit
+                            << ", expected " << mu2 << " +/- " << sigma2
+                            << ", " << (subcell[(i+2)%3]->nhit - mu2) / sigma2
+                            << " sigma." << std::endl;
+                  warnings++;
+               }
+            }
+         }
+         for (int i=0; i < 3; ++i) {
+            warnings += subcell[i]->check_subsets(nfixed, optimized,
+                                                  id + std::to_string(i));
+         }
+         return warnings;
       }
    };
 };
