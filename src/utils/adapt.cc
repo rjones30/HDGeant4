@@ -37,9 +37,10 @@ void usage() {
 int main(int argc, char **argv)
 {
    int Ndim=0;
+   int Nfixed=0;
    int do_adaptation=1;
    double threshold=1000;
-   int verbosity_level=3;
+   int verbosity_level=1;
    long int internal_check_count = 0;
    std::string outfile("adapted.astate");
    AdaptiveSampler *sampler = 0;
@@ -81,12 +82,17 @@ int main(int argc, char **argv)
       else if (Ndim == 0) {
          FILE *fin = fopen(argv[iarg], "r");
          if (fin) {
-            if (fscanf(fin, "fNdim=%d", &Ndim) == 0) {
+            if (fscanf(fin, "fNdim=%d\n", &Ndim) == 0) {
                std::cerr << "adapt - invalid data in input file "
                          << argv[iarg] << std::endl;
                usage();
             }
-            sampler = new AdaptiveSampler(Ndim, my_randoms);
+            else if (fscanf(fin, "fNfixed=%d\n", &Nfixed) == 0) {
+               std::cerr << "adapt - invalid data in input file "
+                         << argv[iarg] << std::endl;
+               usage();
+            }
+            sampler = new AdaptiveSampler(Ndim, my_randoms, Nfixed);
          }
          else {
             std::cerr << "adapt - error opening input file "
@@ -152,9 +158,12 @@ int main(int argc, char **argv)
       double new_error;
       double new_error_uncertainty;
       double new_result = sampler->getReweighted(&new_error, &new_error_uncertainty);
+      double new_efficiency = sampler->getEfficiency(true);
       if (verbosity_level > 0)
          std::cout << "improved result = " << new_result << " +/- "
-                   << new_error << " +/- " << new_error_uncertainty << std::endl;
+                   << new_error << " +/- " << new_error_uncertainty
+                   << ", efficiency = " << new_efficiency
+                   << std::endl;
    }
    sampler->saveState(outfile, do_adaptation);
    if (verbosity_level > 2)
