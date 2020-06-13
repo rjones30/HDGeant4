@@ -357,7 +357,9 @@ class AdaptiveSampler {
                opt_wI2 = 0;
                opt_wI4 = 0;
                for (int n=0; n < 3; ++n) {
-                  double r = subcell[n]->sum_wI2s / (sum_wI2s + 1e-99);
+                  double f0 = 5e-2;  // minimum subset permitted
+                  double r = (subcell[n]->sum_wI2s / sum_wI2s + f0)
+                                                   / (1 + 3*f0);
                   subcell[n]->opt_nhit = nhit * r;
                   subcell[n]->opt_subset = opt_subset * r;
                   subcell[n]->optimize();
