@@ -102,7 +102,7 @@ cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
 g4fixes: $(G4TMPDIR)/libG4fixes.so
 
-CXXFLAGS = -std=c++11 -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -std=c++11 -g -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 HDDSDIR := $(G4TMPDIR)/hdds
 G4FIXESDIR := $(G4TMPDIR)/G4fixes
