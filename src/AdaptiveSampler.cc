@@ -673,10 +673,15 @@ double AdaptiveSampler::display_tree(Cell *cell, double subset, int level,
          ssum += display_tree(cell->subcell[n], cell_subset, 
                               level+1, u0, u1, optimized);
       }
+      ssum /= (cell->divAxis < fNfixed)? 3 : 1;
       if (fabs(ssum - cell_subset) > 1e-15 * cell_subset) {
          std::cerr << "Error in AdaptiveSampler::display_tree - "
-                      "subcell subsets fail to obey the sum rule, "
-                      "tree is invalid !!!" << std::endl;
+                   << "subcell subsets fail to obey the sum rule, "
+                   << "tree is invalid !!!" << std::endl
+                   << "   cell subset = " << cell_subset << std::endl
+                   << "   summed subsets = " << ssum << std::endl
+                   << "   difference = " << ssum - cell_subset
+                   << std::endl;
       }
       u0[cell->divAxis] = u0m;
       u1[cell->divAxis] = u1m;
