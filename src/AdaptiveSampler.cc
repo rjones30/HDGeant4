@@ -193,7 +193,7 @@ double AdaptiveSampler::sample(double *u)
                    << "fixed parameter " << i  << " is "
                    << "outside the allowed interval [0,1), "
                    << "value is " << u[i] << std::endl;
-         return 0;
+         u[i] = 0;
       }
    }
    int depth;
