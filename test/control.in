@@ -19,7 +19,7 @@ c process the following 100 input events and stop.  If the end of the file is
 c reached before the event count specified in card TRIG is exhausted then the
 c processing will stop at the end of file.
 cINFILE 'bggen.hddm'
-TRIG 1000000
+TRIG 10
 
 c The RUNG card is one of the ways to set the run number that is written to
 c the output events. The simulation run number determines which geometry and
@@ -103,6 +103,7 @@ c      spotY - y offset of virtual spot from collimator axis (m)
 c Omitting the final parameter Emin results in the default value being used.
 c Setting Epeak to zero selects an amorphous radiator instead of diamond.
 cBEAM 12. 9.0 0.0012 76.00 0.005 10.e-9 20.e-6 1e-3 -0.0 +0.0
+BEAM 12. 9.0 3.0 76.00 0.005 10.e-9 20.e-6 1e-3 -0.0 +0.0
 
 c The GENBEAM card configures the simulation program to act purely as a
 c Monte Carlo event generator, and not to actually track any of the particles
@@ -139,8 +140,9 @@ c                 weight is in microbarns, such that the average value
 c                 is the total cross section for Bethe-Heitler pairs
 c                 above the stated pair threshold.
 c The first two modes are supported by both HDGeant and HDGeant4, while
-c postconv is only supported at present by HDGeant4.
+c postconv and BHgen are only supported by HDGeant4.
 cGENBEAM 'postconv'
+GENBEAM 'BHgen' 1.0
 
 c Commenting out the following line will disable simulated hits output.
 OUTFILE 'test4.hddm'
@@ -310,7 +312,7 @@ c seeds. The seeds are written to the output HDDM file though so if one
 c uses the output file for input to another invocation of hdgeant(++)
 c then the same seeds will be used. You may check for seeds in the input
 c file using hddm-xml file.hddm | grep random .
-RNDM 3
+RNDM 691877424 281623319
 
 c The following line controls the cutoffs for tracking of particles.
 c CUTS cutgam cutele cutneu cuthad cutmuo bcute bcutm dcute dcutm ppcutm tofmax
@@ -433,7 +435,7 @@ c TRAJECTORIES = 3  store full trajectory of primary tracks
 c TRAJECTORIES = 4  store full trajectory of primary tracks and birth/death points of secondaries
 c TRAJECTORIES = 5  store full trajectory for all particles
 c
-TRAJECTORIES 4
+cTRAJECTORIES 4
 
 c The following tracking parameters are defined for each tracking medium
 c   TMAXFD (REAL) maximum angular deviation due to the magnetic field

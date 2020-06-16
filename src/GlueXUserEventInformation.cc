@@ -81,6 +81,7 @@ std::map<G4String, G4String> process_4letter_abbrev = {
     {"GlueX tracking limits for muons", "cuts"},
     {"GlueX tracking limits for protons", "cuts"},
     {"GlueX tracking limits for neutrons", "cuts"},
+    {"GammaGeneralProc", "gamg"},
     {"User Limit", "user"}
 };
 

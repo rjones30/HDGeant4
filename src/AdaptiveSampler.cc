@@ -4,7 +4,11 @@
 //
 // file: AdaptiveSampler.cc (see AdaptiveSampler.hh for header, usage)
 // author: richard.t.jones at uconn.edu
-// version: february 23, 2016
+// original release: february 23, 2016
+//
+// new feature release: may 30,2 2020
+//    - see new notes 7,8 below
+//    - richard.t.jones at uconn.edu
 //
 // implementation notes:
 // 1) See the description at the top of AdaptiveSampler.hh for an overview
@@ -124,36 +128,51 @@
 //        them and chosing the one with the highest efficiency -- it
 //        may have high efficiency, but by doing this you have almost
 //        guaranteed that your result will have a large bias.
+//
+// 7) The user can now set up the problem with higher dimension than
+//    the number of random numbers needed per event, with the extra
+//    dimensions allocated to user-generated random variables. These
+//    must be transformed by the user to fall within the domain [0,1]
+//    and passed to sample() and feedback() in the first nfixed
+//    elements of the u vector (first argument). If nfixed > 0 then
+//    it needs to be passed as the last argument to the constructor
+//    of AdaptiveSampler.
 
 #include <assert.h>
 #include <fstream>
+#include <sstream>
 #include <iostream>
+#include <exception>
 #include "AdaptiveSampler.hh"
 
 int AdaptiveSampler::verbosity = 3;
 
-AdaptiveSampler::AdaptiveSampler(int dim, Uniform01 user_generator)
- : fMaximum_depth(30),
+AdaptiveSampler::AdaptiveSampler(int dim, Uniform01 user_generator, int nfixed)
+ : fNdim(dim),
+   fNfixed(nfixed),
+   fMaximum_depth(30),
    fMaximum_cells(1000000),
    fSampling_threshold(25),
-   fEfficiency_target(0.9)
+   fEfficiency_target(0.9),
+   fMinimum_sum_wI2_delta(0)
 {
-   fNdim = dim;
    fRandom = user_generator;
-   fTopCell = new Cell(dim);
+   fTopCell = new Cell(dim, nfixed);
    fTopCell->subset = 1;
    reset_stats();
 }
 
 AdaptiveSampler::AdaptiveSampler(const AdaptiveSampler &src)
+ : fNdim(src.fNdim),
+   fNfixed(src.fNfixed),
+   fMaximum_depth(src.fMaximum_depth),
+   fMaximum_cells(src.fMaximum_cells),
+   fSampling_threshold(src.fSampling_threshold),
+   fEfficiency_target(src.fEfficiency_target),
+   fMinimum_sum_wI2_delta(src.fMinimum_sum_wI2_delta)
 {
-   fNdim = src.fNdim;
    fRandom = src.fRandom;
    fTopCell = new Cell(*src.fTopCell);
-   fSampling_threshold = src.fSampling_threshold;
-   fEfficiency_target = src.fEfficiency_target;
-   fMaximum_cells = src.fMaximum_cells;
-   fMaximum_depth = src.fMaximum_depth;
 }
 
 AdaptiveSampler::~AdaptiveSampler()
@@ -166,20 +185,33 @@ AdaptiveSampler AdaptiveSampler::operator=(const AdaptiveSampler &src)
    return AdaptiveSampler(src);
 }
 
-double AdaptiveSampler::sample(double *u) const
+double AdaptiveSampler::sample(double *u)
 {
+   for (int i=0; i < fNfixed; ++i) {
+      if (u[i] < 0 || u[i] >= 1) {
+         std::cerr << "AdaptiveSampler::sample error - "
+                   << "fixed parameter " << i  << " is "
+                   << "outside the allowed interval [0,1), "
+                   << "value is " << u[i] << std::endl;
+         u[i] = 0;
+      }
+   }
    int depth;
    double *u0 = new double[fNdim];
    double *u1 = new double[fNdim];
    double *uu = new double[fNdim + 1];
-   (*fRandom)(fNdim + 1, uu);
-   const Cell *cell = findCell(uu[fNdim], depth, u0, u1);
-   for (int i=0; i < fNdim; ++i) {
+   (*fRandom)(fNdim - fNfixed + 1, uu + fNfixed);
+   Cell *cell = findCell(uu[fNdim], depth, u0, u1, u);
+   for (int i=fNfixed; i < fNdim; ++i) {
       u[i] = uu[i] * u0[i] + (1 - uu[i]) * u1[i];
    }
    delete [] u0;
    delete [] u1;
    delete [] uu;
+   // WARNING: strong condition is assumed here!
+   // All splits along axes 0..fNfixed must be each
+   // assigned the full subset of the parent cell.
+   // You can use check_subsets() to verify this.
    double dNu = (depth > 0)? pow(1/3., depth) : 1;
    return dNu / cell->subset;
 }
@@ -187,27 +219,32 @@ double AdaptiveSampler::sample(double *u) const
 AdaptiveSampler::Cell *AdaptiveSampler::findCell(double ucell,
                                                  int &depth, 
                                                  double *u0,
-                                                 double *u1) const
+                                                 double *u1,
+                                                 const double *u)
 {
    std::fill(u0, u0 + fNdim, 0);
    std::fill(u1, u1 + fNdim, 1);
    depth = 0;
-   double ucell0 = 0;
    Cell *sel = fTopCell;
    while (sel->divAxis > -1) {
       int i;
-      for (i=0; i < 2; i++)
-         if (ucell < ucell0 + sel->subcell[i]->subset)
-            break;
-         else
-            ucell0 += sel->subcell[i]->subset;
-      assert (ucell < ucell0 + sel->subcell[i]->subset);
       int j = sel->divAxis;
       double du = (u1[j] - u0[j]) / 3;
+      if (j < fNfixed) {
+         i = int((u[j] - u0[j]) / du);
+      }
+      else {
+         for (i=0; i < 2; i++) {
+            if (ucell >= sel->subcell[i]->subset)
+               ucell -= sel->subcell[i]->subset;
+            else
+               break;
+         }
+         ++depth;
+      }
       u0[j] = u0[j] + du * i;
       u1[j] = u0[j] + du;
       sel = sel->subcell[i];
-      ++depth;
    }
    return sel;
 }
@@ -220,7 +257,6 @@ AdaptiveSampler::Cell *AdaptiveSampler::findCell(const double *u,
    std::fill(u0, u0 + fNdim, 0);
    std::fill(u1, u1 + fNdim, 1);
    depth = 0;
-   double ucell = 0;
    Cell *sel = fTopCell;
    while (sel->divAxis > -1) {
       int j = sel->divAxis;
@@ -229,13 +265,12 @@ AdaptiveSampler::Cell *AdaptiveSampler::findCell(const double *u,
       i = (i < 0)? 0 : (i < 3)? i : 2;
       u0[j] = u0[j] + du * i;
       u1[j] = u0[j] + du;
-      ucell += (i > 0)? sel->subcell[0]->subset : 0;
-      ucell += (i > 1)? sel->subcell[1]->subset : 0;
       if (sel->subcell[i] == 0) {
          std::cerr << "bad romans!" << std::endl;
       }
       sel = sel->subcell[i];
-      ++depth;
+      if (j >= fNfixed)
+         ++depth;
    }
    return sel;
 }
@@ -250,61 +285,66 @@ void AdaptiveSampler::feedback(const double *u, double wI)
    cell->sum_wI += wI;
    double wI2 = wI*wI;
    cell->sum_wI2 += wI2;
-   int jbase3 = 0;
-   for (int n = fNdim - 1; n >= 0; --n) {
-      double i = floor(3 * (u[n] - u0[n]) / (u1[n] - u0[n]));
-      i = (i < 0)? 0 : (i < 3)? i : 2;
-      jbase3 = jbase3 * 3 + i;
+   cell->sum_wI4 += wI2*wI2;
+   for (int n=0; n < fNdim; ++n) {
+      double du = (u1[n] - u0[n]) / 3;
+      int s = (u[n] - u0[n]) / du;
+      assert (s >= 0 && s < 3);
+      cell->sum_wI2d[3*n+s] += wI2;
+      cell->sum_wI4d[3*n+s] += wI2*wI2;
    }
    delete [] u0;
    delete [] u1;
-   cell->sum_wI2u[jbase3] += wI2;
 }
 
 int AdaptiveSampler::adapt()
 {
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   int ncells = fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-   double sum_wI2_target = sum_wI / (nhit * fEfficiency_target);
-   fMinimum_sum_wI2_delta = (sum_wI2 - sum_wI2_target) / 
+   int ncells = fTopCell->sum_stats();
+   double sum_wI2_target = pow(fTopCell->sum_wI, 2) / 
+                              (fTopCell->nhit * fEfficiency_target);
+   double sum_wI2_error = sqrt(fTopCell->sum_wI4) + 1e-99;
+   double gain_sig = (fTopCell->sum_wI2 - sum_wI2_target) / sum_wI2_error;
+   if (gain_sig > 3) {
+      if (verbosity > 0)
+         std::cout << "adapt - sample statistics indicate that significant"
+                   << " gains (" << gain_sig << " sigma)" << std::endl
+                   << "in sampling efficiency can be achieved through"
+                   << " further optimization, beginning optimization pass."
+                   << std::endl;
+   }
+   else {
+      if (verbosity > 0)
+         std::cout << "adapt - sample statistics indicate that significant"
+                   << " gains in sampling efficiency cannot be achieved through"
+                   << " further optimization "
+                   << "(" << gain_sig << " sigma),"
+                   << " a larger sample size is needed."
+                   << std::endl;
+      return ncells;
+   }
+
+   fMinimum_sum_wI2_delta = (fTopCell->sum_wI2 - sum_wI2_target) / 
                             (fMaximum_cells - ncells);
-   rebalance_tree();
    std::vector<int> cellIndex;
    int newcells = recursively_update(cellIndex);
    if (verbosity > 0) {
       if (newcells) {
-         std::cout << "adapt - " << newcells << " added this pass,"
-                   << " new count is " << getNcells()
-                   << std::endl;
+         if (verbosity > 0)
+            std::cout << "adapt - " << newcells << " added this pass,"
+                      << " new count is " << getNcells()
+                      << std::endl;
       }
       else {
-         std::cout << "adapt - no changes this pass,"
-                   << " count remains unchanged at " << getNcells()
-                   << std::endl;
+         if (verbosity > 0)
+            std::cout << "adapt - no changes this pass,"
+                      << " count remains unchanged at " << getNcells()
+                      << std::endl;
       }
    }
    if (verbosity > 1) {
-      std::cout << "present efficiency ";
-      if (sum_wI2 > 0)
-         std::cout << sum_wI * sum_wI / (nhit * sum_wI2);
-      else
-         std::cout << "unknown";
-      if (newcells > 0) {
-         nhit = 0;
-         sum_wI = 0;
-         sum_wI2 = 0;
-         sum_wI2s = 0;
-         fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-         std::cout << ", new value predicted to be ";
-         if (sum_wI2 > 0)
-            std::cout << sum_wI * sum_wI / (nhit * sum_wI2);
-         else
-            std::cout << "unknown";
-      }
-      std::cout << std::endl;
+      std::cout << "present efficiency " << getEfficiency()
+                << ", new value predicted to be " << getEfficiency(true)
+                << std::endl;
    }
    return newcells;
 }
@@ -313,151 +353,109 @@ int AdaptiveSampler::recursively_update(std::vector<int> index)
 {
    Cell *cell = fTopCell;
    unsigned int depth;
+   std::stringstream cellpath;
    for (depth=0; depth < index.size(); ++depth) {
+      cellpath << "/" << cell->divAxis << ":" << index[depth];
       cell = cell->subcell[index[depth]];
    }
 
    int count = 0;
    double efficiency = 0;
+   double sum_wI2_sig = 0;
    if (cell->nhit > 0 && cell->sum_wI2 > 0) {
-      efficiency = pow(cell->sum_wI, 2) / (cell->sum_wI2 * cell->nhit);
+      sum_wI2_sig = cell->sum_wI2 / sqrt(cell->sum_wI4);
+      efficiency = pow(cell->sum_wI, 2) / (cell->nhit * cell->sum_wI2);
    }
    if (cell->divAxis < 0) {
 
       // This is the adaptation algorithm: all of the power
       // of AdaptiveSampler lies in this little bit of code.
 
-      if (verbosity > 5) {
-         std::cout << "checking if we should partition at depth " << depth 
-                   << " with nhit=" << cell->nhit 
-                   << ", efficiency=" << efficiency
-                   << " = " << cell->nhit * efficiency
-                   << " compared to fSampling_threshold=" << fSampling_threshold
+      if (verbosity > 3) {
+         std::cout << "checking if we should partition " << cellpath.str()
+                   << " with sum_wI2=" << cell->sum_wI2
+                   << " +/- " << sqrt(cell->sum_wI4)
                    << std::endl;
       }
-      if (cell->nhit * efficiency > fSampling_threshold &&
+      if (sum_wI2_sig > fSampling_threshold &&
           efficiency < fEfficiency_target &&
           depth < fMaximum_depth)
       {
-         int dim3 = 1;
-         for (int n=0; n < fNdim; ++n)
-            dim3 *= 3;
-         double new_sum_wI2 = 0;
-         double *new_sum_wI2u[3] = {new double[fNdim], 
-                                    new double[fNdim],
-                                    new double[fNdim]};
-         std::fill(new_sum_wI2u[0], new_sum_wI2u[0] + fNdim, 0);
-         std::fill(new_sum_wI2u[1], new_sum_wI2u[1] + fNdim, 0);
-         std::fill(new_sum_wI2u[2], new_sum_wI2u[2] + fNdim, 0);
-         int *jbase3 = new int[fNdim];
-         std::fill(jbase3, jbase3 + fNdim, 0);
-         for (int i=0; i < dim3; ++i) {
-            new_sum_wI2 += sqrt(cell->sum_wI2u[i]);
-            for (int j = 0; j < fNdim; ++j) {
-               new_sum_wI2u[jbase3[j]][j] += cell->sum_wI2u[i];
-            }
-            for (int j = 0; j < fNdim; ++j) {
-               jbase3[j] += 1;
-               if (jbase3[j] > 2)
-                  jbase3[j] = 0;
-               else
-                  break;
-            }
-         }
-         new_sum_wI2 = new_sum_wI2 * new_sum_wI2 / dim3;
-         double sum_wI2_delta = cell->sum_wI2 - new_sum_wI2;
-         if (sum_wI2_delta < 0) {
-            std::cerr << "AdaptiveSampler::recursive_update error - "
-                      << "new_sum_wI2 > old sum_wI2, this cannot be!"
-                      << std::endl;
-         }
-         if (verbosity > 5) {
+         if (verbosity > 3) {
             std::cout << "checking if to split at level " << depth
-                      << " with sum_wI2_delta=" << sum_wI2_delta 
-                      << " compared to " << "fMinimum_sum_wI2_delta="
+                      << " with sum_wI2 = " << cell->sum_wI2
+                      << " +/- " << sqrt(cell->sum_wI4)
+                      << " with fMinimum_sum_wI2_delta = "
                       << fMinimum_sum_wI2_delta
                       << std::endl;
          }
-         if (sum_wI2_delta > fMinimum_sum_wI2_delta) {
-            int best_axis = -1;
-            double best_sum_wI2u = 1e99;
-            for (int n=0; n < fNdim; ++n) {
-               double sum_wI2u = pow(sqrt(new_sum_wI2u[0][n]) +
-                                     sqrt(new_sum_wI2u[1][n]) +
-                                     sqrt(new_sum_wI2u[2][n]), 2) / 3;
-               if (sum_wI2u < best_sum_wI2u) {
-                  best_sum_wI2u = sum_wI2u;
-                  best_axis = n;
-               }
+         int best_axis = -1;
+         double best_sum_wI2 = 1e99;
+         for (int n=0; n < fNdim; ++n) {
+            double sum_wI2 = pow(sqrt(cell->sum_wI2d[3*n]) +
+                                 sqrt(cell->sum_wI2d[3*n+1]) +
+                                 sqrt(cell->sum_wI2d[3*n+2]), 2) / 3;
+            if (sum_wI2 < best_sum_wI2) {
+               best_sum_wI2 = sum_wI2;
+               best_axis = n;
             }
-            if (best_sum_wI2u > cell->sum_wI2) {
-               std::cerr << "AdaptiveSampler::recursive_update error - "
-                         << "best_sum_wI2 > old sum_wI2, this cannot be!"
-                         << std::endl;
-            }
-            else if (best_sum_wI2u > 0) {
-               double f[3];
-               f[0] = sqrt(new_sum_wI2u[0][best_axis]);
-               f[1] = sqrt(new_sum_wI2u[1][best_axis]);
-               f[2] = sqrt(new_sum_wI2u[2][best_axis]);
-               double fmin = (f[0] + f[1] + f[2]) * 1e-3;
-               f[0] = (f[0] < fmin)? fmin : f[0];
-               f[1] = (f[1] < fmin)? fmin : f[1];
-               f[2] = (f[2] < fmin)? fmin : f[2];
-               double fsum = f[0] + f[1] + f[2];
+         }
+         if (best_sum_wI2 > cell->sum_wI2) {
+            std::cerr << "AdaptiveSampler::recursive_update error - "
+                      << "best_sum_wI2 > sum_wI2, this cannot be!"
+                      << std::endl;
+         }
+         else if (cell->sum_wI2 - best_sum_wI2 > fMinimum_sum_wI2_delta) {
+            if (best_sum_wI2 > 0) {
                cell->divAxis = best_axis;
-               for (int n=0; n < 3; ++n) {
-                  cell->subcell[n] = new Cell(fNdim);
-                  cell->subcell[n]->subset = f[n]/fsum * cell->subset;
-                  cell->subcell[n]->nhit = f[n]/fsum * cell->nhit;
-                  cell->subcell[n]->sum_wI = cell->sum_wI / 3;
-                  cell->subcell[n]->sum_wI2 = new_sum_wI2u[n][best_axis] /
-                                              (3 * f[n]/fsum);
+               for (int s=0; s < 3; ++s) {
+                  cell->subcell[s] = new Cell(fNdim, fNfixed);
+                  cell->subcell[s]->nhit = cell->nhit / 3;
+                  cell->subcell[s]->sum_wI = cell->sum_wI / 3;
+                  cell->subcell[s]->sum_wI2 = cell->sum_wI2d[3*best_axis + s];
+                  cell->subcell[s]->sum_wI4 = cell->sum_wI4d[3*best_axis + s];
+                  cell->subcell[s]->subset = (best_axis < fNfixed)?
+                                             cell->subset : cell->subset / 3;
                }
-               cell->nhit = 0;
-               cell->sum_wI = 0;
-               cell->sum_wI2 = 0;
-
                if (verbosity > 2) {
                   std::cout << "splitting this cell[";
                   for (unsigned int i=0; i < depth; i++) {
                      std::cout << ((i > 0)? "," : "") << index[i];
                   }
                   std::cout << "] along axis " << best_axis << std::endl;
-                  std::cout << "f0,f1,f2=" 
-                            << f[0] << "," << f[1] << "," << f[2] 
-                            << std::endl;
-                  std::cout << " with subsets " 
-                            << cell->subcell[0]->subset << ", "
-                            << cell->subcell[1]->subset << ", "
-                            << cell->subcell[2]->subset
-                            << " with fractions " 
-                            << f[0]/fsum << " / " 
-                            << f[1]/fsum << " / " 
-                            << f[2]/fsum
-                            << std::endl;
                }
                count += 1;
             }
             else {
-               if (verbosity > 5) {
-                  std::cout << "nope!" << std::endl;
+               if (verbosity > 3) {
+                  std::cout << "nope, missing statistics to find best axis!"
+                            << std::endl;
                }
             }
          }
          else {
-            if (verbosity > 5) {
-               std::cout << "nope!" << std::endl;
+            if (verbosity > 3) {
+               std::cout << "nope, fails to make the threshold!" << std::endl;
             }
          }
-         delete [] new_sum_wI2u[0];
-         delete [] new_sum_wI2u[1];
-         delete [] new_sum_wI2u[2];
-         delete [] jbase3;
+      }
+      else if (sum_wI2_sig < fSampling_threshold) {
+         if (verbosity > 3) {
+            std::cout << "nope, fails the statistical significance test!"
+                      << std::endl;
+         }
+      }
+      else if (efficiency >= fEfficiency_target) {
+         if (verbosity > 3) {
+            std::cout << "nope, efficiency is " << efficiency
+                      << ", already meets the target value!"
+                      << std::endl;
+         }
       }
       else {
-         if (verbosity > 5) {
-            std::cout << "nope!" << std::endl;
+         if (verbosity > 3) {
+            std::cout << "nope, this cell cannot be split any further!"
+                      << std::endl;
          }
       }
    }
@@ -479,68 +477,103 @@ void AdaptiveSampler::reset_stats()
 
 long int AdaptiveSampler::getNsample() const
 {
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-   return nhit;
+   fTopCell->sum_stats();
+   return fTopCell->nhit;
 }
 
 double AdaptiveSampler::getWItotal() const
 {
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-   return sum_wI;
+   fTopCell->sum_stats();
+   return fTopCell->sum_wI;
 }
 
-double AdaptiveSampler::getWI2total() const
+double AdaptiveSampler::getWI2total(bool optimized)
 {
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-   return sum_wI2;
-}
-
-double AdaptiveSampler::getEfficiency() const
-{
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-   if (nhit > 0)
-      return sum_wI * sum_wI / (sum_wI2 * nhit);
-   else
-      return 0;
-}
-
-double AdaptiveSampler::getResult(double *error) const
-{
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-   if (error) {
-      double eff = sum_wI * sum_wI / (sum_wI2 * nhit);
-      *error = sqrt((1 - eff) * sum_wI2) / nhit;
+   fTopCell->sum_stats();
+   if (optimized) {
+      optimize_tree();
+      return fTopCell->opt_wI2;
    }
-   return sum_wI / nhit;
+   return fTopCell->sum_wI2;
+}
+
+double AdaptiveSampler::getEfficiency(bool optimized)
+{
+   fTopCell->sum_stats();
+   if (fTopCell->nhit == 0)
+      return 0;
+   else if (optimized) {
+      optimize_tree();
+      return pow(fTopCell->sum_wI, 2) / 
+             (fTopCell->opt_wI2 * fTopCell->opt_nhit + 1e-99);
+   }
+   return pow(fTopCell->sum_wI, 2) / 
+          (fTopCell->sum_wI2 * fTopCell->nhit);
+}
+
+double AdaptiveSampler::getResult(double *error,
+                                  double *error_uncertainty)
+{
+   fTopCell->sum_stats();
+   double eff = pow(fTopCell->sum_wI, 2) /
+                   (fTopCell->sum_wI2 * fTopCell->nhit);
+   double result = (eff > 0)? fTopCell->sum_wI / fTopCell->nhit : 0;
+   if (error) {
+      if (eff > 0)
+         *error = sqrt((1 - eff) * fTopCell->sum_wI2) / fTopCell->nhit;
+      else
+         *error = 0;
+   }
+    
+   if (error_uncertainty) {
+     if (eff > 0)
+         *error_uncertainty = sqrt((1 - eff) / fTopCell->sum_wI2) / 2 *
+                              sqrt(fTopCell->sum_wI4) / fTopCell->nhit;
+     else
+         *error_uncertainty = 0;
+   }
+   return result;
+}
+
+double AdaptiveSampler::getReweighted(double *error,
+                                      double *error_uncertainty)
+{
+   fTopCell->sum_stats();
+   optimize_tree();
+   double eff = pow(fTopCell->sum_wI, 2) / 
+                (fTopCell->opt_wI2 * fTopCell->opt_nhit + 1e-99);
+   double result = (eff > 0)? fTopCell->sum_wI / fTopCell->opt_nhit : 0;
+   if (error) {
+      if (eff > 0)
+         *error = sqrt((1 - eff) * fTopCell->opt_wI2) / 
+                  (fTopCell->opt_nhit + 1e-99);
+      else
+         *error = 0;
+   }
+   if (error_uncertainty) {
+      if (eff > 0)
+         *error_uncertainty = sqrt((1 - eff) / fTopCell->opt_wI2) / 2 *
+                              sqrt(fTopCell->opt_wI4) /
+                              (fTopCell->opt_nhit + 1e-99);
+      else
+         *error_uncertainty = 0;
+   }
+   return result;
+}
+
+int AdaptiveSampler::getNdim() const
+{
+   return fNdim;
+}
+
+int AdaptiveSampler::getNfixed() const
+{
+   return fNfixed;
 }
 
 int AdaptiveSampler::getNcells() const
 {
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   return fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
+   return fTopCell->sum_stats();
 }
 
 void AdaptiveSampler::setAdaptation_sampling_threshold(double threshold)
@@ -583,43 +616,43 @@ int AdaptiveSampler::getAdaptation_maximum_cells() const
    return fMaximum_cells;
 }
 
-void AdaptiveSampler::rebalance_tree()
+void AdaptiveSampler::optimize_tree()
 {
-   long int nhit = 0;
-   double sum_wI = 0;
-   double sum_wI2 = 0;
-   double sum_wI2s = 0;
-   fTopCell->sum_stats(nhit, sum_wI, sum_wI2, sum_wI2s);
-   if (sum_wI > 0)
-      fTopCell->repartition(sum_wI2s, sum_wI2s);
+   fTopCell->sum_stats();
+   if (fTopCell->sum_wI > 0) {
+      fTopCell->opt_nhit = fTopCell->nhit;
+      fTopCell->opt_subset = 1;
+      fTopCell->optimize();
+   }
 }
 
-void AdaptiveSampler::display_tree()
+void AdaptiveSampler::display_tree(bool optimized)
 {
    double *u0 = new double[fNdim];
    double *u1 = new double[fNdim];
    std::fill(u0, u0 + fNdim, 0);
    std::fill(u1, u1 + fNdim, 1);
-   display_tree(fTopCell, 1, 0, u0, u1);
+   display_tree(fTopCell, 1, 0, u0, u1, optimized);
    delete [] u0;
    delete [] u1;
 }
 
 double AdaptiveSampler::display_tree(Cell *cell, double subset, int level,
-                                                 double *u0, double *u1)
+                                     double *u0, double *u1, bool optimized)
 {
    for (int i=0; i < level; ++i)
       std::cout << " ";
 
    char numeric[80];
    std::cout << level << ": ";
-   snprintf(numeric, 80, "%9.5e", cell->subset);
+   double cell_subset = (optimized)? cell->opt_subset : cell->subset;
+   snprintf(numeric, 80, "%9.5e", cell_subset);
    std::cout << numeric;
-   if (cell->subset > subset * 99.95) {
+   if (cell_subset > subset * 99.95) {
       std::cout << "(100%) ";
    }
    else {
-      snprintf(numeric, 30, "(%4.1f) ", 100 * cell->subset / subset);
+      snprintf(numeric, 30, "(%4.1f) ", 100 * cell_subset / subset);
       std::cout << numeric;
    }
 
@@ -633,39 +666,47 @@ double AdaptiveSampler::display_tree(Cell *cell, double subset, int level,
       double dlev = -log(du) / log(3.);
       snprintf(numeric, 80, " (1/3**%5.3f) ", dlev);
       std::cout << numeric;
-      std::cout << cell->nhit << std::endl;
+      std::cout << ((optimized)? cell->opt_nhit : cell->nhit) << std::endl;
       for (int n=0; n < 3; ++n) {
          u0[cell->divAxis] = u0m + du * n;
          u1[cell->divAxis] = u0m + du * (n + 1);
-         ssum += display_tree(cell->subcell[n], cell->subset, level+1, u0, u1);
+         ssum += display_tree(cell->subcell[n], cell_subset, 
+                              level+1, u0, u1, optimized);
       }
-      if (fabs(ssum - cell->subset) > 1e-15 * cell->subset) {
+      ssum /= (cell->divAxis < fNfixed)? 3 : 1;
+      if (fabs(ssum - cell_subset) > 1e-15 * cell_subset) {
          std::cerr << "Error in AdaptiveSampler::display_tree - "
-                      "subcell subsets fail to obey the sum rule, "
-                      "tree is invalid !!!" << std::endl;
+                   << "subcell subsets fail to obey the sum rule, "
+                   << "tree is invalid !!!" << std::endl
+                   << "   cell subset = " << cell_subset << std::endl
+                   << "   summed subsets = " << ssum << std::endl
+                   << "   difference = " << ssum - cell_subset
+                   << std::endl;
       }
       u0[cell->divAxis] = u0m;
       u1[cell->divAxis] = u1m;
    }
    else {
-      std::cout << cell->nhit 
+      std::cout << ((optimized)? cell->opt_nhit : cell->nhit )
                 << " " << cell->sum_wI
-                << " " << cell->sum_wI2
+                << " " << ((optimized)? cell->opt_wI2 : cell->sum_wI2)
+                << " " << ((optimized)? cell->opt_wI4 : cell->sum_wI4)
                 << std::endl;
    }
-   return cell->subset;
+   return cell_subset;
 }
 
-int AdaptiveSampler::saveState(const std::string filename) const
+int AdaptiveSampler::saveState(const std::string filename, bool optimized) const
 {
    std::ofstream fout(filename);
    fout << "fNdim=" << fNdim << std::endl;
+   fout << "fNfixed=" << fNfixed << std::endl;
    fout << "fSampling_threshold=" << fSampling_threshold << std::endl;
    fout << "fMaximum_depth=" << fMaximum_depth << std::endl;
    fout << "fMaximum_cells=" << fMaximum_cells << std::endl;
    fout << "fEfficiency_target=" << fEfficiency_target << std::endl;
    fout << "=" << std::endl;
-   int ncells = fTopCell->serialize(fout);
+   int ncells = fTopCell->serialize(fout, optimized);
    return (ncells > 0);
 }
 
@@ -696,13 +737,19 @@ int AdaptiveSampler::mergeState(const std::string filename)
                 << std::endl;
       return 0;
    }
-   fNdim = keyval.at("fNdim");
-   fSampling_threshold = keyval.at("fSampling_threshold");
-   fMaximum_depth = keyval.at("fMaximum_depth");
-   fMaximum_cells = keyval.at("fMaximum_cells");
-   fEfficiency_target = keyval.at("fEfficiency_target");
+   try {
+      fNfixed = keyval.at("fNfixed");
+      fSampling_threshold = keyval.at("fSampling_threshold");
+      fMaximum_depth = keyval.at("fMaximum_depth");
+      fMaximum_cells = keyval.at("fMaximum_cells");
+      fEfficiency_target = keyval.at("fEfficiency_target");
+   }
+   catch (std::exception e) {
+      std::cerr << "AdaptiveSampler::mergeState warning - "
+                << "required keyword missing in " << filename
+                << std::endl;
+   }
    int ncells = fTopCell->deserialize(fin);
-   rebalance_tree();
    return (ncells > 0);
 }
 
@@ -727,4 +774,9 @@ int AdaptiveSampler::getVerbosity()
 void AdaptiveSampler::setVerbosity(int verbose)
 {
    verbosity = verbose;
+}
+
+int AdaptiveSampler::check_subsets(bool optimized)
+{
+   return fTopCell->check_subsets(optimized);
 }

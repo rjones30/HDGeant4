@@ -491,6 +491,11 @@ const GlueXPrimaryGeneratorAction *GlueXPrimaryGeneratorAction::GetInstance()
    return 0;
 }
 
+const CobremsGeneration *GlueXPrimaryGeneratorAction::GetCobremsGeneration()
+{
+   return fCobremsGeneration;
+}
+
 //--------------------------------------------
 // GeneratePrimaries
 //--------------------------------------------
@@ -521,6 +526,11 @@ void GlueXPrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 
 void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
 {
+   // GlueXUserEventInformation constructor can seed the random number
+   // generator for this event, so this must happen here at the top.
+   GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
+   anEvent->SetUserInformation(event_info);
+
    // Unbelievably, GEANT4's G4ParticleGun class insists on printing
    // a message whenever the momentum or energy is changed, unless
    // the other is 0. Here, we reset the particle gun energy using 
@@ -794,9 +804,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    fParticleGun->GeneratePrimaryVertex(anEvent);
 
    // Store generated particle info so it can be written to output file
-   GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
    event_info->AddPrimaryVertex(*anEvent->GetPrimaryVertex());
-   anEvent->SetUserInformation(event_info);
 }
 
 //--------------------------------------------

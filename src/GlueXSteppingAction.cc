@@ -107,6 +107,12 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
       }
    }
 
+   // Kill tracks when they enter the walls / ceiling / floor,
+   // otherwise a lot of time is spent showering in the walls.
+   if (pvol && (pvol->GetName() == "World")) {
+      track->SetTrackStatus(fStopAndKill);
+   }
+
    // Post new vertices to the MC record for primary particle decays
    if (trackinfo) {
       int primeID = trackinfo->GetGlueXTrackID();
