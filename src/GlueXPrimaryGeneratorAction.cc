@@ -530,6 +530,7 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesParticleGun(G4Event* anEvent)
    // generator for this event, so this must happen here at the top.
    GlueXUserEventInformation *event_info = new GlueXUserEventInformation();
    anEvent->SetUserInformation(event_info);
+   GlueXUserEventInformation::fWriteNoHitEvents = 1;
 
    // Unbelievably, GEANT4's G4ParticleGun class insists on printing
    // a message whenever the momentum or energy is changed, unless
