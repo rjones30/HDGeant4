@@ -357,9 +357,10 @@ class AdaptiveSampler {
                opt_wI2 = 0;
                opt_wI4 = 0;
                for (int n=0; n < 3; ++n) {
-                  double f0 = 5e-2;  // minimum subset fraction
+                  double f0 = 5e-3;  // minimum subset fraction
                   double r = (subcell[n]->sum_wI2s / sum_wI2s + f0)
                                                    / (1 + 3*f0);
+                  r = (nhit > 100)? r : 1;
                   subcell[n]->opt_nhit = nhit * r;
                   subcell[n]->opt_subset = opt_subset * r;
                   subcell[n]->optimize();
@@ -368,10 +369,10 @@ class AdaptiveSampler {
                }
             }
          }
-         else {
-            double r = opt_nhit / (nhit + 1e-99);
-            opt_wI2 = sum_wI2 / (r + 1e-99);
-            opt_wI4 = sum_wI4 / (pow(r,3) + 1e-99);
+         else if (nhit > 0) {
+            double r = (opt_nhit + 1e-99) / nhit;
+            opt_wI2 = sum_wI2 / r;
+            opt_wI4 = sum_wI4 / pow(r,3);
          }
       }
       int serialize(std::ofstream &ofs, bool optimized=false) {
@@ -525,7 +526,41 @@ class AdaptiveSampler {
                double p2 = subcell[(i+2)%3]->subset / (subset + 1e-99);
                double mu2 = nhit * p2;
                double sigma2 = sqrt(nhit * p2 * (1-p2));
-               if (fabs(subcell[i]->nhit - mu) > 5 * sigma) {
+               if (nhit < 30) {
+                  double prob = 1;
+                  for (int k=1; k <= nhit; ++k) {
+                     if (k <=subcell[i]->nhit)
+                        prob *= p * double(nhit - k + 1) / k;
+                     else
+                        prob *= 1 - p;
+                  }
+                  if (prob < 1e-6) {
+                     std::cerr << "Warning in Cell::check_subsets - "
+                               << "nhit - subset probability < 1e-6, cell "
+                               << id << ", subcell " << i 
+                               << " has nhit=" << subcell[i]->nhit
+                               << ", expected " << mu << " +/- " << sigma
+                               << ", P-value " << prob
+                               << std::endl;
+                     std::cerr << "  This cell is splits " << nhit
+                               << " events along axis " << divAxis
+                               << std::endl;
+                     std::cerr << "  Other branch of this cell:"
+                               << "  subcell " << (i+1)%3
+                               << " with nhit=" << subcell[(i+1)%3]->nhit
+                               << ", expected " << mu1 << " +/- " << sigma1
+                               << ", " << (subcell[(i+1)%3]->nhit - mu1) / sigma1
+                               << " sigma." << std::endl;
+                     std::cerr << "  Other branch of this cell:"
+                               << "  subcell " << (i+2)%3
+                               << " with nhit=" << subcell[(i+2)%3]->nhit
+                               << ", expected " << mu2 << " +/- " << sigma2
+                               << ", " << (subcell[(i+2)%3]->nhit - mu2) / sigma2
+                               << " sigma." << std::endl;
+                     warnings++;
+                  }
+               }
+               else if (fabs(subcell[i]->nhit - mu) > 5 * sigma) {
                   std::cerr << "Warning in Cell::check_subsets - "
                             << "nhit - subset mismatch > 5 sigma, cell "
                             << id << ", subcell " << i 
@@ -533,6 +568,9 @@ class AdaptiveSampler {
                             << ", expected " << mu << " +/- " << sigma
                             << ", " << (subcell[i]->nhit - mu) / sigma
                             << " sigma!" << std::endl;
+                  std::cerr << "  This cell is splits " << nhit
+                            << " events along axis " << divAxis
+                            << std::endl;
                   std::cerr << "  Other branch of this cell:"
                             << "  subcell " << (i+1)%3
                             << " with nhit=" << subcell[(i+1)%3]->nhit
