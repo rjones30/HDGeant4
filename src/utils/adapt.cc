@@ -27,7 +27,7 @@ void usage() {
    std::cout << "Usage: adapt [options] <input1> [<input2> ...]" << std::endl
              << "  where options include" << std::endl
              << "     -o <output_file> : output filename [adapted.astate]" << std::endl
-             << "     -t <threshold> : sampling threshold [25]" << std::endl
+             << "     -t <threshold> : sampling threshold (%) [1]" << std::endl
              << "     -v <verbosity> : verbosity level [3]" << std::endl
              << "     -c <count> : internal generator check [0]" << std::endl
              << "     -s : just report statistics, no adaption" << std::endl;
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
    int Ndim=0;
    int Nfixed=0;
    int do_adaptation=1;
-   double threshold=1000;
+   double threshold=0.01;
    int verbosity_level=1;
    long int internal_check_count = 0;
    std::string outfile("adapted.astate");
@@ -56,8 +56,10 @@ int main(int argc, char **argv)
       else if ((opt = sscanf(argv[iarg], "-t %lf", &threshold))) {
          if (opt == EOF)
             sscanf(argv[++iarg], "%lf", &threshold);
-         if (threshold > 0)
+         if (threshold > 0) {
+            threshold *= 0.01;
             continue;
+         }
          else
             usage();
       }
