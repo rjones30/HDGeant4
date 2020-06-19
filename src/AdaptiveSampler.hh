@@ -204,7 +204,7 @@ class AdaptiveSampler {
    Cell *findCell(const double *u, int &depth, 
                   double *u0, double *u1) const;
    int recursively_update(std::vector<int> index);
-   double display_tree(Cell *cell, double subset, int level,
+   double display_tree(Cell *cell, double subset, std::string id,
                        double *u0, double *u1, bool optimized=false);
 
    // internal weighting tables
@@ -526,7 +526,7 @@ class AdaptiveSampler {
                double p2 = subcell[(i+2)%3]->subset / (subset + 1e-99);
                double mu2 = nhit * p2;
                double sigma2 = sqrt(nhit * p2 * (1-p2));
-               if (nhit < 30) {
+               if (subcell[i]->nhit < 30) {
                   double prob = 1;
                   for (int k=1; k <= nhit; ++k) {
                      if (k <=subcell[i]->nhit)

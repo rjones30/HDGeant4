@@ -42,14 +42,9 @@
 //    reach any level of confidence that the result is correct. Tuning
 //    parameters are provided to allow the user to vary the conditions
 //    for adaptation and check the robustness of their result.
-//      *) Adaptation_sampling_threshold - count the effective number 
-//         of samples that need to have been generated within a given
-//         cell before the statistical information within that cell is
-//         sufficiently precise for the adaptation algorithm to decide
-//         if and how it should be split. Before adaptaion is permitted
-//         within any given cell, the product of the cell hit count and
-//         its average hit efficiency (<wI>**2 / (N <wI**2>) must be
-//         above this threshold.
+//      *) Adaptation_sampling_threshold - minimum fraction of the total
+//         sample sum of wI**2 that must be coming from a given cell in
+//         order for that cell to be considered for splitting.
 //      *) Adaptation_efficiency_target - this is the goal that is set
 //         for the adaptation algorithm to shoot for. Adaptations are
 //         allowed if and only if the improvements to the efficiency
@@ -94,9 +89,9 @@
 // 6) Here are rules of thumb that will keep you from common blunders.
 //     a) Do not be too aggressive in adapting, especially at first
 //        when the AdaptiveSampler is new and undifferentiated. Keep
-//        the sampling_threshold value as high as you can (several
-//        hundred is usually safe), only lower it if you cannot get
-//        the adaptation to progress. Keep in mind that the lower
+//        the sampling_threshold value as high as you can (1-10 is a
+//        good range to start off with), only lower it if you cannot
+//        get the adaptation to progress. Keep in mind that the lower
 //        this threshold is set, the more susceptible you are to
 //        tuning on noise and introducing uncontrolled underbias.
 //     b) Bias is generically on the low side of the true result.
@@ -152,7 +147,7 @@ AdaptiveSampler::AdaptiveSampler(int dim, Uniform01 user_generator, int nfixed)
    fNfixed(nfixed),
    fMaximum_depth(30),
    fMaximum_cells(1000000),
-   fSampling_threshold(25),
+   fSampling_threshold(0.01),
    fEfficiency_target(0.9),
    fMinimum_sum_wI2_delta(0)
 {
@@ -320,8 +315,11 @@ int AdaptiveSampler::adapt()
                    << "(" << gain_sig << " sigma),"
                    << " a larger sample size is needed."
                    << std::endl;
-      return ncells;
    }
+   std::cout << "Looking for cells containing at least " 
+             << fSampling_threshold * 100 << "% of the total "
+             << "sample sum_wI2 = " << fTopCell->sum_wI2
+             << std::endl;
 
    fMinimum_sum_wI2_delta = (fTopCell->sum_wI2 - sum_wI2_target) / 
                             (fMaximum_cells - ncells);
@@ -361,9 +359,7 @@ int AdaptiveSampler::recursively_update(std::vector<int> index)
 
    int count = 0;
    double efficiency = 0;
-   double sum_wI2_sig = 0;
    if (cell->nhit > 0 && cell->sum_wI2 > 0) {
-      sum_wI2_sig = cell->sum_wI2 / sqrt(cell->sum_wI4);
       efficiency = pow(cell->sum_wI, 2) / (cell->nhit * cell->sum_wI2);
    }
    if (cell->divAxis < 0) {
@@ -377,12 +373,12 @@ int AdaptiveSampler::recursively_update(std::vector<int> index)
                    << " +/- " << sqrt(cell->sum_wI4)
                    << std::endl;
       }
-      if (sum_wI2_sig > fSampling_threshold &&
+      if (cell->sum_wI2 > fSampling_threshold * fTopCell->sum_wI2 &&
           efficiency < fEfficiency_target &&
           depth < fMaximum_depth)
       {
          if (verbosity > 3) {
-            std::cout << "checking if to split at level " << depth
+            std::cout << "checking if to split at cell " << depth
                       << " with sum_wI2 = " << cell->sum_wI2
                       << " +/- " << sqrt(cell->sum_wI4)
                       << " with fMinimum_sum_wI2_delta = "
@@ -404,6 +400,7 @@ int AdaptiveSampler::recursively_update(std::vector<int> index)
             std::cerr << "AdaptiveSampler::recursive_update error - "
                       << "best_sum_wI2 > sum_wI2, this cannot be!"
                       << std::endl;
+            exit(7);
          }
          else if (cell->sum_wI2 - best_sum_wI2 > fMinimum_sum_wI2_delta) {
             if (best_sum_wI2 > 0) {
@@ -439,7 +436,7 @@ int AdaptiveSampler::recursively_update(std::vector<int> index)
             }
          }
       }
-      else if (sum_wI2_sig < fSampling_threshold) {
+      else if (cell->sum_wI2 < fSampling_threshold * fTopCell->sum_wI2) {
          if (verbosity > 3) {
             std::cout << "nope, fails the statistical significance test!"
                       << std::endl;
@@ -632,27 +629,24 @@ void AdaptiveSampler::display_tree(bool optimized)
    double *u1 = new double[fNdim];
    std::fill(u0, u0 + fNdim, 0);
    std::fill(u1, u1 + fNdim, 1);
-   display_tree(fTopCell, 1, 0, u0, u1, optimized);
+   display_tree(fTopCell, 1, "o", u0, u1, optimized);
    delete [] u0;
    delete [] u1;
 }
 
-double AdaptiveSampler::display_tree(Cell *cell, double subset, int level,
+double AdaptiveSampler::display_tree(Cell *cell, double subset, std::string id,
                                      double *u0, double *u1, bool optimized)
 {
-   for (int i=0; i < level; ++i)
-      std::cout << " ";
-
    char numeric[80];
-   std::cout << level << ": ";
+   std::cout << id << ": ";
    double cell_subset = (optimized)? cell->opt_subset : cell->subset;
    snprintf(numeric, 80, "%9.5e", cell_subset);
    std::cout << numeric;
-   if (cell_subset > subset * 99.95) {
+   if (cell_subset > subset * 0.9995) {
       std::cout << "(100%) ";
    }
    else {
-      snprintf(numeric, 30, "(%4.1f) ", 100 * cell_subset / subset);
+      snprintf(numeric, 30, "(%.1f%%) ", 100 * cell_subset / subset);
       std::cout << numeric;
    }
 
@@ -664,14 +658,18 @@ double AdaptiveSampler::display_tree(Cell *cell, double subset, int level,
       snprintf(numeric, 80, " [%15.13f,%15.13f] ", u0m, u1m);
       std::cout << " split along axis " << cell->divAxis << numeric;
       double dlev = -log(du) / log(3.);
-      snprintf(numeric, 80, " (1/3**%5.3f) ", dlev);
+      snprintf(numeric, 80, " (1/3^%d) ", int(dlev));
       std::cout << numeric;
-      std::cout << ((optimized)? cell->opt_nhit : cell->nhit) << std::endl;
+      std::cout << ((optimized)? cell->opt_nhit : cell->nhit)
+                << " " << cell->sum_wI
+                << " " << ((optimized)? cell->opt_wI2 : cell->sum_wI2)
+                << " " << ((optimized)? cell->opt_wI4 : cell->sum_wI4)
+                << std::endl;
       for (int n=0; n < 3; ++n) {
          u0[cell->divAxis] = u0m + du * n;
          u1[cell->divAxis] = u0m + du * (n + 1);
          ssum += display_tree(cell->subcell[n], cell_subset, 
-                              level+1, u0, u1, optimized);
+                              id + std::to_string(n), u0, u1, optimized);
       }
       ssum /= (cell->divAxis < fNfixed)? 3 : 1;
       if (fabs(ssum - cell_subset) > 1e-15 * cell_subset) {
