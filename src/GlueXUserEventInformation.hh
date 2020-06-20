@@ -11,10 +11,11 @@
 #ifndef _GLUEXUSEREVENTINFORMATION_
 #define _GLUEXUSEREVENTINFORMATION_
 
-#include "G4VUserEventInformation.hh"
-#include "G4PrimaryVertex.hh"
-#include "G4ThreeVector.hh"
+#include <G4VUserEventInformation.hh>
+#include <G4PrimaryVertex.hh>
+#include <G4ThreeVector.hh>
 #include <G4TrackVector.hh>
+#include <G4Step.hh>
 
 #include <HDDM/hddm_s.hpp>
 
@@ -59,6 +60,8 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    void SetRandomSeeds();
    void Print() const;
 
+   static void Dlog(std::string msg);
+
    hddm_s::HDDM *getOutputRecord() {
       return fOutputRecord;
    }
@@ -77,6 +80,11 @@ class GlueXUserEventInformation: public G4VUserEventInformation
  private:
    GlueXUserEventInformation(const GlueXUserEventInformation &src);
    GlueXUserEventInformation &operator=(const GlueXUserEventInformation &src);
+
+   void Dlog(std::string msg, bool rewind);
+   std::map<long int, std::fstream*> fDlogfile;
+   std::map<long int, bool> fDlogreading;
+   long int fEventSeeds[2];
 };
 
 class BCALincidentParticle {
