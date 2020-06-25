@@ -607,7 +607,8 @@ void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
       std::getline(*fDlogfile[seed], logmsg);
       if (logmsg != msg) {
          std::stringstream what;
-         what << "Dlog mismatch in GlueXUserEventInformation:" << std::endl
+         what << "Dlog mismatch in GlueXUserEventInformation"
+              << " log file " << seed << ".dlog :" << std::endl
               << "  log file said: " << logmsg << std::endl
               << "  this run says: " << msg;
          throw std::runtime_error(what.str());
