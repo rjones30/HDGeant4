@@ -13,6 +13,14 @@
 #include "GlueXPathFinder.hh"
 #include "G4PathFinder.hh"
 #include "G4TransportationManager.hh"
+#include "GlueXUserEventInformation.hh"
+#include "G4Material.hh"
+#include <sstream>
+
+class MyPathFinder : public G4PathFinder {
+ public:
+   const G4Navigator *getNavigator(int world) { return GetNavigator(world); }
+};
 
 G4VPhysicalVolume* GlueXPathFinder::GetLocatedVolume()
 {
@@ -27,8 +35,30 @@ G4VPhysicalVolume* GlueXPathFinder::GetLocatedVolume()
       G4VPhysicalVolume *pvol = pathfinder->GetLocatedVolume(world);
       G4LogicalVolume *lvol = (pvol)? pvol->GetLogicalVolume() : 0;
       G4Material *mat = (lvol)? lvol->GetMaterial() : 0;
-      if (mat)
+      G4ThreeVector lpos = ((MyPathFinder*)pathfinder)->getNavigator(world)->GetCurrentLocalCoordinate();
+      G4ThreeVector gpos(lpos);
+      ((MyPathFinder*)pathfinder)->getNavigator(world)->GetLocalToGlobalTransform().ApplyPointTransform(gpos);
+      if (mat) {
+std::stringstream msg;
+msg << " GlueXPathFinder::GetLocatedVolume finds volume " << pvol->GetName()
+    << " with material " << mat->GetName()
+    << " in world " << world << " ("
+    << ((MyPathFinder*)pathfinder)->getNavigator(world)->GetWorldVolume()->GetName()
+    << ") at (" << gpos.x() << "," << gpos.y() << "," << gpos.z() << ")"
+    << ", local=(" << lpos.x() << "," << lpos.y() << "," << lpos.z() << ")";
+GlueXUserEventInformation::Dlog(msg.str());
          return pvol;
+      }
+      else {
+std::stringstream msg;
+msg << " GlueXPathFinder::GetLocatedVolume finds volume " << pvol->GetName()
+    << " with material NULL"
+    << " in world " << world << " ("
+    << ((MyPathFinder*)pathfinder)->getNavigator(world)->GetWorldVolume()->GetName()
+    << ") at (" << gpos.x() << "," << gpos.y() << "," << gpos.z() << ")"
+    << ", local=(" << lpos.x() << "," << lpos.y() << "," << lpos.z() << ")";
+GlueXUserEventInformation::Dlog(msg.str());
+      }
    }
    return 0;
 }
@@ -46,8 +76,32 @@ G4TouchableHandle GlueXPathFinder::CreateTouchableHandle()
       G4VPhysicalVolume *pvol = pathfinder->GetLocatedVolume(world);
       G4LogicalVolume *lvol = (pvol)? pvol->GetLogicalVolume() : 0;
       G4Material *mat = (lvol)? lvol->GetMaterial() : 0;
-      if (mat)
-         return pathfinder->CreateTouchableHandle(world);
+      G4ThreeVector lpos = ((MyPathFinder*)pathfinder)->getNavigator(world)->GetCurrentLocalCoordinate();
+      G4ThreeVector gpos(lpos);
+      ((MyPathFinder*)pathfinder)->getNavigator(world)->GetLocalToGlobalTransform().ApplyPointTransform(gpos);
+      G4TouchableHandle touch = pathfinder->CreateTouchableHandle(world);
+      int copyno = (touch)? touch->GetCopyNumber() : 0;
+      if (mat) {
+std::stringstream msg;
+msg << " GlueXPathFinder::CreateTouchableHandle finds volume " << pvol->GetName() << ":" << copyno
+    << " with material " << mat->GetName()
+    << " in world " << world << " ("
+    << ((MyPathFinder*)pathfinder)->getNavigator(world)->GetWorldVolume()->GetName()
+    << ") at (" << gpos.x() << "," << gpos.y() << "," << gpos.z() << ")"
+    << ", local=(" << lpos.x() << "," << lpos.y() << "," << lpos.z() << ")";
+GlueXUserEventInformation::Dlog(msg.str());
+         return touch;
+      }
+      else {
+std::stringstream msg;
+msg << " GlueXPathFinder::CreateTouchableHandle finds volume " << pvol->GetName() << ":" << copyno
+    << " with material NULL"
+    << " in world " << world << " ("
+    << ((MyPathFinder*)pathfinder)->getNavigator(world)->GetWorldVolume()->GetName()
+    << ") at (" << gpos.x() << "," << gpos.y() << "," << gpos.z() << ")"
+    << ", local=(" << lpos.x() << "," << lpos.y() << "," << lpos.z() << ")";
+GlueXUserEventInformation::Dlog(msg.str());
+      }
    }
    return G4TouchableHandle();
 }

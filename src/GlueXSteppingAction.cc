@@ -15,9 +15,11 @@
 #include "G4Threading.hh"
 #include "G4Event.hh"
 #include "G4Decay.hh"
+#include "G4UnitsTable.hh"
 
 #include <stdio.h>
 #include <exception>
+#include <sstream>
 #include <map>
 
 //#define BACKGROUND_PROFILING 1
@@ -112,6 +114,63 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
    if (pvol && (pvol->GetName() == "World")) {
       track->SetTrackStatus(fStopAndKill);
    }
+
+G4ThreeVector rpre = step->GetPreStepPoint()->GetPosition();
+G4VPhysicalVolume *vpre = step->GetPreStepPoint()->GetTouchable()->GetVolume();
+if (vpre && vpre->GetName() == "LASS::1" && rpre.perp() > 80*cm && rpre.z() > 0 && rpre.z() < 300*cm) {
+   std::stringstream msg;
+   msg << std::setw( 5) << "#Step#"     << " "
+       << std::setw( 8) << "X"          << "    "
+       << std::setw( 8) << "Y"          << "    "
+       << std::setw( 8) << "Z"          << "    "
+       << std::setw(11) << "KineE"      << " "
+       << std::setw(11) << "dEStep"     << " "
+       << std::setw(12) << "StepLeng"
+       << std::setw(12) << "TrakLeng"
+       << std::setw(12) << "Volume"    << "  "
+       << std::setw(12) << "Process"   << "  "
+       << std::setw(12) << "Status";
+   GlueXUserEventInformation::Dlog(msg.str());
+ 
+   std::stringstream msg2;
+   msg2 << std::setw(5) << track->GetCurrentStepNumber() << " "
+        << std::setw(8) << G4BestUnit(track->GetPosition().x(),"Length") << " "
+        << std::setw(8) << G4BestUnit(track->GetPosition().y(),"Length") << " "
+        << std::setw(8) << G4BestUnit(track->GetPosition().z(),"Length") << " "
+        << std::setw(8) << G4BestUnit(track->GetKineticEnergy(),"Energy") << " "
+        << std::setw(8) << G4BestUnit(step->GetTotalEnergyDeposit(),"Energy") << " "
+        << std::setw(8) << G4BestUnit(step->GetStepLength(),"Length") << " "
+        << std::setw(8) << G4BestUnit(track->GetTrackLength(),"Length") << " "
+        << vpre->GetName();
+ 
+   const G4VProcess* process = step->GetPostStepPoint()->GetProcessDefinedStep();
+   G4String procName = " UserLimit";
+   if (process)
+      procName = process->GetProcessName();
+   if (step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary)
+      procName = "OutOfWorld";
+   msg2 << "   " << std::setw(10) << procName;
+   G4String stepstat;
+   G4StepStatus stepStatus = step->GetPostStepPoint()->GetStepStatus();
+   if (stepStatus == fWorldBoundary)
+      stepstat = "WorldBoundary";
+   else if (stepStatus == fGeomBoundary)
+      stepstat = "GeomBoundary";
+   else if (stepStatus == fAtRestDoItProc)
+      stepstat = "AtRestDoItProc";
+   else if (stepStatus == fAlongStepDoItProc)
+      stepstat = "AlongStepDoItProc";
+   else if (stepStatus == fPostStepDoItProc)
+      stepstat = "PostStepDoItProc";
+   else if (stepStatus == fUserDefinedLimit)
+      stepstat = "UserDefinedLimit";
+   else if (stepStatus == fExclusivelyForcedProc)
+      stepstat = "ExclusivelyForcedProc";
+   else
+      stepstat == "Undefined";
+   msg2 << "   " << std::setw(10) << stepstat;
+   GlueXUserEventInformation::Dlog(msg2.str());
+}
 
    // Post new vertices to the MC record for primary particle decays
    if (trackinfo) {
