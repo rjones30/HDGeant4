@@ -39,6 +39,7 @@
 #include "G4SmartVoxelNode.hh"
 #include "G4VSolid.hh"
 #include "G4GeometryTolerance.hh"
+#include "GlueXUserEventInformation.hh"
 
 namespace
 {

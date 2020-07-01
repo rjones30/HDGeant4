@@ -53,6 +53,7 @@
 
 #include "G4AuxiliaryNavServices.hh"
 #include "GlueXUserEventInformation.hh"
+#include "G4Material.hh"
 
 // ********************************************************************
 // Constructor
