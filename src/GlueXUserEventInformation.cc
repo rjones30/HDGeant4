@@ -567,11 +567,14 @@ const BCALincidentParticle *GlueXUserEventInformation::
 
 void GlueXUserEventInformation::Dlog(std::string msg)
 {
-   const G4Event *event = G4RunManager::GetRunManager()
-                                      ->GetCurrentEvent();
-   GlueXUserEventInformation *this1 = (GlueXUserEventInformation*)
-                                      event->GetUserInformation();
-   this1->Dlog(msg, false);
+   G4RunManager *runmgr = G4RunManager::GetRunManager();
+   if (runmgr->GetCurrentRun() != 0) {
+      const G4Event *event = runmgr->GetCurrentEvent();
+      GlueXUserEventInformation *this1 = (GlueXUserEventInformation*)
+                                         event->GetUserInformation();
+      if (this1 != 0)
+         this1->Dlog(msg, false);
+   }
 }
 
 void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
@@ -584,7 +587,7 @@ void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
          std::ifstream *dlog = new std::ifstream(logfile.str().c_str());
          if (dlog && dlog->is_open()) {
             fDlogfile[seed] = (std::fstream*)dlog;
-            fDlogreading[seed] = true;
+            fDlogreading[seed] = 1;
          }
          else
             throw std::exception();
@@ -592,7 +595,7 @@ void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
       catch (std::exception &e) {
          std::ofstream *dlog = new std::ofstream(logfile.str().c_str());
          fDlogfile[seed] = (std::fstream*)dlog;
-         fDlogreading[seed] = false;
+         fDlogreading[seed] = 0;
       }
    }
    else if (rewind || !fDlogfile[seed]) {
@@ -608,11 +611,13 @@ void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
       if (logmsg != msg) {
          std::stringstream what;
          what << "Dlog mismatch in GlueXUserEventInformation"
-              << " log file " << seed << ".dlog :" << std::endl
+              << " log file " << seed << ".dlog"
+              << " line " << fDlogreading[seed] << ":" << std::endl
               << "  log file said: " << logmsg << std::endl
               << "  this run says: " << msg;
          throw std::runtime_error(what.str());
       }
+      ++fDlogreading[seed];
    }
    else {
       *((ofstream*)fDlogfile[seed]) << msg << std::endl;

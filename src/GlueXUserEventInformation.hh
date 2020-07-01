@@ -11,11 +11,10 @@
 #ifndef _GLUEXUSEREVENTINFORMATION_
 #define _GLUEXUSEREVENTINFORMATION_
 
-#include <G4VUserEventInformation.hh>
-#include <G4PrimaryVertex.hh>
-#include <G4ThreeVector.hh>
+#include "G4VUserEventInformation.hh"
+#include "G4PrimaryVertex.hh"
+#include "G4ThreeVector.hh"
 #include <G4TrackVector.hh>
-#include <G4Step.hh>
 
 #include <HDDM/hddm_s.hpp>
 
@@ -83,7 +82,7 @@ class GlueXUserEventInformation: public G4VUserEventInformation
 
    void Dlog(std::string msg, bool rewind);
    std::map<long int, std::fstream*> fDlogfile;
-   std::map<long int, bool> fDlogreading;
+   std::map<long int, int> fDlogreading;
    long int fEventSeeds[2];
 };
 
