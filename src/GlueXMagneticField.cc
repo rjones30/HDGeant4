@@ -13,6 +13,7 @@
 #include "GlueXMagneticField.hh"
 #include "GlueXUserOptions.hh"
 #include "GlueXDetectorConstruction.hh"
+#include "GlueXUserEventInformation.hh"
 
 #include <JANA/JApplication.h>
 #include <JANA/JCalibration.h>
@@ -381,6 +382,14 @@ G4ThreeVector GlueXMappedMagField::GetMagField(const G4double point[4],
    fXform.ApplyAxisTransform(Bvec);
    if (Bvec[2] == 0)
       Bvec[2] = 1e-99; // avoid divide-by-zero by excluding |B|=0
+
+std::stringstream msg;
+msg << "GlueXMappedMagField::GetMagField("
+    << point[0] << "," << point[1] << "," << point[2] << ")"
+    << " returns ("
+    << Bvec[0]*fUnit/tesla << "," << Bvec[1]*fUnit/tesla << "," << Bvec[2]*fUnit/tesla << ") Tesla";
+GlueXUserEventInformation::Dlog(msg.str());
+
    return Bvec *= fUnit / unit;
 }
 
@@ -445,7 +454,12 @@ GlueXComputedMagField::GlueXComputedMagField(G4double Bmax, G4double unit,
 }
 
 GlueXComputedMagField::~GlueXComputedMagField()
-{ }
+{
+   if (fJanaFieldMap)
+      delete fJanaFieldMap;
+   if (fJanaFieldMapPS)
+      delete fJanaFieldMapPS;
+}
       
 GlueXComputedMagField::GlueXComputedMagField(const GlueXComputedMagField &src)
  : G4MagneticField(src)
@@ -464,8 +478,32 @@ GlueXComputedMagField::operator=(const GlueXComputedMagField &src)
    fUnit = src.fUnit;
    fXform = src.fXform;
    fFunction = src.fFunction;
-   fJanaFieldMap = src.fJanaFieldMap;
-   fJanaFieldMapPS = src.fJanaFieldMapPS;
+   fJanaFieldMap = 0;
+   DMagneticFieldMapFineMesh *mapFineMesh = 0;
+   DMagneticFieldMapNoField *mapNoField = 0;
+   DMagneticFieldMapConst *mapConstField = 0;
+   if (src.fJanaFieldMap) {
+      mapFineMesh = dynamic_cast<DMagneticFieldMapFineMesh*>(src.fJanaFieldMap);
+      mapNoField = dynamic_cast<DMagneticFieldMapNoField*>(src.fJanaFieldMap);
+      mapConstField = dynamic_cast<DMagneticFieldMapConst*>(src.fJanaFieldMap);
+      if (mapFineMesh)
+         fJanaFieldMap = new DMagneticFieldMapFineMesh(*mapFineMesh);
+      else if (mapNoField)
+         fJanaFieldMap = new DMagneticFieldMapNoField(*mapNoField);
+      else if (mapConstField)
+         fJanaFieldMap = new DMagneticFieldMapConst(*mapConstField);
+   }
+   fJanaFieldMapPS = 0;
+   DMagneticFieldMapPS2DMap *mapPS2D = 0;
+   DMagneticFieldMapPSConst *mapPSConst = 0;
+   if (src.fJanaFieldMapPS) {
+      mapPS2D = dynamic_cast<DMagneticFieldMapPS2DMap*>(src.fJanaFieldMapPS);
+      mapPSConst = dynamic_cast<DMagneticFieldMapPSConst*>(src.fJanaFieldMapPS);
+      if (mapPS2D)
+	     fJanaFieldMapPS = new DMagneticFieldMapPS2DMap(*mapPS2D);
+      else if (mapPSConst)
+         fJanaFieldMapPS = new DMagneticFieldMapPSConst(*mapPSConst);
+   }
    return *this;
 }
 
@@ -563,6 +601,9 @@ void GlueXComputedMagField::SetFunction(std::string function)
          const GlueXDetectorConstruction *geom =
                GlueXDetectorConstruction::GetInstance();
          double field_T = (geom)? geom->GetUniformField(tesla) : 1.9;
+         if (type_opts.find(2) != type_opts.end()) {
+            field_T = std::atof(type_opts[2].c_str());
+         }
          fJanaFieldMap = new DMagneticFieldMapConst(0.0, 0.0, field_T);
       }
       else {
@@ -618,7 +659,11 @@ void GlueXComputedMagField::SetFunction(std::string function)
          }
       }
       else if (type_opts[1] == "Const") {
-         fJanaFieldMapPS = new DMagneticFieldMapPSConst(0.0, 1.64, 0.0);
+         double field_T = 1.64;
+         if (type_opts.find(2) != type_opts.end()) {
+            field_T = std::atof(type_opts[2].c_str());
+         }
+         fJanaFieldMapPS = new DMagneticFieldMapPSConst(0.0, field_T, 0.0);
       }
       else {
          G4cerr << "Error in GlueXComputedMagField::SetFunction - "
@@ -681,6 +726,14 @@ G4ThreeVector GlueXComputedMagField::GetMagField(const G4double point[4],
    fXform.ApplyAxisTransform(Bvec);
    if (Bvec[2] == 0)
       Bvec[2] = 1e-99; // avoid divide-by-zero by excluding |B|=0
+
+std::stringstream msg;
+msg << "GlueXComputedMagField::GetMagField("
+    << point[0] << "," << point[1] << "," << point[2] << ")"
+    << " returns ("
+    << Bvec[0]*fUnit/tesla << "," << Bvec[1]*fUnit/tesla << "," << Bvec[2]*fUnit/tesla << ") Tesla";
+GlueXUserEventInformation::Dlog(msg.str());
+
    return Bvec *= fUnit / unit;
 }
 
