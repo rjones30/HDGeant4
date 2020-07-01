@@ -58,14 +58,12 @@ template <class T> class G4Splitter {
  public:
    G4Splitter() : totalobj(0) {}
    G4int CreateSubInstance() {
-      G4cerr << "CreateSubInstance called when totalobj is " << totalobj << std::endl;
       totalobj++;
       if (totalobj > workertotalspace)
          NewSubInstances();
       return totalobj - 1;
    }
    void NewSubInstances() {
-      G4cerr << "NewSubInstances called when workertotalspace,totalobj is " << workertotalspace << "," << totalobj << std::endl;
       if (workertotalspace >=totalobj)
          return;
       G4int originaltotalspace = workertotalspace;
@@ -79,12 +77,10 @@ template <class T> class G4Splitter {
       }
    }
    void InitializeWorker() {
-      G4cerr << "InitializeWorker called when totalobj is " << totalobj << std::endl;
       while (workertotalspace < totalobj)
          NewSubInstances();
    }
    void FreeWorker() {
-      G4cerr << "FreeWorker called when totalobj is " << totalobj << std::endl;
       if (offset == 0)
          return;
       delete offset;
