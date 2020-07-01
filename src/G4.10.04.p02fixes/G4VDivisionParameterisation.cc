@@ -46,7 +46,6 @@ template <class T> G4ThreadLocal G4int G4Splitter<T>::workertotalspace = 0;
 template <class T> G4ThreadLocal T* G4Splitter<T>::offset = 0; 
 
 const G4int G4VDivisionParameterisation::verbose = 5;
-//G4ThreadLocal G4RotationMatrix* G4VDivisionParameterisation::fRot = 0;
 
 //--------------------------------------------------------------------------
 G4VDivisionParameterisation::
