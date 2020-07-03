@@ -30,7 +30,7 @@ void usage() {
              << "     -t <threshold> : sampling threshold (%) [1]" << std::endl
              << "     -v <verbosity> : verbosity level [3]" << std::endl
              << "     -c <count> : internal generator check [0]" << std::endl
-             << "     -s : just report statistics, no adaption" << std::endl;
+             << "     -s : just report statistics, no optimization" << std::endl;
    exit(1);
 }
 
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 {
    int Ndim=0;
    int Nfixed=0;
-   int do_adaptation=1;
+   int do_optimization=1;
    double threshold=0.01;
    int verbosity_level=1;
    long int internal_check_count = 0;
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
          continue;
       }
       else if (strncmp(argv[iarg], "-s", 2) == 0) {
-         do_adaptation = 0;
+         do_optimization = 0;
          continue;
       }
       else if (argv[iarg][0] == '-') {
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
    }
 
    int Na = 0;
-   if (do_adaptation) {
+   if (do_optimization) {
       sampler->setAdaptation_sampling_threshold(threshold);
       Na = sampler->adapt();
       if (verbosity_level > 0)
@@ -167,8 +167,8 @@ int main(int argc, char **argv)
                    << ", efficiency = " << new_efficiency
                    << std::endl;
    }
-   sampler->saveState(outfile, do_adaptation);
+   sampler->saveState(outfile, do_optimization);
    if (verbosity_level > 2)
-      sampler->display_tree(do_adaptation);
+      sampler->display_tree(do_optimization);
    return (Na == 0);
 }
