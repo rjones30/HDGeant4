@@ -11,7 +11,7 @@
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
 #include "GlueXUserOptions.hh"
-#include "GlueXPathFinder.hh"
+#include "G4ParallelWorldProcess.hh"
 
 #define VERBOSE_PAIRS_SPLITTING 1
 #define DO_PAIRCOH_IMPORTANCE_SAMPLE 1
@@ -170,7 +170,8 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
                                      G4double previousStepSize,
                                      G4ForceCondition *condition)
 {
-   G4VPhysicalVolume *pvol = GlueXPathFinder::GetLocatedVolume();
+   const G4Step *step = G4ParallelWorldProcess::GetHyperStep();
+   G4VPhysicalVolume *pvol = step->GetPostStepPoint()->GetPhysicalVolume();
    if (track.GetTrackID() == 1 && pvol && pvol->GetName() == "PTAR" &&
        (FORCED_PTAR_PAIR_CONVERSION || 
         fStopBeamBeforeConverter ||
