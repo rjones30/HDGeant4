@@ -86,10 +86,11 @@ INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -lboost_python -L$(shell python-config --prefix)/lib $(shell python-config --ldflags)
+INTYLIBS += -lboost_python38 -L$(shell python-config --prefix)/lib $(shell python-config --ldflags)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 INTYLIBS += -lgfortran
 INTYLIBS += -L/usr/lib64
+INTYLIBS += -ltirpc
 
 EXTRALIBS += -lG4fixes
 
@@ -115,7 +116,7 @@ G4fixes_symlink:
 
 $(G4TMPDIR)/libcobrems.so: $(Cobrems_sources)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libcobrems.so \
-	-shared -o $@ $^ $(G4shared_libs) -lboost_python
+	-shared -o $@ $^ $(G4shared_libs) -lboost_python38
 
 hdgeant4_objects := $(patsubst src/%.cc, $(G4TMPDIR)/%.o, $(hdgeant4_sources))
 G4fixes_objects := $(patsubst src/G4fixes/%.cc, $(G4FIXESDIR)/%.o, $(G4fixes_sources))
@@ -126,7 +127,7 @@ $(G4TMPDIR)/libhdgeant4.so: $(hdgeant4_objects)
 
 $(G4TMPDIR)/libG4fixes.so: $(G4FIXESDIR)/G4fixes.o $(G4fixes_objects) $(G4debug_objects)
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wl,--export-dynamic -Wl,-soname,libG4fixes.so \
-	-shared -o $@ $^ $(G4shared_libs) -lboost_python
+	-shared -o $@ $^ $(G4shared_libs) -lboost_python38
 
 $(G4FIXESDIR)/G4fixes.o: src/G4fixes.cc
 	@mkdir -p $(G4FIXESDIR)
