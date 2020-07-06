@@ -19,6 +19,7 @@
 #include <G4VParticleChange.hh>
 #include <ImportanceSampler.hh>
 #include <PairConversionGeneration.hh>
+#include <AdaptiveSampler.hh>
 #include <G4Step.hh>
 
 class GlueXBeamConversionProcess: public G4VDiscreteProcess
@@ -42,22 +43,26 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
                                     G4ForceCondition *condition);
    void GenerateBetheHeitlerProcess(const G4Step &step);
 
-#if USING_DIRACXX
-   static PairConversionGeneration *fPairsGeneration;
-#endif
+   static G4ThreadLocal PairConversionGeneration *fPairsGeneration;
 
    int fStopBeamBeforeConverter;
    int fStopBeamAfterConverter;
    int fStopBeamAfterTarget;
 
-   void prepareImportanceSamplingPDFs();
+   static void prepareImportanceSamplingPDFs();
 
-   static ImportanceSampler fPaircohPDF;
-   static ImportanceSampler fTripletPDF;
+   static G4ThreadLocal ImportanceSampler *fPaircohPDF;
+   static G4ThreadLocal ImportanceSampler *fTripletPDF;
    static G4double fBHpair_mass_min;
+
+   static G4ThreadLocal AdaptiveSampler *fAdaptiveSampler;
+   static void InitializeAdaptiveSampler();
 
  private:
    GlueXBeamConversionProcess operator=(GlueXBeamConversionProcess &src);
+
+   static std::vector<AdaptiveSampler*> fAdaptiveSamplerRegistry;
+   static void TerminateWorker();
 };
 
 #endif

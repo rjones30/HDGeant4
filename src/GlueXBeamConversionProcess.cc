@@ -35,6 +35,8 @@
 #include "G4RunManager.hh"
 #include "G4TrackVector.hh"
 #include "G4Gamma.hh"
+#include "G4Threading.hh"
+#include "G4AutoLock.hh"
 
 #include <stdio.h>
 #include <iomanip>
@@ -45,20 +47,21 @@
 #include <TLepton.h>
 #include <TCrossSection.h>
 
-void unif01(int n, double *u) { G4Random::getTheEngine()->flatArray(n,u); }
-
-#if USE_ADAPTIVE_SAMPLER
-#include "AdaptiveSampler.hh"
-AdaptiveSampler sampler(6, &unif01, 1);
-int sampler_initialized = 0;
+G4ThreadLocal PairConversionGeneration *GlueXBeamConversionProcess::fPairsGeneration = 0;
 #endif
 
-PairConversionGeneration *GlueXBeamConversionProcess::fPairsGeneration = 0;
-#endif
+void unif01(int n, double *u) {
+   G4Random::getTheEngine()->flatArray(n,u);
+}
 
-ImportanceSampler GlueXBeamConversionProcess::fPaircohPDF;
-ImportanceSampler GlueXBeamConversionProcess::fTripletPDF;
-G4double GlueXBeamConversionProcess::fBHpair_mass_min=0;
+G4ThreadLocal AdaptiveSampler *GlueXBeamConversionProcess::fAdaptiveSampler = 0;
+G4ThreadLocal ImportanceSampler *GlueXBeamConversionProcess::fPaircohPDF = 0;
+G4ThreadLocal ImportanceSampler *GlueXBeamConversionProcess::fTripletPDF = 0;
+
+G4double GlueXBeamConversionProcess::fBHpair_mass_min = 0;
+
+std::vector<AdaptiveSampler*> GlueXBeamConversionProcess::fAdaptiveSamplerRegistry;
+G4Mutex myPrivateMutex = G4MUTEX_INITIALIZER;
 
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name, 
                                                        G4ProcessType aType)
@@ -112,14 +115,6 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
       }
    }
 
-#if USING_DIRACXX
-   if (fPairsGeneration == 0)
-      fPairsGeneration = new PairConversionGeneration();
-#endif
-
-   fPaircohPDF.Pcut = 60;
-   fTripletPDF.Pcut = 15;
-
    if (verboseLevel > 0) {
        G4cout << GetProcessName() << " is created " << G4endl
 	      << "    Stop beam before converter? "
@@ -142,12 +137,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(
 
 GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
 {
-#ifdef USING_DIRACXX
-#if USE_ADAPTIVE_SAMPLER
-   if (sampler_initialized)
-      sampler.saveState("BHgen_stats.astate");
-#endif
-#endif
+   TerminateWorker();
 }
 
 GlueXBeamConversionProcess GlueXBeamConversionProcess::operator=(
@@ -271,6 +261,14 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
    // because the mapping u0->Mpair and u1->qR used here is the
    // same as is used in GenerateBeamPairConversion.
 
+   if (fPaircohPDF == 0 || fTripletPDF == 0) {
+      fPaircohPDF = new ImportanceSampler;
+      fTripletPDF = new ImportanceSampler;
+   }
+
+   fPaircohPDF->Pcut = 60;
+   fTripletPDF->Pcut = 15;
+
 #if USING_DIRACXX
 
    LDouble_t kin = 9.; // GeV
@@ -292,8 +290,8 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
    LDouble_t qRcut = 1e-3; // 1 MeV/c cutoff parameter
 
    int Nbins = 50;
-   fTripletPDF.Psum = 0;
-   fPaircohPDF.Psum = 0;
+   fTripletPDF->Psum = 0;
+   fPaircohPDF->Psum = 0;
    for (int i0=0; i0 < Nbins; ++i0) {
       LDouble_t u0 = (i0 + 0.5) / Nbins;
       LDouble_t um = pow(um0, u0);
@@ -310,10 +308,10 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
          LDouble_t E3 = sqrt(sqr(qR) + sqr(mElectron));
          LDouble_t E12 = kin + mElectron - E3;
          if (k12star2 < 0 || E12 < Mpair) {
-            fPaircohPDF.density.push_back(0);
-            fTripletPDF.density.push_back(0);
-            fPaircohPDF.integral.push_back(fPaircohPDF.Psum);
-            fTripletPDF.integral.push_back(fTripletPDF.Psum);
+            fPaircohPDF->density.push_back(0);
+            fTripletPDF->density.push_back(0);
+            fPaircohPDF->integral.push_back(fPaircohPDF->Psum);
+            fTripletPDF->integral.push_back(fTripletPDF->Psum);
             continue;
          }
          LDouble_t k12star = sqrt(k12star2);
@@ -323,10 +321,10 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
          LDouble_t costhetaR = (sqr(Mpair) / 2 + (kin + mElectron) *
                                 (E3 - mElectron)) / (kin * qR);
          if (fabs(costhetastar) > 1 || fabs(costhetaR) > 1) {
-            fPaircohPDF.density.push_back(0);
-            fTripletPDF.density.push_back(0);
-            fPaircohPDF.integral.push_back(fPaircohPDF.Psum);
-            fTripletPDF.integral.push_back(fTripletPDF.Psum);
+            fPaircohPDF->density.push_back(0);
+            fTripletPDF->density.push_back(0);
+            fPaircohPDF->integral.push_back(fPaircohPDF->Psum);
+            fTripletPDF->integral.push_back(fTripletPDF->Psum);
             continue;
          }
          LDouble_t qRlong = qR * costhetaR;
@@ -345,12 +343,12 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
          e3.SetMom(q3);
          LDouble_t tripXS = fPairsGeneration->DiffXS_triplet(g0,p1,e2,e3);
          LDouble_t pairXS = fPairsGeneration->DiffXS_pair(g0,p1,e2);
-         fTripletPDF.Psum += fTripletPDF.Pmax = tripXS * weight;
-         fPaircohPDF.Psum += fPaircohPDF.Pmax = pairXS * weight;
-         fTripletPDF.density.push_back(fTripletPDF.Pmax);
-         fPaircohPDF.density.push_back(fPaircohPDF.Pmax);
-         fPaircohPDF.integral.push_back(fPaircohPDF.Psum);
-         fTripletPDF.integral.push_back(fTripletPDF.Psum);
+         fTripletPDF->Psum += fTripletPDF->Pmax = tripXS * weight;
+         fPaircohPDF->Psum += fPaircohPDF->Pmax = pairXS * weight;
+         fTripletPDF->density.push_back(fTripletPDF->Pmax);
+         fPaircohPDF->density.push_back(fPaircohPDF->Pmax);
+         fPaircohPDF->integral.push_back(fPaircohPDF->Psum);
+         fTripletPDF->integral.push_back(fTripletPDF->Psum);
       }
    }
 
@@ -358,20 +356,20 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
    for (int i0=0, index=0; i0 < Nbins; ++i0) {
       for (int i1=0; i1 < Nbins; ++i1, ++index) {
          LDouble_t randvar = i0 + (i1 + 0.5) / Nbins;
-         fTripletPDF.randvar.push_back(randvar);
-         fPaircohPDF.randvar.push_back(randvar);
-         fTripletPDF.density[index] /= fTripletPDF.Psum * du2;
-         fPaircohPDF.density[index] /= fPaircohPDF.Psum * du2;
-         fTripletPDF.integral[index] /= fTripletPDF.Psum;
-         fPaircohPDF.integral[index] /= fPaircohPDF.Psum;
+         fTripletPDF->randvar.push_back(randvar);
+         fPaircohPDF->randvar.push_back(randvar);
+         fTripletPDF->density[index] /= fTripletPDF->Psum * du2;
+         fPaircohPDF->density[index] /= fPaircohPDF->Psum * du2;
+         fTripletPDF->integral[index] /= fTripletPDF->Psum;
+         fPaircohPDF->integral[index] /= fPaircohPDF->Psum;
       }
    }
 #endif
 
-   fTripletPDF.Pmax = 0;
-   fTripletPDF.Psum = 0;
-   fPaircohPDF.Pmax = 0;
-   fPaircohPDF.Psum = 0;
+   fTripletPDF->Pmax = 0;
+   fTripletPDF->Psum = 0;
+   fPaircohPDF->Pmax = 0;
+   fPaircohPDF->Psum = 0;
 }
 
 void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
@@ -406,8 +404,12 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 
 #else
 
+   if (fPairsGeneration == 0) {
+      fPairsGeneration = new PairConversionGeneration;
+   }
+
 #if defined DO_TRIPLET_IMPORTANCE_SAMPLE || defined DO_PAIRCOH_IMPORTANCE_SAMPLE
-   if (fTripletPDF.density.size() == 0) {
+   if (fTripletPDF->density.size() == 0) {
       G4cout << "GlueXBeamConversionProcess::GenerateBeamPairConversion:"
              << G4endl
              << "   Setting up cross section tables, please wait... "
@@ -467,26 +469,26 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 
 #if DO_TRIPLET_IMPORTANCE_SAMPLE
 
-      int i = fTripletPDF.search(u1);
-      LDouble_t fi = fTripletPDF.density[i];
-      LDouble_t ui = fTripletPDF.integral[i];
-      LDouble_t ri = fTripletPDF.randvar[i];
+      int i = fTripletPDF->search(u1);
+      LDouble_t fi = fTripletPDF->density[i];
+      LDouble_t ui = fTripletPDF->integral[i];
+      LDouble_t ri = fTripletPDF->randvar[i];
       LDouble_t xi = ri - floor(ri);
-      LDouble_t dx = (xi > 0.5)? ri - fTripletPDF.randvar[i-1]:
-                              fTripletPDF.randvar[i+1] - ri;
+      LDouble_t dx = (xi > 0.5)? ri - fTripletPDF->randvar[i-1]:
+                              fTripletPDF->randvar[i+1] - ri;
       u1 = xi + dx / 2 - (ui - u1) / (fi * dx);
       u0 = (u0 + floor(ri)) * dx;
       weight /= fi;
 
 #elif DO_PAIRCOH_IMPORTANCE_SAMPLE
 
-      int i = fPaircohPDF.search(u1);
-      LDouble_t fi = fPaircohPDF.density[i];
-      LDouble_t ui = fPaircohPDF.integral[i];
-      LDouble_t ri = fPaircohPDF.randvar[i];
+      int i = fPaircohPDF->search(u1);
+      LDouble_t fi = fPaircohPDF->density[i];
+      LDouble_t ui = fPaircohPDF->integral[i];
+      LDouble_t ri = fPaircohPDF->randvar[i];
       LDouble_t xi = ri - floor(ri);
-      LDouble_t dx = (xi > 0.5)? ri - fPaircohPDF.randvar[i-1]:
-                              fPaircohPDF.randvar[i+1] - ri;
+      LDouble_t dx = (xi > 0.5)? ri - fPaircohPDF->randvar[i-1]:
+                              fPaircohPDF->randvar[i+1] - ri;
       u1 = xi + dx / 2 - (ui - u1) / (fi * dx);
       u0 = (u0 + floor(ri)) * dx;
       weight /= fi;
@@ -514,12 +516,12 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
       weight *= Mpair / (2 * kin);
    
       // Generate with importance sampling
-      LDouble_t Striplet = fTripletPDF.Npassed * 
-                        (fTripletPDF.Ntested / (fTripletPDF.Psum + 1e-99));
-      LDouble_t Spaircoh = fPaircohPDF.Npassed *
-                        (fPaircohPDF.Ntested / (fPaircohPDF.Psum + 1e-99));
+      LDouble_t Striplet = fTripletPDF->Npassed * 
+                        (fTripletPDF->Ntested / (fTripletPDF->Psum + 1e-99));
+      LDouble_t Spaircoh = fPaircohPDF->Npassed *
+                        (fPaircohPDF->Ntested / (fPaircohPDF->Psum + 1e-99));
       if (Striplet < Spaircoh) {                     // try incoherent generation
-         ++fTripletPDF.Ntested;
+         ++fTripletPDF->Ntested;
    
          // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
          LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mElectron);
@@ -602,31 +604,31 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 
          // Use keep/discard algorithm
          LDouble_t Pfactor = diffXS * weight;
-         if (Pfactor > fTripletPDF.Pmax)
-            fTripletPDF.Pmax = Pfactor;
-         if (Pfactor > fTripletPDF.Pcut) {
+         if (Pfactor > fTripletPDF->Pmax)
+            fTripletPDF->Pmax = Pfactor;
+         if (Pfactor > fTripletPDF->Pcut) {
             G4cout << "Warning in GenerateBeamPairConversion - Pfactor " 
-                   << Pfactor << " exceeds fTripletPDF.Pcut = " 
-                   << fTripletPDF.Pcut << G4endl
+                   << Pfactor << " exceeds fTripletPDF->Pcut = " 
+                   << fTripletPDF->Pcut << G4endl
                    << "  present qR = " << qR << G4endl
                    << "  present Mpair = " << Mpair << G4endl
                    << "  present maximum Pfactor = "
-                   << fTripletPDF.Pmax << G4endl
+                   << fTripletPDF->Pmax << G4endl
                    << "  current generator efficiency = "
-                   << fTripletPDF.Npassed /
-                      (fTripletPDF.Ntested + 1e-99)
+                   << fTripletPDF->Npassed /
+                      (fTripletPDF->Ntested + 1e-99)
                    << G4endl;
          }
-         fTripletPDF.Psum += Pfactor;
-         if (G4UniformRand() * fTripletPDF.Pcut > Pfactor) {
+         fTripletPDF->Psum += Pfactor;
+         if (G4UniformRand() * fTripletPDF->Pcut > Pfactor) {
             continue;
          }
-         ++fTripletPDF.Npassed;
+         ++fTripletPDF->Npassed;
          break;
       }
 
       else {                          // try coherent generation
-         ++fPaircohPDF.Ntested;
+         ++fPaircohPDF->Ntested;
    
          // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
          // assuming that the atomic target absorbs zero energy
@@ -683,26 +685,26 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    
          // Use keep/discard algorithm
          LDouble_t Pfactor = diffXS * weight;
-         if (Pfactor > fPaircohPDF.Pmax)
-            fPaircohPDF.Pmax = Pfactor;
-         if (Pfactor > fPaircohPDF.Pcut) {
+         if (Pfactor > fPaircohPDF->Pmax)
+            fPaircohPDF->Pmax = Pfactor;
+         if (Pfactor > fPaircohPDF->Pcut) {
             G4cout << "Warning in GenerateBeamPairConversion - Pfactor " 
-                   << Pfactor << " exceeds fPaircohPDF.Pcut = " 
-                   << fPaircohPDF.Pcut << G4endl
+                   << Pfactor << " exceeds fPaircohPDF->Pcut = " 
+                   << fPaircohPDF->Pcut << G4endl
                    << "  present qR = " << qR << G4endl
                    << "  present Mpair = " << Mpair << G4endl
                    << "  present maximum Pfactor = "
-                   << fPaircohPDF.Pmax << G4endl
+                   << fPaircohPDF->Pmax << G4endl
                    << "  current generator efficiency = "
-                   << fPaircohPDF.Npassed /
-                      (fPaircohPDF.Ntested + 1e-99)
+                   << fPaircohPDF->Npassed /
+                      (fPaircohPDF->Ntested + 1e-99)
                    << G4endl;
          }
-         fPaircohPDF.Psum += Pfactor;
-         if (G4UniformRand() * fPaircohPDF.Pcut > Pfactor) {
+         fPaircohPDF->Psum += Pfactor;
+         if (G4UniformRand() * fPaircohPDF->Pcut > Pfactor) {
             continue;
          }
-         ++fPaircohPDF.Npassed;
+         ++fPaircohPDF->Npassed;
          break;
       }
    }
@@ -756,26 +758,26 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    }
 
 #if VERBOSE_PAIRS_SPLITTING
-   if ((fTripletPDF.Npassed + fPaircohPDF.Npassed) % 500 == 0) {
+   if ((fTripletPDF->Npassed + fPaircohPDF->Npassed) % 500 == 0) {
       G4cout << std::setprecision(5)
-             << "triplet cross section is " << fTripletPDF.Pcut *
-             fTripletPDF.Npassed / (fTripletPDF.Ntested + 1e-99) 
-             << " +/- " << fTripletPDF.Pcut *
-             sqrt(fTripletPDF.Npassed) / (fTripletPDF.Ntested + 1e-99) 
+             << "triplet cross section is " << fTripletPDF->Pcut *
+             fTripletPDF->Npassed / (fTripletPDF->Ntested + 1e-99) 
+             << " +/- " << fTripletPDF->Pcut *
+             sqrt(fTripletPDF->Npassed) / (fTripletPDF->Ntested + 1e-99) 
              << " barns, efficiency is " 
-             << fTripletPDF.Npassed / (fTripletPDF.Ntested + 1e-99)
+             << fTripletPDF->Npassed / (fTripletPDF->Ntested + 1e-99)
              << G4endl
-             << "pair cross section is " << fPaircohPDF.Pcut *
-             fPaircohPDF.Npassed / (fPaircohPDF.Ntested + 1e-99) 
-             << " +/- " << fPaircohPDF.Pcut *
-             sqrt(fPaircohPDF.Npassed) / (fPaircohPDF.Ntested + 1e-99) 
+             << "pair cross section is " << fPaircohPDF->Pcut *
+             fPaircohPDF->Npassed / (fPaircohPDF->Ntested + 1e-99) 
+             << " +/- " << fPaircohPDF->Pcut *
+             sqrt(fPaircohPDF->Npassed) / (fPaircohPDF->Ntested + 1e-99) 
              << " barns, efficiency is " 
-             << fPaircohPDF.Npassed / (fPaircohPDF.Ntested + 1e-99) 
+             << fPaircohPDF->Npassed / (fPaircohPDF->Ntested + 1e-99) 
              << G4endl
              << "counts are "
-             << fTripletPDF.Npassed << " / " << fPaircohPDF.Npassed
+             << fTripletPDF->Npassed << " / " << fPaircohPDF->Npassed
              << " = "
-             << fTripletPDF.Npassed / (fPaircohPDF.Npassed + 1e-99)
+             << fTripletPDF->Npassed / (fPaircohPDF->Npassed + 1e-99)
              << G4endl;
    }
 #endif
@@ -813,11 +815,8 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 #else
 
 #if USE_ADAPTIVE_SAMPLER
-   if (sampler_initialized == 0) {
-      sampler.restoreState("BHgen.astate");
-      sampler.setVerbosity(2);
-      sampler.reset_stats();
-      sampler_initialized = 1;
+   if (fAdaptiveSampler == 0) {
+      InitializeAdaptiveSampler();
    }
 #endif
 
@@ -866,7 +865,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    double u[6];
    u[0] = kin / E0_GeV;
 #if USE_ADAPTIVE_SAMPLER
-   double weight = sampler.sample(u);
+   double weight = fAdaptiveSampler->sample(u);
 #else
    unif01(5, u+1);
    double weight=1;
@@ -999,7 +998,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
                                                   F1_timelike,
                                                   F2_timelike);
 #if USE_ADAPTIVE_SAMPLER
-      sampler.feedback(u, weight * diffXS);
+      fAdaptiveSampler->feedback(u, weight * diffXS);
 #endif
    }
    catch (const std::exception &e) {
@@ -1011,7 +1010,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       eOut.SetMom(TThreeVectorReal(0,0,1e-12));
       pOut.SetMom(TThreeVectorReal(0,0,1e-12));
 #if USE_ADAPTIVE_SAMPLER
-      sampler.feedback(u, 0);
+      fAdaptiveSampler->feedback(u, 0);
 #endif
       diffXS = 0;
    }
@@ -1077,11 +1076,56 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    while (passes >= tens*10)
       tens *= 10;
    if (passes % tens == 0) {
-      std::cout << "sampler reports efficiency " << sampler.getEfficiency()
+      std::cout << "AdaptiveSampler reports efficiency " 
+                << fAdaptiveSampler->getEfficiency()
                 << std::endl;
-      sampler.saveState("BHgen_stats.astate");
+      std::stringstream astatefile;
+      astatefile << "BHgen_thread_" << G4Threading::G4GetThreadId() << ".astate";
+      fAdaptiveSampler->saveState(astatefile.str());
    }
 #endif
 
 #endif
+}
+
+void GlueXBeamConversionProcess::InitializeAdaptiveSampler()
+{
+   fAdaptiveSampler = new AdaptiveSampler(6, &unif01, 1);
+   fAdaptiveSampler->restoreState("BHgen.astate");
+   fAdaptiveSampler->setVerbosity(2);
+   fAdaptiveSampler->reset_stats();
+
+   G4AutoLock l(&myPrivateMutex);
+   fAdaptiveSamplerRegistry.push_back(fAdaptiveSampler);
+}
+
+void GlueXBeamConversionProcess::TerminateWorker()
+{
+   if (fPaircohPDF) {
+      delete fPaircohPDF;
+      fPaircohPDF = 0;
+   }
+   if (fTripletPDF) {
+      delete fTripletPDF;
+      fTripletPDF = 0;
+   }
+   if (fPairsGeneration) {
+      delete fPairsGeneration;
+      fPairsGeneration = 0;
+   }
+   int nsamplers = fAdaptiveSamplerRegistry.size();
+   if (nsamplers > 0) {
+      fAdaptiveSampler = fAdaptiveSamplerRegistry[0];
+      for (int i=1; i < nsamplers; ++i) {
+         std::stringstream astatefile;
+         astatefile << "BHgen_thread_" << i << ".astate";
+         fAdaptiveSamplerRegistry[i]->saveState(astatefile.str());
+         fAdaptiveSampler->mergeState(astatefile.str());
+         delete fAdaptiveSamplerRegistry[i];
+      }
+   }
+   if (fAdaptiveSampler) {
+      fAdaptiveSampler->saveState("BHgen_stats.astate");
+      delete fAdaptiveSampler;
+   }
 }
