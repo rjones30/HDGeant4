@@ -447,7 +447,8 @@ void GlueXUserEventInformation::SetRandomSeeds()
 
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
    hddm_s::ReactionList rea = pev(0).getReactions();
-   long int eventNo = pev(0).getEventNo();
+   long int eventNo;
+   eventNo = pev(0).getEventNo();
    if (rea.size() == 0) {
       rea = pev(0).addReactions();
    }
