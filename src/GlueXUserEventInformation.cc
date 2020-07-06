@@ -447,6 +447,8 @@ void GlueXUserEventInformation::SetRandomSeeds()
 
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
    hddm_s::ReactionList rea = pev(0).getReactions();
+   long int eventNo;
+   eventNo = pev(0).getEventNo();
    if (rea.size() == 0) {
       rea = pev(0).addReactions();
    }
@@ -457,7 +459,7 @@ void GlueXUserEventInformation::SetRandomSeeds()
       seed[1] = rnd(0).getSeed2();
       G4Random::setTheSeeds(seed);
 #if VERBOSE_RANDOMS
-      G4cout << "New event with starting seeds " 
+      G4cout << "New event " << eventNo << " with starting seeds " 
              << seed[0] << ", " << seed[1] << G4endl;
 #endif
    }
@@ -476,7 +478,7 @@ void GlueXUserEventInformation::SetRandomSeeds()
       fEventSeeds[0] = seed[0];
       fEventSeeds[1] = seed[1];
 #if VERBOSE_RANDOMS
-      G4cout << "New event with starting seeds " 
+      G4cout << "New event " << eventNo << " with starting seeds " 
              << seed[0] << ", " << seed[1] << G4endl;
 #endif
    }
