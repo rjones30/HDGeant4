@@ -1109,10 +1109,12 @@ void GlueXBeamConversionProcess::TerminateWorker()
       delete fTripletPDF;
       fTripletPDF = 0;
    }
+#ifdef USING_DIRACXX
    if (fPairsGeneration) {
       delete fPairsGeneration;
       fPairsGeneration = 0;
    }
+#endif
    int nsamplers = fAdaptiveSamplerRegistry.size();
    if (nsamplers > 0) {
       fAdaptiveSampler = fAdaptiveSamplerRegistry[0];

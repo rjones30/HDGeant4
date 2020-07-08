@@ -43,7 +43,9 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
                                     G4ForceCondition *condition);
    void GenerateBetheHeitlerProcess(const G4Step &step);
 
+#ifdef USING_DIRACXX
    static G4ThreadLocal PairConversionGeneration *fPairsGeneration;
+#endif
 
    int fStopBeamBeforeConverter;
    int fStopBeamAfterConverter;
