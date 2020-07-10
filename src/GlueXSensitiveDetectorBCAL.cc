@@ -23,7 +23,7 @@
 #define USE_ENERGY_WEIGHTED_TIMES 1
 
 // Energy rescale factor to match reconstructed to generated
-double GlueXSensitiveDetectorBCAL::SHOWER_ENERGY_SCALE_FACTOR = 1.04;
+double GlueXSensitiveDetectorBCAL::SHOWER_ENERGY_SCALE_FACTOR = 1.008;
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorBCAL::MAX_HITS = 100;
