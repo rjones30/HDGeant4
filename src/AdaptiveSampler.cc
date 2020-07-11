@@ -793,7 +793,7 @@ void AdaptiveSampler::Cell::optimize()
          double r = (opt_nhit + 1e-99) / nhit;
          for (int n=0; n < 3; ++n) {
             subcell[n]->opt_nhit = subcell[n]->nhit * r;
-            subcell[n]->opt_subset = opt_subset * r;
+            subcell[n]->opt_subset = opt_subset;
             subcell[n]->optimize();
             opt_wI2 += subcell[n]->opt_wI2;
             opt_wI4 += subcell[n]->opt_wI4;
