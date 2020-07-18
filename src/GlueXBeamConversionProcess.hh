@@ -6,11 +6,9 @@
 //
 // In the context of the Geant4 event-level multithreading model,
 // this class is "thread-local", ie. has thread-local state.
-// Separate object instances are created for each worker thread,
-// but virtually all of its functions need to be serialized, so
-// it maintains its own interlocks for this purpose. Resources
-// are created once when the first object is instantiated, and
-// destroyed once when the last object is destroyed.
+// Separate object instances are created for each worker thread.
+// Resources are created once when the first object is instantiated,
+// and destroyed once when the last object is destroyed.
 
 #ifndef _GLUEXBEAMCONVERSIONPROCESS_H_
 #define _GLUEXBEAMCONVERSIONPROCESS_H_
@@ -20,6 +18,7 @@
 #include <ImportanceSampler.hh>
 #include <PairConversionGeneration.hh>
 #include <AdaptiveSampler.hh>
+#include <G4AutoLock.hh>
 #include <G4Step.hh>
 
 class GlueXBeamConversionProcess: public G4VDiscreteProcess
@@ -44,27 +43,29 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
    void GenerateBetheHeitlerProcess(const G4Step &step);
 
 #ifdef USING_DIRACXX
-   static G4ThreadLocal PairConversionGeneration *fPairsGeneration;
+   PairConversionGeneration *fPairsGeneration;
 #endif
 
-   int fStopBeamBeforeConverter;
-   int fStopBeamAfterConverter;
-   int fStopBeamAfterTarget;
-
-   static void prepareImportanceSamplingPDFs();
-
-   static G4ThreadLocal ImportanceSampler *fPaircohPDF;
-   static G4ThreadLocal ImportanceSampler *fTripletPDF;
+   static int fStopBeamBeforeConverter;
+   static int fStopBeamAfterConverter;
+   static int fStopBeamAfterTarget;
    static G4double fBHpair_mass_min;
 
-   static G4ThreadLocal AdaptiveSampler *fAdaptiveSampler;
-   static void InitializeAdaptiveSampler();
+   void prepareImportanceSamplingPDFs();
+
+   ImportanceSampler *fPaircohPDF;
+   ImportanceSampler *fTripletPDF;
+
+
+   AdaptiveSampler *fAdaptiveSampler;
+   void prepareAdaptiveSampler();
 
  private:
    GlueXBeamConversionProcess operator=(GlueXBeamConversionProcess &src);
 
+   static G4Mutex fMutex;
+   static int fInitialized;
    static std::vector<AdaptiveSampler*> fAdaptiveSamplerRegistry;
-   static void TerminateWorker();
 };
 
 #endif

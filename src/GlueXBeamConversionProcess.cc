@@ -35,8 +35,6 @@
 #include "G4RunManager.hh"
 #include "G4TrackVector.hh"
 #include "G4Gamma.hh"
-#include "G4Threading.hh"
-#include "G4AutoLock.hh"
 
 #include <stdio.h>
 #include <iomanip>
@@ -47,26 +45,36 @@
 #include <TLepton.h>
 #include <TCrossSection.h>
 
-G4ThreadLocal PairConversionGeneration *GlueXBeamConversionProcess::fPairsGeneration = 0;
 #endif
 
 void unif01(int n, double *u) {
    G4Random::getTheEngine()->flatArray(n,u);
 }
 
-G4ThreadLocal AdaptiveSampler *GlueXBeamConversionProcess::fAdaptiveSampler = 0;
-G4ThreadLocal ImportanceSampler *GlueXBeamConversionProcess::fPaircohPDF = 0;
-G4ThreadLocal ImportanceSampler *GlueXBeamConversionProcess::fTripletPDF = 0;
-
 G4double GlueXBeamConversionProcess::fBHpair_mass_min = 0;
 
 std::vector<AdaptiveSampler*> GlueXBeamConversionProcess::fAdaptiveSamplerRegistry;
-G4Mutex myPrivateMutex = G4MUTEX_INITIALIZER;
+
+G4Mutex GlueXBeamConversionProcess::fMutex = G4MUTEX_INITIALIZER;
+int GlueXBeamConversionProcess::fStopBeamBeforeConverter = 0;
+int GlueXBeamConversionProcess::fStopBeamAfterConverter = 0;
+int GlueXBeamConversionProcess::fStopBeamAfterTarget = 0;
+int GlueXBeamConversionProcess::fInitialized = 0;
 
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name, 
                                                        G4ProcessType aType)
- : G4VDiscreteProcess(name, aType)
+ : G4VDiscreteProcess(name, aType),
+#  ifdef USING_DIRACXX
+   fPairsGeneration(0),
+#  endif
+   fPaircohPDF(0),
+   fTripletPDF(0),
+   fAdaptiveSampler(0)
 {
+   G4AutoLock l(&fMutex);
+   if (fInitialized)
+      return;
+
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
    if (user_opts == 0) {
       G4cerr << "Error in GlueXBeamConversionProcess constructor - "
@@ -115,6 +123,8 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
       }
    }
 
+   fInitialized = 1;
+
    if (verboseLevel > 0) {
        G4cout << GetProcessName() << " is created " << G4endl
 	      << "    Stop beam before converter? "
@@ -128,16 +138,42 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
 
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(
                             GlueXBeamConversionProcess &src)
- : G4VDiscreteProcess(src)
+ : G4VDiscreteProcess(src),
+#  ifdef USING_DIRACXX
+   fPairsGeneration(0),
+#  endif
+   fPaircohPDF(0),
+   fTripletPDF(0),
+   fAdaptiveSampler(0)
 {
-   fStopBeamBeforeConverter = src.fStopBeamBeforeConverter;
-   fStopBeamAfterConverter = src.fStopBeamAfterConverter;
-   fStopBeamAfterTarget = src.fStopBeamAfterTarget;
 }
 
 GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
 {
-   TerminateWorker();
+   if (fPaircohPDF)
+      delete fPaircohPDF;
+   if (fTripletPDF)
+      delete fTripletPDF;
+#ifdef USING_DIRACXX
+   if (fPairsGeneration)
+      delete fPairsGeneration;
+#endif
+   G4AutoLock l(&fMutex);
+   int nsamplers = fAdaptiveSamplerRegistry.size();
+   if (nsamplers > 0) {
+      fAdaptiveSampler = fAdaptiveSamplerRegistry[0];
+      for (int i=1; i < nsamplers; ++i) {
+         std::stringstream astatefile;
+         astatefile << "BHgen_thread_" << i << ".astate";
+         fAdaptiveSamplerRegistry[i]->saveState(astatefile.str());
+         fAdaptiveSampler->mergeState(astatefile.str());
+         delete fAdaptiveSamplerRegistry[i];
+      }
+   }
+   if (fAdaptiveSampler) {
+      fAdaptiveSampler->saveState("BHgen_stats.astate");
+      delete fAdaptiveSampler;
+   }
 }
 
 GlueXBeamConversionProcess GlueXBeamConversionProcess::operator=(
@@ -409,7 +445,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    }
 
 #if defined DO_TRIPLET_IMPORTANCE_SAMPLE || defined DO_PAIRCOH_IMPORTANCE_SAMPLE
-   if (fTripletPDF->density.size() == 0) {
+   if (fTripletPDF == 0 || fPaircohPDF == 0) {
       G4cout << "GlueXBeamConversionProcess::GenerateBeamPairConversion:"
              << G4endl
              << "   Setting up cross section tables, please wait... "
@@ -816,7 +852,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 
 #if USE_ADAPTIVE_SAMPLER
    if (fAdaptiveSampler == 0) {
-      InitializeAdaptiveSampler();
+      prepareAdaptiveSampler();
    }
 #endif
 
@@ -860,8 +896,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    // elemnt of the u-vector in the call to sample(), and let it
    // return the remaining 5 random numbers needed to fix the
    // kinematics of the pair-production reaction.
-   double E0_GeV = GlueXPrimaryGeneratorAction::GetInstance()->
-                   GetCobremsGeneration()->getBeamEnergy();
+   double E0_GeV = GlueXPrimaryGeneratorAction::getBeamEndpointEnergy()/GeV;
    double u[6];
    u[0] = kin / E0_GeV;
 #if USE_ADAPTIVE_SAMPLER
@@ -1071,7 +1106,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 
 #if USE_ADAPTIVE_SAMPLER
    static int passes = 0;
-   ++passes;
+   ++passes; // thread safety not important here
    int tens = 1000;
    while (passes >= tens*10)
       tens *= 10;
@@ -1088,46 +1123,13 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 #endif
 }
 
-void GlueXBeamConversionProcess::InitializeAdaptiveSampler()
+void GlueXBeamConversionProcess::prepareAdaptiveSampler()
 {
    fAdaptiveSampler = new AdaptiveSampler(6, &unif01, 1);
    fAdaptiveSampler->restoreState("BHgen.astate");
    fAdaptiveSampler->setVerbosity(2);
    fAdaptiveSampler->reset_stats();
 
-   G4AutoLock l(&myPrivateMutex);
+   G4AutoLock l(&fMutex);
    fAdaptiveSamplerRegistry.push_back(fAdaptiveSampler);
-}
-
-void GlueXBeamConversionProcess::TerminateWorker()
-{
-   if (fPaircohPDF) {
-      delete fPaircohPDF;
-      fPaircohPDF = 0;
-   }
-   if (fTripletPDF) {
-      delete fTripletPDF;
-      fTripletPDF = 0;
-   }
-#ifdef USING_DIRACXX
-   if (fPairsGeneration) {
-      delete fPairsGeneration;
-      fPairsGeneration = 0;
-   }
-#endif
-   int nsamplers = fAdaptiveSamplerRegistry.size();
-   if (nsamplers > 0) {
-      fAdaptiveSampler = fAdaptiveSamplerRegistry[0];
-      for (int i=1; i < nsamplers; ++i) {
-         std::stringstream astatefile;
-         astatefile << "BHgen_thread_" << i << ".astate";
-         fAdaptiveSamplerRegistry[i]->saveState(astatefile.str());
-         fAdaptiveSampler->mergeState(astatefile.str());
-         delete fAdaptiveSamplerRegistry[i];
-      }
-   }
-   if (fAdaptiveSampler) {
-      fAdaptiveSampler->saveState("BHgen_stats.astate");
-      delete fAdaptiveSampler;
-   }
 }
