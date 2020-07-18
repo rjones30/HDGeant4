@@ -48,7 +48,7 @@
 // Should the user wish to try other values for this angle, a public
 // method is provided for this purpose.
 
-#define COBREMS_GENERATOR_VERBOSITY 1
+#define COBREMS_GENERATOR_VERBOSITY 0
 #define BOOST_PYTHON_WRAPPING 1
 
 #include <iostream>
