@@ -82,8 +82,8 @@ GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const G4String& name)
 
 }
 
-    GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const GlueXSensitiveDetectorDIRC &src)
-      : G4VSensitiveDetector(src)
+GlueXSensitiveDetectorDIRC::GlueXSensitiveDetectorDIRC(const GlueXSensitiveDetectorDIRC &src)
+ : G4VSensitiveDetector(src)
 {
   G4AutoLock barrier(&fMutex);
   ++instanceCount;
@@ -443,7 +443,10 @@ double GlueXSensitiveDetectorDIRC::GetDetectionEfficiency(double energy)
 
 void GlueXSensitiveDetectorDIRC::InitializeDetEff()
 {
-  G4AutoLock barrier(&fMutex);
+   G4AutoLock barrier(&fMutex);
+   if (fDetEff != 0)
+      return;
+
    // quantum efficiency for H12700
    // defined for wavelength in the range [0, 1000] nm
    double fEfficiency[1000] = {0.000000, 0.000000, 0.000000, 0.000000, 0.000000,
