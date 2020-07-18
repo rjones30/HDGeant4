@@ -40,7 +40,8 @@ void GlueXRunAction::BeginOfRunAction(const G4Run*)
 
    std::map<int,int> save;
    if (user_opts->Find("SAVEHITS", save)) {
-      GlueXUserEventInformation::fWriteNoHitEvents |= (save[1] != 0);
+      if (save[1] != 0)
+         GlueXUserEventInformation::setWriteNoHitEvents(1);
    }
 
    fPhysicsList->SelectActiveProcesses(1);
