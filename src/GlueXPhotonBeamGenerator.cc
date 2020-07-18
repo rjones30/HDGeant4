@@ -35,16 +35,9 @@ double GlueXPhotonBeamGenerator::fBeamDiameter = 0.5 * cm;
 double GlueXPhotonBeamGenerator::fBeamVelocity = 2.99792e8 * m/s;
 double GlueXPhotonBeamGenerator::fBeamOffset[2] = {0,0};
 
-ImportanceSampler GlueXPhotonBeamGenerator::fCoherentPDFx; 
-ImportanceSampler GlueXPhotonBeamGenerator::fIncoherentPDFlogx;
-ImportanceSampler GlueXPhotonBeamGenerator::fIncoherentPDFy;
-double GlueXPhotonBeamGenerator::fIncoherentPDFtheta02;
-
 int GlueXPhotonBeamGenerator::fForceFixedPolarization = false;
 double GlueXPhotonBeamGenerator::fFixedPolarization = 0;
 double GlueXPhotonBeamGenerator::fFixedPolarization_phi = 0;
-
-GlueXPseudoDetectorTAG *GlueXPhotonBeamGenerator::fTagger = 0;
 
 // This utility function is useful in the debugger,
 // but do not use it for actual simulation operatons.
@@ -61,7 +54,8 @@ int g4random_seeds(CLHEP::HepRandomEngine *eng=0) {
 }
 
 GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
- : fCobrems(gen)
+ : fCobrems(gen),
+   fTagger(0)
 {
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
    if (user_opts == 0) {
@@ -89,7 +83,7 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
       else {
          fGenerateNotSimulate = -1;
       }
-      GlueXUserEventInformation::fWriteNoHitEvents = 1;
+      GlueXUserEventInformation::setWriteNoHitEvents(1);
    }
    std::map<int, int> bgratepars;
    std::map<int, int> bggatepars;
@@ -131,7 +125,6 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
                              &GlueXPhotonBeamGenerator::disableFixedPolarization,
        "Tell the photon beam generator not to force a fixed polarization\n"
        " on beam photons created by the simulation.");
-   G4cout << "GlueXPhotonBeamGenerator initialization complete." << G4endl;
 }
 
 GlueXPhotonBeamGenerator::~GlueXPhotonBeamGenerator()
@@ -545,7 +538,7 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
       tvtx += (vtx[2] - targetCenterZ) / fBeamVelocity;
       if (fBeamBackgroundTagOnly) {
          double ttag = tvtx + (targetCenterZ - vtx[2]) / fBeamVelocity;
-         fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
+         GenerateTaggerHit(anEvent, pabs, ttag, bg);
          return;
       }
    }
@@ -591,16 +584,8 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
 
       // Register a tagger hit for each beam photon
 
-      int runNo = HddmOutput::getRunNo();
-      if (fTagger == 0) {
-         fTagger = new GlueXPseudoDetectorTAG(runNo);
-      }
-      else if (fTagger->getRunNo() != runNo) {
-         delete fTagger;
-         fTagger = new GlueXPseudoDetectorTAG(runNo);
-      }
       double ttag = tvtx + (targetCenterZ - vtx[2]) / fBeamVelocity;
-      fTagger->addTaggerPhoton(anEvent, pabs, ttag, bg);
+      GenerateTaggerHit(anEvent, pabs, ttag, bg);
    }
 }
 
@@ -650,6 +635,14 @@ void GlueXPhotonBeamGenerator::GenerateRFsync(const G4Event *event)
    // Append a RF sync element to the output record, assuming that
    // GenerateTriggerTime has already been called for this event.
 
+   int runNo = HddmOutput::getRunNo();
+   if (fTagger == 0) {
+      fTagger = new GlueXPseudoDetectorTAG(runNo);
+   }
+   else if (fTagger->getRunNo() != runNo) {
+      delete fTagger;
+      fTagger = new GlueXPseudoDetectorTAG(runNo);
+   }
    double tsync = 512*ns * G4UniformRand();
    tsync = fBeamBucketPeriod * floor(tsync / fBeamBucketPeriod + 0.5);
    fTagger->addRFsync(event, tsync);
