@@ -89,6 +89,8 @@ std::map<G4String, G4String> process_4letter_abbrev = {
 int GlueXUserEventInformation::fWriteNoHitEvents = 0;
 long int *GlueXUserEventInformation::fStartingSeeds = 0;
 
+G4Mutex GlueXUserEventInformation::fMutex = G4MUTEX_INITIALIZER;
+
 GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
  : fKeepEvent(true),
    fNprimaries(0),
@@ -427,6 +429,7 @@ void GlueXUserEventInformation::AddMCtrajectoryPoint(const G4Step &step,
 
 void GlueXUserEventInformation::SetStartingSeeds(const long int seeds[2])
 {
+   G4AutoLock l(&fMutex);
    if (fStartingSeeds)
       delete [] fStartingSeeds;
    fStartingSeeds = new long int[2];
@@ -465,9 +468,12 @@ void GlueXUserEventInformation::SetRandomSeeds()
    }
    else {
       if (fStartingSeeds) {
-         G4Random::setTheSeeds(fStartingSeeds);
-         delete [] fStartingSeeds;
-         fStartingSeeds = 0;
+         G4AutoLock l(&fMutex);
+         if (fStartingSeeds) {
+            G4Random::setTheSeeds(fStartingSeeds);
+            delete [] fStartingSeeds;
+            fStartingSeeds = 0;
+         }
       }
       const long int *seed = G4Random::getTheSeeds();
       rnd = rea(0).addRandoms();
@@ -584,7 +590,7 @@ void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
    int seed = fEventSeeds[0];
    if (fDlogfile.find(seed) == fDlogfile.end()) {
       std::stringstream logfile;
-      logfile << seed << ".dlog";
+      logfile << fEventSeeds[0] << "_" << fEventSeeds[1] << ".dlog";
       try {
          std::ifstream *dlog = new std::ifstream(logfile.str().c_str());
          if (dlog && dlog->is_open()) {
@@ -613,7 +619,8 @@ void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
       if (logmsg != msg) {
          std::stringstream what;
          what << "Dlog mismatch in GlueXUserEventInformation"
-              << " log file " << seed << ".dlog"
+              << " log file " << fEventSeeds[0]
+              << "_" << fEventSeeds[1] << ".dlog"
               << " line " << fDlogreading[seed] << ":" << std::endl
               << "  log file said: " << logmsg << std::endl
               << "  this run says: " << msg;
