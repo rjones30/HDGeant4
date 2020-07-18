@@ -254,7 +254,7 @@ int main(int argc,char** argv)
       }
    }
 
-   double nsim = GlueXPrimaryGeneratorAction::GetInstance()->getEventCount();
+   double nsim = HddmOutput::getEventNo();
    double norm = (nsim == 0)? 1e9 : nsim;
    runtimer.Stop();
    double realrun = runtimer.GetRealElapsed();
