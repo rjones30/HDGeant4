@@ -29,6 +29,8 @@ std::map<int, TTree*> bgprofiles;
 #endif
 
 G4Mutex GlueXSteppingAction::fMutex = G4MUTEX_INITIALIZER;
+int GlueXSteppingAction::fStopTracksInCollimator = 0;
+int GlueXSteppingAction::fSaveTrajectories = 0;
 
 GlueXSteppingAction::GlueXSteppingAction()
 {
@@ -66,9 +68,7 @@ GlueXSteppingAction::GlueXSteppingAction()
 }
 
 GlueXSteppingAction::GlueXSteppingAction(const GlueXSteppingAction &src)
-{
-   fStopTracksInCollimator = src.fStopTracksInCollimator;
-}
+{}
 
 GlueXSteppingAction::~GlueXSteppingAction()
 {
