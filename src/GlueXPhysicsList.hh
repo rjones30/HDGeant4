@@ -57,7 +57,7 @@ class GlueXPhysicsList: public G4VModularPhysicsList
    GlueXUserOptions *fOptions;
 
 #if USING_DIRACXX
-   static G4ThreadLocal GlueXBeamConversionProcess *fBeamConversion;
+   GlueXBeamConversionProcess *fBeamConversion;
 #endif
    G4OpticalPhysics *fOpticalPhysics;
 

@@ -33,13 +33,13 @@
 #include "G4HadronPhysicsQGSP_FTFP_BERT.hh"
 #include "G4OpticalProcessIndex.hh"
 
-#if USING_DIRACXX
-G4ThreadLocal GlueXBeamConversionProcess *GlueXPhysicsList::fBeamConversion = 0;
-#endif
-
 GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
                                    G4int verbosity)
- : G4VModularPhysicsList(), fOpticalPhysics(0)
+ : G4VModularPhysicsList(),
+#  if USING_DIRACXX
+   fBeamConversion(0),
+#  endif
+   fOpticalPhysics(0)
 {
    if (geometry == 0) {
       geometry = GlueXDetectorConstruction::GetInstance();
