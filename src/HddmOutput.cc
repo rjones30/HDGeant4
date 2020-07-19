@@ -34,6 +34,7 @@ HddmOutput::HddmOutput(const std::string &filename)
 
 HddmOutput::~HddmOutput()
 {
+   G4AutoLock barrier(&fMutex);
    if (fHDDMostream != 0) {
       delete fHDDMostream;
       delete fHDDMoutfile;
@@ -68,4 +69,3 @@ int HddmOutput::incrementEventNo()
    G4AutoLock barrier(&fMutex);
    return ++fEventNo;
 }
-
