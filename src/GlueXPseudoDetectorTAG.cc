@@ -39,6 +39,7 @@ G4Mutex GlueXPseudoDetectorTAG::fMutex = G4MUTEX_INITIALIZER;
 GlueXPseudoDetectorTAG::GlueXPseudoDetectorTAG(int run_number)
  : fRunNo(run_number)
 {
+   G4AutoLock barrier(&fMutex);
    if (run_number != 0)
       setRunNo(run_number);
    instanceCount++;
@@ -46,6 +47,7 @@ GlueXPseudoDetectorTAG::GlueXPseudoDetectorTAG(int run_number)
 
 GlueXPseudoDetectorTAG::~GlueXPseudoDetectorTAG()
 {
+   G4AutoLock barrier(&fMutex);
    --instanceCount;
 }
 
@@ -113,7 +115,8 @@ inline void GlueXPseudoDetectorTAG::setRunNo(int runno)
 }
 
 int GlueXPseudoDetectorTAG::addTaggerPhoton(const G4Event *event,
-                                            double energy, double time, int bg)
+                                            double energy, double time,
+                                            int bg) const
 {
    // look up which tagger channel is hit, if any
 
@@ -271,7 +274,7 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(const G4Event *event,
    return (micro_channel > -1 || hodo_channel > -1);
 }
 
-int GlueXPseudoDetectorTAG::addRFsync(const G4Event *event, double tsync)
+int GlueXPseudoDetectorTAG::addRFsync(const G4Event *event, double tsync) const
 {
    G4VUserEventInformation* info = event->GetUserInformation();
    hddm_s::HDDM *record = ((GlueXUserEventInformation*)info)->getOutputRecord();
