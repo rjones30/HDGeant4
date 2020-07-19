@@ -429,7 +429,7 @@ void GlueXUserEventInformation::AddMCtrajectoryPoint(const G4Step &step,
 
 void GlueXUserEventInformation::SetStartingSeeds(const long int seeds[2])
 {
-   G4AutoLock l(&fMutex);
+   G4AutoLock barrier(&fMutex);
    if (fStartingSeeds)
       delete [] fStartingSeeds;
    fStartingSeeds = new long int[2];
@@ -468,7 +468,7 @@ void GlueXUserEventInformation::SetRandomSeeds()
    }
    else {
       if (fStartingSeeds) {
-         G4AutoLock l(&fMutex);
+         G4AutoLock barrier(&fMutex);
          if (fStartingSeeds) {
             G4Random::setTheSeeds(fStartingSeeds);
             delete [] fStartingSeeds;

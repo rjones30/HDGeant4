@@ -71,7 +71,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
    fTripletPDF(0),
    fAdaptiveSampler(0)
 {
-   G4AutoLock l(&fMutex);
+   G4AutoLock barrier(&fMutex);
    if (fInitialized)
       return;
 
@@ -158,7 +158,7 @@ GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
    if (fPairsGeneration)
       delete fPairsGeneration;
 #endif
-   G4AutoLock l(&fMutex);
+   G4AutoLock barrier(&fMutex);
    int nsamplers = fAdaptiveSamplerRegistry.size();
    if (nsamplers > 0) {
       fAdaptiveSampler = fAdaptiveSamplerRegistry[0];
@@ -1130,6 +1130,6 @@ void GlueXBeamConversionProcess::prepareAdaptiveSampler()
    fAdaptiveSampler->setVerbosity(2);
    fAdaptiveSampler->reset_stats();
 
-   G4AutoLock l(&fMutex);
+   G4AutoLock barrier(&fMutex);
    fAdaptiveSamplerRegistry.push_back(fAdaptiveSampler);
 }
