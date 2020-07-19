@@ -212,6 +212,7 @@ const GlueXDetectorConstruction *GlueXDetectorConstruction::GetInstance()
    // application obtain the primary instance, if any. If none has
    // yet been constructed, it returns zero.
 
+   G4AutoLock barrier(&fMutex);
    if (fInstance.size() > 0)
       return *fInstance.begin();
    return 0;
@@ -221,6 +222,7 @@ const HddsG4Builder *GlueXDetectorConstruction::GetBuilder()
 {
    // Return a const pointer to the internal HddsG4Builder object.
 
+   G4AutoLock barrier(&fMutex);
    if (fInstance.size() > 0)
       return &(*fInstance.begin())->fHddsBuilder;
    return 0;
