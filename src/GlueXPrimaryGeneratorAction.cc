@@ -1381,12 +1381,12 @@ void GlueXPrimaryGeneratorAction::clone_photon_beam_generator()
    fCobremsGeneration = new CobremsGeneration(fBeamEndpointEnergy/GeV,
                                               fBeamPeakEnergy/GeV);
    CobremsGeneration *gen0 = (*fInstance.begin())->fCobremsGeneration;
-   double beamEmin = gen0->getPhotonEnergyMin();
-   double radColDist = gen0->getCollimatorDistance();
-   double colDiam = gen0->getCollimatorDiameter();
-   double beamEmit = gen0->getBeamEmittance();
-   double radThick = gen0->getTargetThickness();
-   double spotRMS = gen0->getCollimatorSpotrms();
+   double beamEmin = gen0->getPhotonEnergyMin()*GeV;
+   double radColDist = gen0->getCollimatorDistance()*m;
+   double colDiam = gen0->getCollimatorDiameter()*m;
+   double beamEmit = gen0->getBeamEmittance()*(m*radian);
+   double radThick = gen0->getTargetThickness()*m;
+   double spotRMS = gen0->getCollimatorSpotrms()*m;
    GlueXPhotonBeamGenerator *gen1 = (*fInstance.begin())->fPhotonBeamGenerator;
    double spotX = gen1->getBeamOffset(0);
    double spotY = gen1->getBeamOffset(1);
