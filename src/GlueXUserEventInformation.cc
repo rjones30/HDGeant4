@@ -8,6 +8,7 @@
 #include "GlueXUserTrackInformation.hh"
 #include "GlueXPrimaryGeneratorAction.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4Run.hh"
 #include "HddmOutput.hh"
 #include "HddsG4Builder.hh"
 #include "Randomize.hh"
@@ -131,9 +132,13 @@ GlueXUserEventInformation::~GlueXUserEventInformation()
       }
       delete fOutputRecord;
    }
-   std::map<long int, std::fstream*>::iterator it;
-   for (it = fDlogfile.begin(); it != fDlogfile.end(); ++it)
+   std::map<std::string, std::fstream*>::iterator it;
+   for (it = fDlogfile.begin(); it != fDlogfile.end(); ++it) {
+      std::stringstream msg;
+      msg << "end of tracking for this event";
+      Dlog(msg.str(), false);
       delete it->second;
+   }
 }
 
 void GlueXUserEventInformation::AddBeamParticle(int geanttype, double t0,
@@ -450,20 +455,20 @@ void GlueXUserEventInformation::SetRandomSeeds()
 
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
    hddm_s::ReactionList rea = pev(0).getReactions();
-   long int eventNo;
-   eventNo = pev(0).getEventNo();
+   long int eventNo = GetEventSequenceNo();
    if (rea.size() == 0) {
       rea = pev(0).addReactions();
    }
    hddm_s::RandomList rnd = rea(0).getRandoms();
    if (rnd.size() > 0) {
-      long int seed[2];
-      seed[0] = rnd(0).getSeed1();
-      seed[1] = rnd(0).getSeed2();
-      G4Random::setTheSeeds(seed);
+      fEventSeeds[0] = rnd(0).getSeed1();
+      fEventSeeds[1] = rnd(0).getSeed2();
+      if (pev(0).getEventNo() > 0)
+         eventNo = pev(0).getEventNo();
+      G4Random::setTheSeeds(fEventSeeds);
 #if VERBOSE_RANDOMS
       G4cout << "New event " << eventNo << " with starting seeds " 
-             << seed[0] << ", " << seed[1] << G4endl;
+             << fEventSeeds[0] << ", " << fEventSeeds[1] << G4endl;
 #endif
    }
    else {
@@ -475,25 +480,43 @@ void GlueXUserEventInformation::SetRandomSeeds()
             fStartingSeeds = 0;
          }
       }
-      const long int *seed = G4Random::getTheSeeds();
+      const long int *s = G4Random::getTheSeeds();
+      fEventSeeds[0] = s[0];
+      fEventSeeds[1] = s[1];
       rnd = rea(0).addRandoms();
-      rnd(0).setSeed1(seed[0]);
-      rnd(0).setSeed2(seed[1]);
+      rnd(0).setSeed1(fEventSeeds[0]);
+      rnd(0).setSeed2(fEventSeeds[1]);
       rnd(0).setSeed3(709975946 + pev(0).getEventNo());
       rnd(0).setSeed4(912931182 + pev(0).getEventNo());
-      fEventSeeds[0] = seed[0];
-      fEventSeeds[1] = seed[1];
 #if VERBOSE_RANDOMS
       G4cout << "New event " << eventNo << " with starting seeds " 
-             << seed[0] << ", " << seed[1] << G4endl;
+             << fEventSeeds[0] << ", " << fEventSeeds[1] << G4endl;
 #endif
    }
+   std::stringstream msg;
+   msg << "GlueXUserEventInformation::SetRandomSeeds with seeds "
+       << fEventSeeds[0] << ", " << fEventSeeds[1]
+       << " for this event";
+   Dlog(msg.str(), false);
 }
 
 int GlueXUserEventInformation::GetRunNo()
 {
    if (fOutputRecord && fOutputRecord->getPhysicsEvents().size() > 0) {
       return fOutputRecord->getPhysicsEvent().getRunNo();
+   }
+   G4RunManager *runmgr = G4RunManager::GetRunManager();
+   if (runmgr != 0 && runmgr->GetCurrentRun() != 0) {
+      return runmgr->GetCurrentRun()->GetRunID();
+   }
+   return 0;
+}
+
+long int GlueXUserEventInformation::GetEventSequenceNo()
+{
+   G4RunManager *runmgr = G4RunManager::GetRunManager();
+   if (runmgr != 0 && runmgr->GetCurrentEvent() != 0) {
+      return runmgr->GetCurrentEvent()->GetEventID();
    }
    return 0;
 }
@@ -576,59 +599,69 @@ const BCALincidentParticle *GlueXUserEventInformation::
 void GlueXUserEventInformation::Dlog(std::string msg)
 {
    G4RunManager *runmgr = G4RunManager::GetRunManager();
-   if (runmgr->GetCurrentRun() != 0) {
+   if (runmgr != 0 && runmgr->GetCurrentEvent() != 0) {
       const G4Event *event = runmgr->GetCurrentEvent();
       GlueXUserEventInformation *this1 = (GlueXUserEventInformation*)
                                          event->GetUserInformation();
       if (this1 != 0)
-         this1->Dlog(msg, false);
+         return this1->Dlog(msg, false);
    }
+   std::stringstream what;
+   what << "GlueXUserEventInformation::Dlog fatal error - "
+        << "called when event simulation is not active,"
+        << " cannot continue!" << std::endl
+        << "  message says: " << msg;
+   throw std::runtime_error(what.str());
 }
 
 void GlueXUserEventInformation::Dlog(std::string msg, bool rewind)
 {
-   int seed = fEventSeeds[0];
-   if (fDlogfile.find(seed) == fDlogfile.end()) {
-      std::stringstream logfile;
-      logfile << fEventSeeds[0] << "_" << fEventSeeds[1] << ".dlog";
+   std::stringstream logfile;
+   logfile << fEventSeeds[0] << "_" << fEventSeeds[1] << ".dlog";
+   if (fDlogfile.find(logfile.str()) == fDlogfile.end()) {
       try {
          std::ifstream *dlog = new std::ifstream(logfile.str().c_str());
          if (dlog && dlog->is_open()) {
-            fDlogfile[seed] = (std::fstream*)dlog;
-            fDlogreading[seed] = 1;
+            fDlogfile[logfile.str()] = (std::fstream*)dlog;
+            fDlogreading[logfile.str()] = 1;
          }
          else
             throw std::exception();
       }
       catch (std::exception &e) {
          std::ofstream *dlog = new std::ofstream(logfile.str().c_str());
-         fDlogfile[seed] = (std::fstream*)dlog;
-         fDlogreading[seed] = 0;
+         fDlogfile[logfile.str()] = (std::fstream*)dlog;
+         fDlogreading[logfile.str()] = 0;
       }
    }
-   else if (rewind || !fDlogfile[seed]) {
-      delete fDlogfile[seed];
-      fDlogfile.erase(seed);
-      fDlogreading.erase(seed);
+   else if (rewind || !fDlogfile[logfile.str()]) {
+      delete fDlogfile[logfile.str()];
+      fDlogfile.erase(logfile.str());
+      fDlogreading.erase(logfile.str());
+      std::stringstream what;
+      what << "GlueXUserEventInformation::Dlog fatal error - "
+           << "called with rewind=" << rewind
+           << " cannot continue!" << std::endl
+           << "  message says: " << msg;
+      throw std::runtime_error(what.str());
       return Dlog(msg, false);
    }
 
-   if (fDlogreading[seed]) {
+   if (fDlogreading[logfile.str()]) {
       std::string logmsg;
-      std::getline(*fDlogfile[seed], logmsg);
+      std::getline(*fDlogfile[logfile.str()], logmsg);
       if (logmsg != msg) {
          std::stringstream what;
          what << "Dlog mismatch in GlueXUserEventInformation"
-              << " log file " << fEventSeeds[0]
-              << "_" << fEventSeeds[1] << ".dlog"
-              << " line " << fDlogreading[seed] << ":" << std::endl
+              << " log file " << logfile.str()
+              << " line " << fDlogreading[logfile.str()] << ":" << std::endl
               << "  log file said: " << logmsg << std::endl
               << "  this run says: " << msg;
          throw std::runtime_error(what.str());
       }
-      ++fDlogreading[seed];
+      ++fDlogreading[logfile.str()];
    }
    else {
-      *((ofstream*)fDlogfile[seed]) << msg << std::endl;
+      *((ofstream*)fDlogfile[logfile.str()]) << msg << std::endl;
    }
 }
