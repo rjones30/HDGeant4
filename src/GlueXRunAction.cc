@@ -44,7 +44,7 @@ void GlueXRunAction::BeginOfRunAction(const G4Run*)
          GlueXUserEventInformation::setWriteNoHitEvents(1);
    }
 
-   fPhysicsList->SelectActiveProcesses(1);
+   fPhysicsList->SelectActiveProcesses();
    //fPhysicsList->ListActiveProcesses();
 
    // Reorder processes to user-defined order
