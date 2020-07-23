@@ -79,22 +79,18 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    fParticleGun = new GlueXParticleGun();
 
    if (fSourceType == SOURCE_TYPE_HDDM) {
-G4cout << "GlueXPrimaryGeneratorAction constructor: cloning GlueXPrimaryGenerator" << G4endl;
       fPrimaryGenerator = new GlueXPrimaryGenerator(fHDDMistream);
       return;
    }
    else if (fSourceType == SOURCE_TYPE_COBREMS_GEN) {
-G4cout << "GlueXPrimaryGeneratorAction constructor: cloning CobremsGeneration" << G4endl;
       clone_photon_beam_generator();
       return;
    }
    else if (fSourceType == SOURCE_TYPE_PARTICLE_GUN) {
-G4cout << "GlueXPrimaryGeneratorAction constructor: cloning CobremsGeneration" << G4endl;
       fParticleGun->SetParticleDefinition(fGunParticle.partDef);
       return;
    }
 
-G4cout << "GlueXPrimaryGeneratorAction constructor: first call!" << G4endl;
    fParticleTable = G4ParticleTable::GetParticleTable();
    
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
@@ -492,15 +488,12 @@ GlueXPrimaryGeneratorAction &GlueXPrimaryGeneratorAction::operator=(const
    fPrimaryGenerator = 0;
 
    if (fSourceType == SOURCE_TYPE_HDDM) {
-G4cout << "GlueXPrimaryGeneratorAction constructor: cloning GlueXPrimaryGenerator" << G4endl;
       fPrimaryGenerator = new GlueXPrimaryGenerator(fHDDMistream);
    }
    else if (fSourceType == SOURCE_TYPE_COBREMS_GEN) {
-G4cout << "GlueXPrimaryGeneratorAction constructor: cloning CobremsGeneration" << G4endl;
       clone_photon_beam_generator();
    }
    else if (fSourceType == SOURCE_TYPE_PARTICLE_GUN) {
-G4cout << "GlueXPrimaryGeneratorAction constructor: cloning CobremsGeneration" << G4endl;
       fParticleGun->SetParticleDefinition(fGunParticle.partDef);
    }
    fBeamvertex = src.fBeamvertex;
