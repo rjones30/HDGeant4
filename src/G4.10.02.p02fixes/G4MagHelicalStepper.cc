@@ -188,15 +188,10 @@ G4MagHelicalStepper::AdvanceHelix( const G4double  yIn[],
   G4ChordFinder *cf = G4TransportationManager::GetTransportationManager()->
                                                GetPropagatorInField()->
                                                GetChordFinder();
-  G4double flast = cf->GetFractionLast();
-  G4double fnext = cf->GetFractionNextEstimate();
-  static G4double fnext_saved = 0.98;
-  if (GetAngCurve() > 2*M_PI && 2*GetRadHelix() > cf->GetDeltaChord()) {
-    cf->SetFractions_Last_Next(flast, 2*M_PI / GetAngCurve());
-  }
-  else if (fnext != fnext_saved) {
-    cf->SetFractions_Last_Next(flast, fnext_saved);
-  }
+  if (GetAngCurve() > M_PI && 2*GetRadHelix() > cf->GetDeltaChord())
+    cf->SetFractions_Last_Next(-1, M_PI / GetAngCurve());
+  else
+    cf->SetFractions_Last_Next(-1, -1);
 }
 
 //

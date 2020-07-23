@@ -165,6 +165,7 @@ G4FieldManagerStore::ClearAllChordFindersState()
       G4MagInt_Driver *driver =
         dynamic_cast<G4MagInt_Driver*>(pChordFnd->GetIntegrationDriver());
       if (driver) {
+         driver->SetFractions_Last_Next(-1, -1);
          G4MagHelicalStepper *stepper =
            dynamic_cast<G4MagHelicalStepper*>(driver->GetStepper());
          if (stepper)

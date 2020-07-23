@@ -40,7 +40,7 @@
 #include "G4ChordFinder.hh"
 #include "G4PropagatorInField.hh"
 #include "G4TransportationManager.hh"
-
+#include "G4MagIntegratorDriver.hh"
 
 // Constant for determining unit conversion when using normal as integrand.
 //
@@ -187,21 +187,14 @@ G4MagHelicalStepper::AdvanceHelix( const G4double yIn[],
   G4ChordFinder *cf = G4TransportationManager::GetTransportationManager()->
                                                GetPropagatorInField()->
                                                GetChordFinder();
-  //G4double flast = cf->GetFractionLast();
-  //G4double fnext = cf->GetFractionNextEstimate();
-  //static G4double fnext_saved = 0.98;
-  if (GetAngCurve() > 2*M_PI && 2*GetRadHelix() > cf->GetDeltaChord()) {
-    G4cerr << "Warning in G4MagHelicalStepper::AdvanceHelix - "
-           << "low-energy particle spiralling in strong magnetic field "
-           << G4endl;
-    G4cerr << "needs to limit the step, but hooks to do so were removed "
-           << "from G4ChordFinder in v4.10.06 -- complain to R.T. Jones!"
-           << G4endl;
-    //cf->SetFractions_Last_Next(flast, 2*M_PI / GetAngCurve());
+  if (GetAngCurve() > M_PI && 2*GetRadHelix() > cf->GetDeltaChord()) {
+    G4MagInt_Driver *driver =
+        dynamic_cast<G4MagInt_Driver*>(cf->GetIntegrationDriver());
+    if (driver)
+      driver->SetFractions_Last_Next(-1, M_PI / GetAngCurve());
+    else
+      driver->SetFractions_Last_Next(-1, -1);
   }
-  //else if (fnext != fnext_saved) {
-  //  cf->SetFractions_Last_Next(flast, fnext_saved);
-  //}
 }
 
 // Use the midpoint method to get an error estimate and correction
