@@ -134,9 +134,6 @@ GlueXUserEventInformation::~GlueXUserEventInformation()
    }
    std::map<std::string, std::fstream*>::iterator it;
    for (it = fDlogfile.begin(); it != fDlogfile.end(); ++it) {
-      std::stringstream msg;
-      msg << "end of tracking for this event";
-      Dlog(msg.str(), false);
       delete it->second;
    }
 }
@@ -493,11 +490,6 @@ void GlueXUserEventInformation::SetRandomSeeds()
              << fEventSeeds[0] << ", " << fEventSeeds[1] << G4endl;
 #endif
    }
-   std::stringstream msg;
-   msg << "GlueXUserEventInformation::SetRandomSeeds with seeds "
-       << fEventSeeds[0] << ", " << fEventSeeds[1]
-       << " for this event";
-   Dlog(msg.str(), false);
 }
 
 int GlueXUserEventInformation::GetRunNo()
