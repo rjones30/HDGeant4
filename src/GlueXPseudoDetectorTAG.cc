@@ -39,9 +39,9 @@ G4Mutex GlueXPseudoDetectorTAG::fMutex = G4MUTEX_INITIALIZER;
 GlueXPseudoDetectorTAG::GlueXPseudoDetectorTAG(int run_number)
  : fRunNo(run_number)
 {
-   G4AutoLock barrier(&fMutex);
    if (run_number != 0)
       setRunNo(run_number);
+   G4AutoLock barrier(&fMutex);
    instanceCount++;
 }
 
