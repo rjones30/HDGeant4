@@ -490,11 +490,11 @@ GlueXPrimaryGeneratorAction &GlueXPrimaryGeneratorAction::operator=(const
    if (fSourceType == SOURCE_TYPE_HDDM) {
       fPrimaryGenerator = new GlueXPrimaryGenerator(fHDDMistream);
    }
-   else if (fSourceType == SOURCE_TYPE_COBREMS_GEN) {
-      clone_photon_beam_generator();
-   }
    else if (fSourceType == SOURCE_TYPE_PARTICLE_GUN) {
       fParticleGun->SetParticleDefinition(fGunParticle.partDef);
+   }
+   if (fPhotonBeamGenerator) {
+      clone_photon_beam_generator();
    }
    fBeamvertex = src.fBeamvertex;
    fBeamvertex_activated = src.fBeamvertex_activated;
@@ -882,6 +882,8 @@ void GlueXPrimaryGeneratorAction::GeneratePrimariesHDDM(G4Event* anEvent)
          }
          z = fTargetCenterZ + (G4UniformRand() - 0.5) * fTargetLength;
       }
+      assert (fPrimaryGenerator != 0);
+      assert (fPhotonBeamGenerator != 0);
       double ttag = fPhotonBeamGenerator->GenerateTriggerTime(anEvent);
       double trel = (z - fRFreferencePlaneZ) / beamVelocity;
       fPrimaryGenerator->SetParticlePosition(G4ThreeVector(x,y,z));
