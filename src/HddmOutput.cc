@@ -54,6 +54,7 @@ HddmOutput& HddmOutput::operator=(HddmOutput &src)
 
 void HddmOutput::setRunNo(int runno)
 {
+   G4AutoLock barrier(&fMutex);
    fRunNo = runno;
 }
 

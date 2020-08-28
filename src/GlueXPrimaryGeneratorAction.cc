@@ -79,6 +79,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    fParticleGun = new GlueXParticleGun();
 
    if (fSourceType == SOURCE_TYPE_HDDM) {
+      clone_photon_beam_generator();
       fPrimaryGenerator = new GlueXPrimaryGenerator(fHDDMistream);
       return;
    }
@@ -493,7 +494,7 @@ GlueXPrimaryGeneratorAction &GlueXPrimaryGeneratorAction::operator=(const
    else if (fSourceType == SOURCE_TYPE_PARTICLE_GUN) {
       fParticleGun->SetParticleDefinition(fGunParticle.partDef);
    }
-   if (fPhotonBeamGenerator) {
+   if (src.fPhotonBeamGenerator) {
       clone_photon_beam_generator();
    }
    fBeamvertex = src.fBeamvertex;

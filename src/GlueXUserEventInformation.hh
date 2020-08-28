@@ -45,7 +45,7 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    void AddMCtrajectoryPoint(const G4Step &step, int save_option);
 
    int GetRunNo();
-   long int GetEventSequenceNo();
+   long int GetEventNo();
    double GetBeamPhotonEnergy();
    int GetGlueXTrackID(int g4ID);
    int GetGlueXTrackID(const G4Track *track);
@@ -93,6 +93,7 @@ class GlueXUserEventInformation: public G4VUserEventInformation
    std::map<std::string, std::fstream*> fDlogfile;
    std::map<std::string, int> fDlogreading;
    long int fEventSeeds[2];
+   long int fEventSequenceNo;
 
    static G4Mutex fMutex;
 };
