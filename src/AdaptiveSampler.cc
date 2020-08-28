@@ -134,6 +134,7 @@
 //    of AdaptiveSampler.
 
 #include <assert.h>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -834,18 +835,20 @@ int AdaptiveSampler::Cell::serialize(std::ofstream &ofs, bool optimized)
    if (nhit != 0)
       ofs << "nhit=" << nhit << std::endl;
    if (sum_wI != 0)
-      ofs << "sum_wI=" << sum_wI << std::endl;
+      ofs << "sum_wI=" << (std::isfinite(sum_wI)? sum_wI : 0) << std::endl;
    if (sum_wI2 != 0)
-      ofs << "sum_wI2=" << sum_wI2 << std::endl;
+      ofs << "sum_wI2=" << (std::isfinite(sum_wI2)? sum_wI2 : 0) << std::endl;
    if (sum_wI4 != 0)
-      ofs << "sum_wI4=" << sum_wI4 << std::endl;
+      ofs << "sum_wI4=" << (std::isfinite(sum_wI4)? sum_wI4 : 0) << std::endl;
    for (int i=0; i < 3*ndim; ++i) {
       if (sum_wI2d[i] != 0)
-         ofs << "sum_wI2d[" << i << "]=" << sum_wI2d[i] << std::endl;
+         ofs << "sum_wI2d[" << i << "]=" 
+             << (std::isfinite(sum_wI2d[i])? sum_wI2d[i] : 0) << std::endl;
    }
    for (int i=0; i < 3*ndim; ++i) {
       if (sum_wI4d[i] != 0)
-         ofs << "sum_wI4d[" << i << "]=" << sum_wI4d[i] << std::endl;
+         ofs << "sum_wI4d[" << i << "]=" 
+             << (std::isfinite(sum_wI4d[i])? sum_wI4d[i] : 0) << std::endl;
    }
    if (optimized)
       ofs << "subset=" << std::setprecision(20) << opt_subset << std::endl;
