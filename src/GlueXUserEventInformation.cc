@@ -93,13 +93,18 @@ long int *GlueXUserEventInformation::fStartingSeeds = 0;
 G4Mutex GlueXUserEventInformation::fMutex = G4MUTEX_INITIALIZER;
 
 GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
- : fKeepEvent(true),
+ : fOutputRecord(0),
+   fKeepEvent(true),
    fNprimaries(0),
    fNvertices(0)
 {
+   fEventSequenceNo = HddmOutput::incrementEventNo();
    if (hddmevent == 0) {
+      int runNo = GetRunNo();
       fOutputRecord = new hddm_s::HDDM();
-      fOutputRecord->addPhysicsEvents();
+      hddm_s::PhysicsEventList pev = fOutputRecord->addPhysicsEvents();
+      pev(0).setEventNo(fEventSequenceNo);
+      pev(0).setRunNo(runNo);
    }
    else {
       fOutputRecord = hddmevent;
@@ -120,12 +125,6 @@ GlueXUserEventInformation::~GlueXUserEventInformation()
       }
       if (fKeepEvent) {
          hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
-         int runno = HddmOutput::getRunNo();
-         if (runno > 0)
-            pev(0).setRunNo(runno);
-         if (pev(0).getEventNo() == 0) {
-            pev(0).setEventNo(HddmOutput::incrementEventNo());
-         }
          if (fWriteNoHitEvents || pev(0).getHitViews().size() > 0) {
             HddmOutput::WriteOutputHDDM(*fOutputRecord);
          }
@@ -452,7 +451,6 @@ void GlueXUserEventInformation::SetRandomSeeds()
 
    hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
    hddm_s::ReactionList rea = pev(0).getReactions();
-   long int eventNo = GetEventSequenceNo();
    if (rea.size() == 0) {
       rea = pev(0).addReactions();
    }
@@ -460,11 +458,9 @@ void GlueXUserEventInformation::SetRandomSeeds()
    if (rnd.size() > 0) {
       fEventSeeds[0] = rnd(0).getSeed1();
       fEventSeeds[1] = rnd(0).getSeed2();
-      if (pev(0).getEventNo() > 0)
-         eventNo = pev(0).getEventNo();
       G4Random::setTheSeeds(fEventSeeds);
 #if VERBOSE_RANDOMS
-      G4cout << "New event " << eventNo << " with starting seeds " 
+      G4cout << "New event " << pev(0).getEventNo() << " with starting seeds " 
              << fEventSeeds[0] << ", " << fEventSeeds[1] << G4endl;
 #endif
    }
@@ -486,7 +482,7 @@ void GlueXUserEventInformation::SetRandomSeeds()
       rnd(0).setSeed3(709975946 + pev(0).getEventNo());
       rnd(0).setSeed4(912931182 + pev(0).getEventNo());
 #if VERBOSE_RANDOMS
-      G4cout << "New event " << eventNo << " with starting seeds " 
+      G4cout << "New event " << pev(0).getEventNo() << " with starting seeds " 
              << fEventSeeds[0] << ", " << fEventSeeds[1] << G4endl;
 #endif
    }
@@ -495,7 +491,8 @@ void GlueXUserEventInformation::SetRandomSeeds()
 int GlueXUserEventInformation::GetRunNo()
 {
    if (fOutputRecord && fOutputRecord->getPhysicsEvents().size() > 0) {
-      return fOutputRecord->getPhysicsEvent().getRunNo();
+      hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+      return pev(0).getRunNo();
    }
    G4RunManager *runmgr = G4RunManager::GetRunManager();
    if (runmgr != 0 && runmgr->GetCurrentRun() != 0) {
@@ -504,13 +501,13 @@ int GlueXUserEventInformation::GetRunNo()
    return 0;
 }
 
-long int GlueXUserEventInformation::GetEventSequenceNo()
+long int GlueXUserEventInformation::GetEventNo()
 {
-   G4RunManager *runmgr = G4RunManager::GetRunManager();
-   if (runmgr != 0 && runmgr->GetCurrentEvent() != 0) {
-      return runmgr->GetCurrentEvent()->GetEventID();
+   if (fOutputRecord && fOutputRecord->getPhysicsEvents().size() > 0) {
+      hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+      return pev(0).getEventNo();
    }
-   return 0;
+   return fEventSequenceNo;
 }
 
 double GlueXUserEventInformation::GetBeamPhotonEnergy()
