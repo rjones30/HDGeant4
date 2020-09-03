@@ -494,11 +494,7 @@ int GlueXUserEventInformation::GetRunNo()
       hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
       return pev(0).getRunNo();
    }
-   G4RunManager *runmgr = G4RunManager::GetRunManager();
-   if (runmgr != 0 && runmgr->GetCurrentRun() != 0) {
-      return runmgr->GetCurrentRun()->GetRunID();
-   }
-   return 0;
+   return HddmOutput::getRunNo();
 }
 
 long int GlueXUserEventInformation::GetEventNo()
