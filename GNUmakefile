@@ -3,8 +3,6 @@
 # GNUmakefile for examples module.  Gabriele Cosmo, 06/04/98.
 # --------------------------------------------------------------
 
-include python_version.mk
-
 name := hdgeant4
 G4TARGET := $(name)
 G4EXLIB := true
@@ -23,12 +21,14 @@ ifdef DIRACXX_HOME
     CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
 endif
 
+PYTHON_CONFIG = python-config
+
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
 CPPFLAGS += -I./src/G4debug
 CPPFLAGS += -I$(HALLD_RECON_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
-CPPFLAGS += $(shell python-config --includes)
+CPPFLAGS += $(shell $(PYTHON_CONFIG) --includes)
 CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
 CPPFLAGS += -DUSE_SSE2 -std=c++11
 #CPPFLAGS += -I/usr/include/Qt
@@ -83,17 +83,14 @@ DANALIBS += -L$(ETROOT)/lib -let -let_remote
 endif
 
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
-ifeq ($(PYTHON_GE_3), true)
-  BOOST_PYTHON_LIB = boost_python$(PYTHON_MAJOR_VERSION)$(PYTHON_MINOR_VERSION)
-else
-  BOOST_PYTHON_LIB = boost_python
-endif
+BOOST_PYTHON_LIB = boost_python
+PYTHON_LIB_OPTION = ""
 
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -l$(BOOST_PYTHON_LIB) -L$(shell python-config --prefix)/lib $(shell python-config --ldflags)
+INTYLIBS += -l$(BOOST_PYTHON_LIB) -L$(shell $(PYTHON_CONFIG) --prefix)/lib $(shell $(PYTHON_CONFIG) --ldflags) $(PYTHON_LIB_OPTION)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 INTYLIBS += -lgfortran
 INTYLIBS += -L/usr/lib64
