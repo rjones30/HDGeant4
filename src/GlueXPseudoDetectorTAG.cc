@@ -36,11 +36,11 @@ double GlueXPseudoDetectorTAG::TAGGER_TMAX_NS = +200.*ns;
 int GlueXPseudoDetectorTAG::instanceCount = 0;
 G4Mutex GlueXPseudoDetectorTAG::fMutex = G4MUTEX_INITIALIZER;
 
-GlueXPseudoDetectorTAG::GlueXPseudoDetectorTAG(int run_number)
- : fRunNo(run_number)
+GlueXPseudoDetectorTAG::GlueXPseudoDetectorTAG(int runNo)
+ : fRunNo(runNo)
 {
-   if (run_number != 0)
-      setRunNo(run_number);
+   if (runNo != 0)
+      setRunNo(runNo);
    G4AutoLock barrier(&fMutex);
    instanceCount++;
 }
@@ -63,7 +63,6 @@ inline void GlueXPseudoDetectorTAG::setRunNo(int runno)
 {
    fRunNo = runno;
    G4AutoLock barrier(&fMutex);
-   extern int run_number;
    extern jana::JApplication *japp;
    if (japp == 0) {
       G4cerr << "Error in GlueXPseudoDetectorTAG constructor - "
@@ -71,8 +70,7 @@ inline void GlueXPseudoDetectorTAG::setRunNo(int runno)
              << "cannot continue." << G4endl;
       exit(-1);
    }
-   run_number = runno;
-   jana::JCalibration *jcalib = japp->GetJCalibration(run_number);
+   jana::JCalibration *jcalib = japp->GetJCalibration(runno);
    std::map<string, float> beam_parms;
    jcalib->Get("PHOTON_BEAM/endpoint_energy", beam_parms);
    double endpoint_energy = beam_parms.at("PHOTON_BEAM_ENDPOINT_ENERGY")*GeV;

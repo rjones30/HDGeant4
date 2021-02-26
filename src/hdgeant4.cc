@@ -106,7 +106,7 @@ int main(int argc,char** argv)
       }
       else if (opts.Find("INFILE", infile_opts) ||
                opts.Find("INFI", infile_opts))
-     {
+      {
          std::ifstream fin(infile_opts[1].c_str());
          if (!fin.is_open()) {
             G4cerr << "Input error: Unable to open HDDM input file: "
@@ -117,9 +117,11 @@ int main(int argc,char** argv)
          hddm_s::HDDM record;
          while (record.getPhysicsEvents().size() == 0) 
             ifs >> record;
-         run_number = record.getPhysicsEvents()(0).getRunNo();
+         HddmOutput::setRunNo(record.getPhysicsEvents()(0).getRunNo());
       }
    }
+   if (run_number > 0)
+      HddmOutput::setRunNo(run_number);
 
    G4Timer runtimer;
    G4Timer simtimer;
@@ -129,7 +131,6 @@ int main(int argc,char** argv)
    std::map<int, std::string> outfile_opts;
    if (opts.Find("OUTFILE", outfile_opts)) {
       hddmOut = new HddmOutput(outfile_opts[1]);
-      hddmOut->setRunNo(run_number);
    }
 
    G4Random::setTheEngine(new CLHEP::RanecuEngine);

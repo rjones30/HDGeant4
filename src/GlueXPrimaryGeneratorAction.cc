@@ -9,6 +9,7 @@
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserOptions.hh"
 #include "G4OpticalPhoton.hh"
+#include "HddmOutput.hh"
 
 #include "G4Event.hh"
 #include "G4ParticleTable.hh"
@@ -108,7 +109,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 
    if (user_opts->Find("DIRCLUT", dirclutpars)) {
       
-      extern int run_number;
+      int runno = HddmOutput::getRunNo();
       extern jana::JApplication *japp;
       if (japp == 0) {
          G4cerr << "Error in GlueXPrimaryGeneratorAction constructor - "
@@ -116,7 +117,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
            << "cannot continue." << G4endl;
          exit(-1);
       }
-      jana::JGeometry *jgeom = japp->GetJGeometry(run_number);
+      jana::JGeometry *jgeom = japp->GetJGeometry(runno);
       if (japp == 0) {   // dummy
          jgeom = 0;
          G4cout << "DIRC: ALL parameters loaded from ccdb" << G4endl;
@@ -189,7 +190,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
    }
 
    if (user_opts->Find("DIRCLED", dircledpars)) {
-      extern int run_number;
+      int runno = HddmOutput::getRunNo();
       extern jana::JApplication *japp;
       if (japp == 0) {
          G4cerr << "Error in GlueXPrimaryGeneratorAction constructor - "
@@ -197,7 +198,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
            << "cannot continue." << G4endl;
          exit(-1);
       }
-      jana::JGeometry *jgeom = japp->GetJGeometry(run_number);
+      jana::JGeometry *jgeom = japp->GetJGeometry(runno);
       if (japp == 0) {   // dummy
          jgeom = 0;
          G4cout << "DIRC: ALL parameters loaded from ccdb" << G4endl;
@@ -1285,7 +1286,7 @@ void GlueXPrimaryGeneratorAction::configure_beam_vertex()
    }
    const char *spec = vertex_spec[1].c_str();
    if (sscanf(spec, "beam_spot(ccdb) * %lf", &fBeamvertex.length)) {
-      extern int run_number;
+      int runno = HddmOutput::getRunNo();
       extern jana::JApplication *japp;
       if (japp == 0) {
          G4cerr << "Error in GlueXPrimaryGeneratorAction::configure_beam_vertex"
@@ -1293,7 +1294,7 @@ void GlueXPrimaryGeneratorAction::configure_beam_vertex()
                 << "cannot continue." << G4endl;
          exit(-1);
       }
-      jana::JCalibration *jcalib = japp->GetJCalibration(run_number);
+      jana::JCalibration *jcalib = japp->GetJCalibration(runno);
       std::map<string, float> beam_spot_params;
       jcalib->Get("/PHOTON_BEAM/beam_spot", beam_spot_params);
       fBeamvertex.x = beam_spot_params.at("x") * cm;
