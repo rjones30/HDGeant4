@@ -19,7 +19,7 @@
 class GlueXPseudoDetectorTAG
 {
  public:
-   GlueXPseudoDetectorTAG(int run_number);
+   GlueXPseudoDetectorTAG(int runno);
    ~GlueXPseudoDetectorTAG();
 
    void Draw() const;

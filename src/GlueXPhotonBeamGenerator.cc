@@ -594,8 +594,8 @@ double GlueXPhotonBeamGenerator::GenerateTriggerTime(const G4Event *event)
    // of the L1 trigger signal. The spread in the L1 relative to the
    // interacting bunch time is parameterized as a Gaussian.
 
-   extern int run_number;
    static int last_run_number = 0;
+   int run_number = HddmOutput::getRunNo();
    if (run_number != last_run_number) {
       fBeamBucketPeriod = getBeamBucketPeriod(run_number);
       double refZ = getRFreferencePlaneZ(run_number);

@@ -55,7 +55,11 @@ HddmOutput& HddmOutput::operator=(HddmOutput &src)
 void HddmOutput::setRunNo(int runno)
 {
    G4AutoLock barrier(&fMutex);
-   fRunNo = runno;
+   extern int run_number;
+   if (run_number > 0)
+      fRunNo = run_number;
+   else
+      fRunNo = runno;
 }
 
 void HddmOutput::WriteOutputHDDM(hddm_s::HDDM &record)

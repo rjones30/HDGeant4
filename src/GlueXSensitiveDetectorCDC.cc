@@ -10,6 +10,7 @@
 #include "GlueXUserEventInformation.hh"
 #include "GlueXUserTrackInformation.hh"
 #include "GlueXUserOptions.hh"
+#include "HddmOutput.hh"
 
 #include <CLHEP/Random/RandPoisson.h>
 #include <Randomize.hh>
@@ -86,7 +87,7 @@ GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(const G4String& name)
 
    G4AutoLock barrier(&fMutex);
    if (instanceCount++ == 0) {
-      extern int run_number;
+      int runno = HddmOutput::getRunNo();
       extern jana::JApplication *japp;
       if (japp == 0) {
          G4cerr << "Error in GlueXSensitiveDetector constructor - "
@@ -94,7 +95,7 @@ GlueXSensitiveDetectorCDC::GlueXSensitiveDetectorCDC(const G4String& name)
                 << "cannot continue." << G4endl;
          exit(-1);
       }
-      jana::JCalibration *jcalib = japp->GetJCalibration(run_number);
+      jana::JCalibration *jcalib = japp->GetJCalibration(runno);
       std::map<string, float> cdc_parms;
       jcalib->Get("CDC/cdc_parms", cdc_parms);
       DRIFT_SPEED = cdc_parms.at("CDC_DRIFT_SPEED")*cm/ns;

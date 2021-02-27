@@ -3,8 +3,6 @@
 # GNUmakefile for examples module.  Gabriele Cosmo, 06/04/98.
 # --------------------------------------------------------------
 
-include python_version.mk
-
 name := hdgeant4
 G4TARGET := $(name)
 G4EXLIB := true
@@ -23,12 +21,14 @@ ifdef DIRACXX_HOME
     CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
 endif
 
+PYTHON_CONFIG = python-config
+
 CPPFLAGS += -I$(HDDS_HOME) -I./src -I./src/G4fixes
 CPPFLAGS += -I./src/G4debug
 CPPFLAGS += -I$(HALLD_RECON_HOME)/$(BMS_OSNAME)/include
 CPPFLAGS += -I$(JANA_HOME)/include
 CPPFLAGS += -I$(shell root-config --incdir)
-CPPFLAGS += $(shell python-config --includes)
+CPPFLAGS += $(shell $(PYTHON_CONFIG) --includes)
 CPPFLAGS += -Wno-unused-parameter -Wno-unused-but-set-variable
 CPPFLAGS += -DUSE_SSE2 -std=c++11
 #CPPFLAGS += -I/usr/include/Qt
@@ -40,8 +40,8 @@ CPPFLAGS += -DREDUCE_OPTIMIZATION_OF_CDC=1
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
-CPPFLAGS += -DG4MULTITHREADED
-CPPFLAGS += -DVERBOSE_RANDOMS=1
+#CPPFLAGS += -DG4MULTITHREADED
+#CPPFLAGS += -DVERBOSE_RANDOMS=1
 #CPPFLAGS += -DFORCE_PARTICLE_TYPE_CHARGED_GEANTINO
 #CPPFLAGS += -DBP_DEBUG
 #CPPFLAGS += -DMOD_SPONCE
@@ -83,17 +83,24 @@ DANALIBS += -L$(ETROOT)/lib -let -let_remote
 endif
 
 G4shared_libs := $(wildcard $(G4ROOT)/lib64/*.so)
+#BOOST_PYTHON_LIB = boost_python
+#PYTHON_LIB_OPTION = ""
 ifeq ($(PYTHON_GE_3), true)
   BOOST_PYTHON_LIB = boost_python$(PYTHON_MAJOR_VERSION)$(PYTHON_MINOR_VERSION)
 else
   BOOST_PYTHON_LIB = boost_python
 endif
 
+ifdef HDF5ROOT
+CPPFLAGS += -DHDF5_SUPPORT -I ${HDF5ROOT}/include
+DANALIBS +=	-L $(HDF5ROOT)/lib -lhdf5_cpp -lhdf5_hl -lhdf5 -lsz -lz -lbz2 -ldl 
+endif
+
 INTYLIBS += -Wl,--whole-archive $(DANALIBS) -Wl,--no-whole-archive
 INTYLIBS += -fPIC -I$(HDDS_HOME) -I$(XERCESCROOT)/include
 INTYLIBS += -L${XERCESCROOT}/lib -lxerces-c
 INTYLIBS += -L$(G4TMPDIR) -lhdds
-INTYLIBS += -l$(BOOST_PYTHON_LIB) -L$(shell python-config --prefix)/lib $(shell python-config --ldflags)
+INTYLIBS += -l$(BOOST_PYTHON_LIB) -L$(shell $(PYTHON_CONFIG) --prefix)/lib $(shell $(PYTHON_CONFIG) --ldflags) $(PYTHON_LIB_OPTION)
 INTYLIBS += -L$(G4ROOT)/lib64 $(patsubst $(G4ROOT)/lib64/lib%.so, -l%, $(G4shared_libs))
 INTYLIBS += -lgfortran
 INTYLIBS += -L/usr/lib64
@@ -110,7 +117,7 @@ cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
 g4fixes: $(G4TMPDIR)/libG4fixes.so
 
-CXXFLAGS = -std=c++11 -g -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -std=c++11 -g -O0 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 HDDSDIR := $(G4TMPDIR)/hdds
 G4FIXESDIR := $(G4TMPDIR)/G4fixes
@@ -211,3 +218,6 @@ show_env:
 	@echo PYTHON_MINOR_VERSION = $(PYTHON_MINOR_VERSION)
 	@echo PYTHON_SUBMINOR_VERSION = $(PYTHON_SUBMINOR_VERSION)
 	@echo PYTHON_GE_3 = $(PYTHON_GE_3)
+
+diff:
+	diff -q -r ../jlab . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
