@@ -40,7 +40,7 @@ CPPFLAGS += -DREDUCE_OPTIMIZATION_OF_CDC=1
 #CPPFLAGS += -DG4UI_USE_EXECUTIVE
 CPPFLAGS += -DG4VIS_BUILD_OPENGL_DRIVER
 CPPFLAGS += -DG4VIS_BUILD_OPENGLX_DRIVER
-CPPFLAGS += -DG4MULTITHREADED
+#CPPFLAGS += -DG4MULTITHREADED
 #CPPFLAGS += -DVERBOSE_RANDOMS=1
 #CPPFLAGS += -DFORCE_PARTICLE_TYPE_CHARGED_GEANTINO
 #CPPFLAGS += -DBP_DEBUG
@@ -117,7 +117,7 @@ cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
 g4fixes: $(G4TMPDIR)/libG4fixes.so
 
-CXXFLAGS = -std=c++11 -g -O4 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
+CXXFLAGS = -std=c++11 -g -O0 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 HDDSDIR := $(G4TMPDIR)/hdds
 G4FIXESDIR := $(G4TMPDIR)/G4fixes
@@ -218,3 +218,6 @@ show_env:
 	@echo PYTHON_MINOR_VERSION = $(PYTHON_MINOR_VERSION)
 	@echo PYTHON_SUBMINOR_VERSION = $(PYTHON_SUBMINOR_VERSION)
 	@echo PYTHON_GE_3 = $(PYTHON_GE_3)
+
+diff:
+	diff -q -r ../jlab . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
