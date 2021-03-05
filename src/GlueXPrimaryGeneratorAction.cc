@@ -327,7 +327,7 @@ GlueXPrimaryGeneratorAction::GlueXPrimaryGeneratorAction()
 
    else if (user_opts->Find("KINE", kinepars))
    {
-      if (kinepars[1] == 1000) {
+      if (kinepars[1] == 1000 || kinepars[1] == 148 || kinepars[1] == 48) {
          fGunParticle.geantType = 0;
          fGunParticle.pdgType = 999999;
          fGunParticle.partDef = fParticleTable->FindParticle("geantino");
