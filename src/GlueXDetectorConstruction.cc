@@ -148,7 +148,6 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    else {
       G4cerr << APP_NAME << " - no hdds geometry file specified!"
              << " Cannot continue" << G4endl;
-             << G4endl;
       exit(9);
    }
    if (document == 0)
