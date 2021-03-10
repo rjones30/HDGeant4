@@ -100,7 +100,7 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
       XString message(toCatch.getMessage());
       G4cerr << APP_NAME << " - error during xercesc initialization!"
              << G4endl << S(message) << G4endl;
-      return;
+      exit(1);
    }
 
    DOMDocument* document;
@@ -147,14 +147,15 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    }
    else {
       G4cerr << APP_NAME << " - no hdds geometry file specified!"
+             << " Cannot continue" << G4endl;
              << G4endl;
-      return;
+      exit(9);
    }
    if (document == 0)
    {
       G4cerr << APP_NAME << " - error parsing HDDS document, "
              << "cannot continue" << G4endl;
-      return;
+      exit(9);
    }
 
    DOMNode* docEl;
@@ -163,15 +164,16 @@ GlueXDetectorConstruction::GlueXDetectorConstruction(G4String hddsFile)
    }
    catch (DOMException& e) {
       G4cerr << APP_NAME << " - Woops " << e.msg << G4endl;
-      return;
+      exit(9);
    }
 
    DOMElement* rootEl = document->getElementById(X("everything"));
    if (rootEl == 0)
    {
       G4cerr << APP_NAME << " - error scanning HDDS document, " << G4endl
-             << "  no element named \"everything\" found" << G4endl;
-      return;
+             << "  no element named \"everything\" found, "
+             << "cannot continue" << G4endl;
+      exit(9);
    }
 
    try {

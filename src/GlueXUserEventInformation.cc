@@ -281,6 +281,7 @@ void GlueXUserEventInformation::AddSecondaryVertex(
                  << "track found without any UserTrackInformation attached "
                  << "in secondaries list, cannot continue, aborting!"
                  << G4endl;
+          exit(1);
        }
        int gluexID = trackinfo->GetGlueXTrackID();
        int pdgtype = secondaries[ip]->GetDefinition()->GetPDGEncoding();
