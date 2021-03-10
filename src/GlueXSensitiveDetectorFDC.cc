@@ -318,7 +318,8 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
    // in this model, and should not be considered to be a bug.
 
    G4int rkey = 1 << 24; // reserved key for this thread
-   GlueXHitsMapFDCpoint::iterator saved_segment = fPointsMap->GetMap()->find(rkey);
+   std::map<int,GlueXHitFDCpoint*>::iterator saved_segment =
+                                    fPointsMap->GetMap()->find(rkey);
    G4String invol = step->GetPostStepPoint()->GetTouchable()
                                             ->GetVolume()->GetName();
    if (track->GetTrackStatus() == fAlive &&
@@ -351,7 +352,7 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
          return ProcessHits(step, ROhist);
       }
    }
-   else if (saved_segment != fPointsMap->end()) {
+   else if (saved_segment != fPointsMap->GetMap()->end()) {
       if (saved_segment->second->track_ == trackID) {
          xin.setX(saved_segment->second->x_cm);
          xin.setY(saved_segment->second->y_cm);
