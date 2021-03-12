@@ -216,27 +216,26 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
          }
       }
       if (merge_hit) {
-	// Use the time from the earlier hit but add the charge
-	hiter->dE_keV += dEsum/keV;
-	hiter->dx_cm += dx.mag()/cm;
-	if (hiter->t_ns*ns > t) {
-	  hiter->t_ns = t/ns;
-	}
+         // Use the time from the earlier hit but add the charge
+         hiter->dE_keV += dEsum/keV;
+         hiter->dx_cm += dx.mag()/cm;
+         if (hiter->t_ns*ns > t) {
+            hiter->t_ns = t/ns;
+         }
       }
-      else if ((int)counter->hits.size() < MAX_HITS)	{
-	// create new hit 
-	hiter = counter->hits.insert(hiter, GlueXHitFMWPCwire::hitinfo_t());
-	hiter->dE_keV = dEsum/keV;
-	hiter->dx_cm = dx.mag()/cm;
-	hiter->t_ns = t/ns;
+      else if ((int)counter->hits.size() < MAX_HITS) {
+         // create new hit 
+         hiter = counter->hits.insert(hiter, GlueXHitFMWPCwire::hitinfo_t());
+         hiter->dE_keV = dEsum/keV;
+         hiter->dx_cm = dx.mag()/cm;
+         hiter->t_ns = t/ns;
       }
       else {
-	G4cerr << "GlueXSensitiveDetectorFMWPC::ProcessHits error: "
-	       << "max hit count " << MAX_HITS
-	       << " exceeded, truncating!"
-	       << G4endl;
+         G4cerr << "GlueXSensitiveDetectorFMWPC::ProcessHits error: "
+                << "max hit count " << MAX_HITS
+                << " exceeded, truncating!"
+                << G4endl;
       }
-   
    }
    return true;
 }
