@@ -535,7 +535,7 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
             }
          }
          if (merge_hits) {
-            hiter->dE_keV += dEsum/keV;
+            hiter->dE_keV += dE/keV;
             hiter->t1_ns = tout/ns;
             hiter->x1_g = xout;
             hiter->x1_l = x1;
@@ -543,7 +543,7 @@ G4bool GlueXSensitiveDetectorFDC::ProcessHits(G4Step* step,
          else if ((int)anode->hits.size() < MAX_HITS) {
             // create new hit
             hiter = anode->hits.insert(hiter, GlueXHitFDCwire::hitinfo_t());
-            hiter->dE_keV = dEsum/keV;
+            hiter->dE_keV = dE/keV;
             hiter->itrack_ = itrack;
             hiter->ptype_G3 = g3type;
             hiter->t0_ns = tin/ns;
@@ -654,7 +654,7 @@ void GlueXSensitiveDetectorFDC::EndOfEvent(G4HCofThisEvent*)
     
          double xwire = U_OF_WIRE_ONE + (wire - 1) * WIRE_SPACING;
          double dE = splits[0].dE_keV*keV;
-         if (dE > THRESH_KEV*keV*0) {
+         if (dE > THRESH_KEV*keV) {
             // Average number of primary ion pairs
             double n_p_mean = dE / W_EFF_PER_ION / (1 + N_SECOND_PER_PRIMARY);
             // number of primary ion pairs
