@@ -363,7 +363,7 @@ void GlueXUserEventInformation::AddMCtrajectoryPoint(const G4Step &step,
       trajpt(0).setStep(0);
       trajpt(0).setDE(0);
       trajpt(0).setE(xin->GetKineticEnergy()/GeV);
-      trajpt(0).setMech(0);
+      trajpt(0).setMech(-track->GetParentID());
       trajpt(0).setPart(g3type);
       trajpt(0).setPrimary_track(abs(itrack));
       trajpt(0).setPx(mom[0]/GeV);
