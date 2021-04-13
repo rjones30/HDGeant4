@@ -184,13 +184,19 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
       int wire = 0;
       if (layer % 2 != 0) {
          // Vertical wires
-         wire = floor(x[0] + 73.0);
+         wire = floor(x[0]/cm + 73.0);
       }
       else {
          // Horizontal wires
-         wire = floor(x[1] + 73.0);
+         wire = floor(x[1]/cm + 73.0);
+      }
+      if (layer == 6) {
+         // Vertical wires
+         wire = floor(x[0]/cm + 73.0);
       }
       
+      //cout<<"MWPC: layer/wire = "<<layer<<" / "<<wire<<endl;
+
       if (wire < 1 || wire > 144)
          return false;
       
