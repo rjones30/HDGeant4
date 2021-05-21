@@ -31,10 +31,10 @@ double GlueXSensitiveDetectorFMWPC::TWO_HIT_TIME_RESOL = 400*ns;
 double GlueXSensitiveDetectorFMWPC::THRESH_KEV = 0.;
 
 // Coordinate of wire 0, transverse to wire direction
-double GlueXSensitiveDetectorFMWPC::WIRE_OFFSET = -73*cm;
+double GlueXSensitiveDetectorFMWPC::WIRE_OFFSET = -(73.000*1.016)*cm;
 
 // Minimum photoelectron count for a hit
-double GlueXSensitiveDetectorFMWPC::WIRE_PITCH = 1.0*cm;
+double GlueXSensitiveDetectorFMWPC::WIRE_PITCH = 1.016*cm;
 
 int GlueXSensitiveDetectorFMWPC::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorFMWPC::fMutex = G4MUTEX_INITIALIZER;
@@ -190,15 +190,15 @@ G4bool GlueXSensitiveDetectorFMWPC::ProcessHits(G4Step* step,
       int wire = 0;
       if (layer % 2 != 0) {
          // Vertical wires
-         wire = floor(x[0] - WIRE_OFFSET)/WIRE_PITCH;
+	wire = floor((x[0] - WIRE_OFFSET)/WIRE_PITCH);
       }
       else {
          // Horizontal wires
-         wire = floor(x[1] - WIRE_OFFSET)/WIRE_PITCH;
+	wire = floor((x[1] - WIRE_OFFSET)/WIRE_PITCH);
       }
       if (layer == 6) {
          // Vertical wires
-         wire = floor(x[0] - WIRE_OFFSET)/WIRE_PITCH;
+	wire = floor((x[0] - WIRE_OFFSET)/WIRE_PITCH);
       }
       
       //cout<<"MWPC: layer/wire = "<<layer<<" / "<<wire<<endl;
