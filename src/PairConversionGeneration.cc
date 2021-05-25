@@ -55,9 +55,21 @@ const TThreeVectorReal negYhat(0,-1,0);
 const TThreeVectorReal posZhat(0,0,1);
 const TThreeVectorReal negZhat(0,0,-1);
 
-PairConversionGeneration::PairConversionGeneration()
- : fConverterZ(4)
-{}
+PairConversionGeneration::PairConversionGeneration(std::vector<double> Z,
+                                                   std::vector<double> A,
+                                                   std::vector<double> w)
+{
+   if (Z.size() == 1) {
+       fConverterZ = Z[0];
+   }
+   else {
+      std::cerr << "PairConversionGeneration constructor error: "
+                << "converter material is a compound or mixture, " << std::endl
+                << "only pure elements are supported by the "
+                << "present algorithm, cannot continue." << std::endl;
+      exit(13);
+   }
+}
 
 PairConversionGeneration::~PairConversionGeneration()
 {}
@@ -68,32 +80,31 @@ LDouble_t PairConversionGeneration::FFatomic(LDouble_t qRecoil)
    // normalized to unity at zero momentum transfer qRecoil (GeV/c).
    // Lengths are in Angstroms in this function.
 
-#if H_DIPOLE_FORM_FACTOR
-
-   LDouble_t a0Bohr = 0.529177 / 1.97327e-6;
-   LDouble_t ff = 1 / pow(1 + pow(a0Bohr * qRecoil, 2), 2);
-
-#else
-
-   // parameterization for 4Be given by online database at
-   // http://lampx.tugraz.at/~hadley/ss1/crystaldiffraction
-   //                    /atomicformfactors/formfactors.php
-
-   int Z=4;
-
-   LDouble_t acoeff[] = {1.5919, 1.1278, 0.5391, 0.7029};
-   LDouble_t bcoeff[] = {43.6427, 1.8623, 103.483, 0.5420};
-   LDouble_t ccoeff[] = {0.0385};
-
-   LDouble_t q_invA = qRecoil / 1.97327e-6;
-   LDouble_t ff = ccoeff[0];
-   for (int i=0; i < 4; ++i) {
-      ff += acoeff[i] * exp(-bcoeff[i] * pow(q_invA / (4 * M_PI), 2));
+   LDouble_t ff(0);
+   if (fConverterZ == 1) {
+      LDouble_t a0Bohr = 0.529177 / 1.97327e-6;
+      ff = 1 / pow(1 + pow(a0Bohr * qRecoil, 2), 2);
    }
-   ff /= Z;
-
-#endif
-
+   else if (fConverterZ == 4) {
+      // parameterization for 4Be given by online database at
+      // http://lampx.tugraz.at/~hadley/ss1/crystaldiffraction
+      //                    /atomicformfactors/formfactors.php
+      LDouble_t acoeff[] = {1.5919, 1.1278, 0.5391, 0.7029};
+      LDouble_t bcoeff[] = {43.6427, 1.8623, 103.483, 0.5420};
+      LDouble_t ccoeff[] = {0.0385};
+      LDouble_t q_invA = qRecoil / 1.97327e-6;
+      LDouble_t ff = ccoeff[0];
+      for (int i=0; i < 4; ++i) {
+         ff += acoeff[i] * exp(-bcoeff[i] * pow(q_invA / (4 * M_PI), 2));
+      }
+      ff /= fConverterZ;
+   }
+   else {
+      std::cerr << "PairConversionGeneration::FFatomic error: "
+                << "no model currently implemented for element "
+                << "Z=" << fConverterZ << std::endl;
+      exit(13);
+   }
    return ff;
 }
 
