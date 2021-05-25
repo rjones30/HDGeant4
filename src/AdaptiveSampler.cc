@@ -715,9 +715,11 @@ int AdaptiveSampler::mergeState(const std::string filename)
 {
    std::ifstream fin(filename);
    if (!fin.is_open()) {
+#ifdef EXTRA_ADAPTIVE_SAMPLER_WARNINGS
       std::cerr << "AdaptiveSampler::mergeState error - "
                 << "unable to open " << filename << " for input."
                 << std::endl;
+#endif
       return 0;
    }
    std::map<std::string,double> keyval;

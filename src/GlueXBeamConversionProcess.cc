@@ -26,7 +26,7 @@
 // the LIH2 target will undergo Bethe-Heitler conversion to e+e-
 // pairs inside, otherwise the standard pair conversion
 // probabilities apply.
-#define FORCED_LIH2_BETHE_HEITLER 0
+#define FORCED_LIH2_PAIR_CONVERSION 0
 
 #include <G4SystemOfUnits.hh>
 #include "G4Positron.hh"
@@ -207,7 +207,7 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
       return 100*cm;
    }
    else if (track.GetTrackID() == 1 && pvol && pvol->GetName() == "LIH2" &&
-       (FORCED_LIH2_BETHE_HEITLER || 
+       (FORCED_LIH2_PAIR_CONVERSION || 
         fStopBeamAfterTarget ))
    {
       *condition = Forced;
@@ -264,13 +264,35 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       G4ThreeVector mom = step.GetPreStepPoint()->GetMomentum();
       G4ThreeVector pol = step.GetPreStepPoint()->GetPolarization();
       eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
-      GenerateBetheHeitlerProcess(step);
-
-      if (verboseLevel > 0) {
-         G4cout << "GlueXBeamConversionProcess: beam particle stopped"
-                << " in the LiH2 target, Bethe-Heitler conversion forced."
-                << G4endl;
+      double BetheHeitler_fraction = 0.5;
+      double maxTripletMass2 = 2 * 0.511*MeV *
+                               step.GetPreStepPoint()->GetKineticEnergy();
+      if (fBHpair_mass_min*GeV > sqrt(maxTripletMass2))
+         BetheHeitler_fraction = 1;
+      double weight_factor;
+      if (G4UniformRand() < BetheHeitler_fraction) {
+         if (verboseLevel > 0) {
+            G4cout << "GlueXBeamConversionProcess: beam particle stopped"
+                   << " in the LiH2 target, Bethe-Heitler conversion forced."
+                   << G4endl;
+         }
+         GenerateBetheHeitlerProcess(step);
+         weight_factor = 1 / BetheHeitler_fraction;
       }
+      else {
+         if (verboseLevel > 0) {
+            G4cout << "GlueXBeamConversionProcess: beam particle stopped"
+                   << " in the LiH2 target, triplet conversion forced."
+                   << G4endl;
+         }
+         GenerateTripletProcess(step);
+         weight_factor = 1 / (1. - BetheHeitler_fraction);
+      }
+      GlueXUserEventInformation *event_info;
+      const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+      event_info = (GlueXUserEventInformation*)event->GetUserInformation();
+      hddm_s::ReactionList rea = event_info->getOutputRecord()->getReactions();
+      rea(0).setWeight(rea(0).getWeight() * weight_factor);
    }
    else {
       GenerateBeamPairConversion(step);
@@ -293,9 +315,10 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
 
    // Compute 2D histogram containing rate as a function of u0,u1
    // where u0 is the (originally uniform [0,1]) random number used
-   // to generate Mpair and u1 generates qR. The algorithm succeeds
-   // because the mapping u0->Mpair and u1->qR used here is the
-   // same as is used in GenerateBeamPairConversion.
+   // to generate Mpair and u1 generates qR. The algorithm assumes
+   // that the mapping u0->Mpair and u1->qR used here is the same
+   // as the mmpaing used in the process generation methods, currently
+   // GenerateBeamPairConversion and GenerateTargetConversionProcess.
 
    if (fPaircohPDF == 0 || fTripletPDF == 0) {
       fPaircohPDF = new ImportanceSampler;
@@ -441,7 +464,13 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 #else
 
    if (fPairsGeneration == 0) {
-      fPairsGeneration = new PairConversionGeneration;
+      std::vector<double> Z;
+      std::vector<double> A;
+      std::vector<double> w;
+      Z.push_back(4);    // 4Be converter target
+      A.push_back(9.012);
+      w.push_back(1);
+      fPairsGeneration = new PairConversionGeneration(Z, A, w);
    }
 
 #if defined DO_TRIPLET_IMPORTANCE_SAMPLE || defined DO_PAIRCOH_IMPORTANCE_SAMPLE
@@ -831,8 +860,8 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    // the member variable fBHpair_mass_min. It should be called from your
    // G4SteppingAction::UserSteppingAction method to force pair conversion
    // in special simulations dedicated to the study of the Bethe-Heitler
-   // process. The incident gamma ray is stopped and the e+/e- pair vertex
-   // is added to the output event record.
+   // process. The incident gamma ray is stopped and the e+/e- pair vertex,
+   // plus the recoil proton, is added to the output event record.
 
 #ifndef USING_DIRACXX
 
@@ -1027,7 +1056,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       LDouble_t F2_spacelike = (1 / sqr(1 - t/0.71)) / (1 + tau) * 
                                (proton_magnetic_moment - 1);
       diffXS = TCrossSection::BetheHeitlerNucleon(gIn, nIn,
-                                                  eOut, pOut, nOut,
+                                                  pOut, eOut, nOut,
                                                   F1_spacelike,
                                                   F2_spacelike,
                                                   F1_timelike,
@@ -1100,6 +1129,293 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       hddm_s::ReactionList rea = event_info->getOutputRecord()->getReactions();
       if (rea.size() > 0) {
          rea(0).setType(221); // Bethe-Heitler process
+         rea(0).setWeight(weight * diffXS);
+      }
+   }
+
+#if USE_ADAPTIVE_SAMPLER
+   static int passes = 0;
+   ++passes; // thread safety not important here
+   int tens = 1000;
+   while (passes >= tens*10)
+      tens *= 10;
+   if (passes % tens == 0) {
+      std::cout << "AdaptiveSampler reports efficiency " 
+                << fAdaptiveSampler->getEfficiency()
+                << std::endl;
+      std::stringstream astatefile;
+      astatefile << "BHgen_thread_" << G4Threading::G4GetThreadId() << ".astate";
+      fAdaptiveSampler->saveState(astatefile.str());
+   }
+#endif
+
+#endif
+}
+
+void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
+{
+   // This method is completemary to GenerateBetheHeitlerProcess, for the case
+   // of pair production off a target electron rather than coherently from the
+   // atom as a whole. It generates the triplet process in the GlueX liquid
+   // hydrogen target with the full polarization-dependent QED differential
+   // cross section. A minimum invariant mass of the pair may be specified in
+   // the member variable fBHpair_mass_min. It should be called from your
+   // G4SteppingAction::UserSteppingAction method to force pair conversion
+   // in special simulations dedicated to the study of the triplet proces.
+   // The incident gamma ray is stopped and the e+/e- pair vertex plus the
+   // recoil electron is added to the output event record.
+
+#ifndef USING_DIRACXX
+
+   G4cerr << "GlueXBeamConversionProcess::GenerateTripletProcess error:"
+          << G4endl
+          << "  You have enabled triplet conversion in the LIH2 target,"
+          << G4endl
+          << "  but your have built HDGeant4 without support for the Dirac++"
+		  << G4endl
+          << "  library. Either rebuild with Dirac++ support or else turn off"
+		  << G4endl
+          << "  this process. Aborting this run..."
+		  << G4endl;
+   exit(1);
+
+#else
+
+#if USE_ADAPTIVE_SAMPLER
+   if (fAdaptiveSampler == 0) {
+      prepareAdaptiveSampler();
+   }
+#endif
+
+   TPhoton gIn;
+   TLepton eOut(mElectron);
+   TLepton pOut(mElectron);
+   TLepton eIn(mElectron);
+   TLepton eOut3(mElectron);
+   LDouble_t diffXS(0);
+   eOut.AllPol();
+   pOut.AllPol();
+   eOut3.AllPol();
+   const TThreeVectorReal zero3vector(0,0,0);
+   eIn.SetPol(TThreeVectorReal(zero3vector));
+   eIn.SetMom(TThreeVectorReal(zero3vector));
+   const G4Track *track = step.GetTrack();
+   LDouble_t kin = track->GetKineticEnergy()/GeV;
+
+   // If we are below pair production threshold, do nothing
+   if (kin < 4 * mElectron)
+      return;
+
+   G4ThreeVector mom(track->GetMomentum());
+   TThreeVectorReal mom0(mom[0]/GeV, mom[1]/GeV, mom[2]/GeV);
+   gIn.SetMom(mom0);
+   G4ThreeVector pol(track->GetPolarization());
+   TThreeVectorReal pol0(pol[0], pol[1], pol[2]);
+   gIn.SetPlanePolarization(pol0, pol0.Length());
+
+   // Define an angle and axis that rotates zhat into the direction
+   // of the incident gamma, so that the generated kinematics is
+   // defined with the incident gamma aligned with zhat, and then
+   // rotated at the end into the final spatial direction.
+   TThreeVectorReal rockaxis(mom0);
+   rockaxis.Cross(TThreeVectorReal(0,0,1));
+   double rockangle = asin(rockaxis.Length() / mom0.Length());
+   rockaxis /= rockaxis.Length();
+
+   // The beam photon energy is already generated by the cobrems
+   // generator. Supply a normalized beam energy as the leading
+   // elemnt of the u-vector in the call to sample(), and let it
+   // return the remaining 5 random numbers needed to fix the
+   // kinematics of the pair-production reaction.
+   double E0_GeV = GlueXPrimaryGeneratorAction::getBeamEndpointEnergy()/GeV;
+   double u[6];
+   u[0] = kin / E0_GeV;
+#if USE_ADAPTIVE_SAMPLER
+   double weight = fAdaptiveSampler->sample(u);
+#else
+   unif01(5, u+1);
+   double weight=1;
+#endif
+
+   // Generate uniform in E+, phi12, phiR
+   LDouble_t Epos = kin * u[1];
+   weight *= kin;
+   LDouble_t phi12 = 2*M_PI * u[2];
+   weight *= 2*M_PI;
+   LDouble_t phiR = 2*M_PI * u[3];
+   weight *= 2*M_PI;
+
+   // Generate Mpair as 1 / (M [M^2 + Mcut^2])
+   LDouble_t Mthresh = 2 * mElectron;
+   LDouble_t Mcut = 0.005;  // GeV
+   LDouble_t um0 = 1 + sqr(Mcut / Mthresh);
+   LDouble_t umax = 1;
+   if (fBHpair_mass_min > Mthresh)
+      umax = log(1 + sqr(Mcut / fBHpair_mass_min)) / log(um0);
+   LDouble_t um = pow(um0, u[4] * umax);
+   LDouble_t Mpair = Mcut / sqrt(um - 1 + 1e-99);
+   weight *= Mpair * (sqr(Mcut) + sqr(Mpair)) * log(um0) / (2 * sqr(Mcut));
+   weight *= umax;
+
+   // Generate qR^2 with weight 1 / [qR^2 sqrt(qRcut^2 + qR^2)]
+   LDouble_t qRmin = sqr(Mpair) /(2 * kin);
+   LDouble_t qRcut = 1e-3; // GeV
+   LDouble_t uq0 = qRmin / (qRcut + sqrt(sqr(qRcut) + sqr(qRmin)));
+   LDouble_t uq = pow(uq0, u[5]);
+   LDouble_t qR = 2 * qRcut * uq / (1 - sqr(uq));
+   LDouble_t qR2 = qR * qR;
+   weight *= qR2 * sqrt(1 + qR2 / sqr(qRcut)) * (-2 * log(uq0));
+
+   // Include overall measure Jacobian factor
+   weight *= Mpair / (2 * kin);
+
+   try {
+      if (Epos < mElectron) {
+         throw std::runtime_error("positron energy less than its rest mass.");
+      }
+
+      // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
+      LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+      if (k12star2 < 0) {
+         throw std::runtime_error("no kinematic solution because k12star2 < 0");
+      }
+      LDouble_t k12star = sqrt(k12star2);
+      LDouble_t Erec = sqrt(qR2 + sqr(mElectron));
+      LDouble_t E12 = kin + mElectron - Erec;
+      if (E12 < Mpair) {
+         throw std::runtime_error("no kinematic solution because E12 < Mpair");
+      }
+      LDouble_t q12mag = sqrt(sqr(E12) - sqr(Mpair));
+      LDouble_t costhetastar = (Epos - E12 / 2) * Mpair / (k12star * q12mag);
+      if (Epos > E12 - mElectron) {
+         throw std::runtime_error("no kinematic solution because Epos > E12 - mElectron");
+      }
+      else if (fabs(costhetastar) > 1) {
+         throw std::runtime_error("no kinematic solution because |costhetastar| > 1");
+      }
+
+      // Solve for the recoil nucleon kinematics
+      LDouble_t costhetaR = (sqr(Mpair) / 2 + (kin + mElectron) *
+                            (Erec - mElectron)) / (kin * qR);
+      if (fabs(costhetaR) > 1) {
+         throw std::runtime_error("no kinematic solution because |costhetaR| > 1");
+      }
+      LDouble_t sinthetaR = sqrt(1 - sqr(costhetaR));
+      TFourVectorReal q3(Erec, qR * sinthetaR * cos(phiR),
+                               qR * sinthetaR * sin(phiR),
+                               qR * costhetaR);
+
+      // Boost the pair momenta into the lab
+      TLorentzBoost toLab(q3[1] / E12, q3[2] / E12, (q3[3] - kin) / E12);
+      LDouble_t sinthetastar = sqrt(1 - sqr(costhetastar));
+      TThreeVectorReal k12(k12star * sinthetastar * cos(phi12),
+                           k12star * sinthetastar * sin(phi12),
+                           k12star * costhetastar);
+      TFourVectorReal q1(Mpair / 2, k12);
+      TFourVectorReal q2(Mpair / 2, -k12);
+      q1.Boost(toLab);
+      q2.Boost(toLab);
+
+      // Rotate final state momenta to the lab frame
+      pOut.SetMom(q1.Rotate(rockaxis, rockangle));
+      eOut.SetMom(q2.Rotate(rockaxis, rockangle));
+      eOut3.SetMom(q3.Rotate(rockaxis, rockangle));
+
+      // Check 4-momentum conservation
+      TFourVectorReal pIn(gIn.Mom() + eIn.Mom());
+      TFourVectorReal pFi(pOut.Mom() + eOut.Mom() + eOut3.Mom());
+      TFourVectorReal::SetResolution(1e-10);
+      if (pIn != pFi) {
+         std::cout << "Warning in GenerateTripletConversion - "
+                   << "momentum conservation violated." << std::endl
+                   << "   pIn = "; 
+         pIn.Print();
+         std::cout << "       = ";
+         gIn.Mom().Print();
+         std::cout << "       + ";
+         eIn.Mom().Print();
+         std::cout << "   pFi = ";
+         pFi.Print();
+         std::cout << "       = ";
+         pOut.Mom().Print();
+         std::cout << "       + ";
+         eOut.Mom().Print();
+         std::cout << "       + ";
+         eOut3.Mom().Print();
+         std::cout << "   pIn - pFi = ";
+         (pIn-pFi).Print();
+      }
+
+      // Compute the polarized differential cross section (barnes/GeV^4)
+      // returned as d(sigma)/(dE+ dphi+ d^3qR)
+      diffXS = TCrossSection::TripletProduction(gIn, eIn, pOut, eOut, eOut3);
+#if USE_ADAPTIVE_SAMPLER
+      fAdaptiveSampler->feedback(u, weight * diffXS);
+#endif
+   }
+   catch (const std::exception &e) {
+
+      // These events have no cross section, but do not discard
+      // them because they are needed to get the right MC integral.
+ 
+      eOut3.SetMom(TThreeVectorReal(0,0,1e-12));
+      eOut.SetMom(TThreeVectorReal(0,0,1e-12));
+      pOut.SetMom(TThreeVectorReal(0,0,1e-12));
+#if USE_ADAPTIVE_SAMPLER
+      fAdaptiveSampler->feedback(u, 0);
+#endif
+      diffXS = 0;
+   }
+
+   // Generate the new vertex
+   double beamVelocity = GlueXPhotonBeamGenerator::getBeamVelocity();
+   double steplength = pParticleChange->GetTrueStepLength();
+   G4ThreeVector direction(track->GetMomentumDirection());
+   G4ThreeVector x0(track->GetPosition());
+   double t0 = track->GetGlobalTime();
+   double uvtx = G4UniformRand();
+   x0 -= uvtx * steplength * direction;
+   t0 -= uvtx * steplength / beamVelocity;
+   G4PrimaryVertex vertex(x0, t0);
+   G4ParticleDefinition *positron = G4Positron::Definition();
+   G4ParticleDefinition *electron = G4Electron::Definition();
+   G4ThreeVector psec1(pOut.Mom()[1]*GeV, pOut.Mom()[2]*GeV, pOut.Mom()[3]*GeV);
+   G4ThreeVector psec2(eOut.Mom()[1]*GeV, eOut.Mom()[2]*GeV, eOut.Mom()[3]*GeV);
+   G4ThreeVector psec3(eOut3.Mom()[1]*GeV, eOut3.Mom()[2]*GeV, eOut3.Mom()[3]*GeV);
+   G4DynamicParticle *sec1 = new G4DynamicParticle(positron, psec1);
+   G4DynamicParticle *sec2 = new G4DynamicParticle(electron, psec2);
+   G4DynamicParticle *sec3 = new G4DynamicParticle(electron, psec3);
+   G4TrackVector secondaries;
+   secondaries.push_back(new G4Track(sec1, t0, x0));
+   secondaries.push_back(new G4Track(sec2, t0, x0));
+   if (eOut3.Mom().Length() > 0) {
+      secondaries.push_back(new G4Track(sec3, t0, x0));
+   }
+
+   GlueXUserEventInformation *event_info;
+   const G4Event *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+   event_info = (GlueXUserEventInformation*)event->GetUserInformation();
+   G4TrackVector::iterator iter;
+   for (iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
+      GlueXUserTrackInformation *trackinfo = new GlueXUserTrackInformation();
+      if (event_info) {
+         trackinfo->SetGlueXTrackID(event_info->AssignNextGlueXTrackID());
+      }
+      (*iter)->SetUserInformation(trackinfo);
+      if (fStopBeamAfterTarget == 0) {
+         pParticleChange->AddSecondary(*iter);
+      }
+   }
+
+   // append secondary vertex to MC record
+   if (event_info) {
+      int mech[2];
+      char *cmech = (char*)mech;
+      snprintf(cmech, 5, "%c%c%c%c", 'C', 'O', 'N', 'V');
+      event_info->AddSecondaryVertex(secondaries, 1, mech[0]);
+      hddm_s::ReactionList rea = event_info->getOutputRecord()->getReactions();
+      if (rea.size() > 0) {
+         rea(0).setType(231); // triplet process
          rea(0).setWeight(weight * diffXS);
       }
    }

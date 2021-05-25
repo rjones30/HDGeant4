@@ -41,6 +41,7 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
                                     G4double previousStepSize,
                                     G4ForceCondition *condition);
    void GenerateBetheHeitlerProcess(const G4Step &step);
+   void GenerateTripletProcess(const G4Step &step);
 
 #ifdef USING_DIRACXX
    PairConversionGeneration *fPairsGeneration;
