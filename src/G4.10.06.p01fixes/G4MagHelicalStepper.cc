@@ -192,8 +192,6 @@ G4MagHelicalStepper::AdvanceHelix( const G4double yIn[],
         dynamic_cast<G4MagInt_Driver*>(cf->GetIntegrationDriver());
     if (driver)
       driver->SetFractions_Last_Next(-1, M_PI / GetAngCurve());
-    else
-      driver->SetFractions_Last_Next(-1, -1);
   }
 }
 
