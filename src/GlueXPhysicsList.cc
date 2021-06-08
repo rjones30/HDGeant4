@@ -29,16 +29,19 @@
 #include "G4StoppingPhysics.hh"
 #include "G4HadronElasticPhysics.hh"
 #include "G4NeutronTrackingCut.hh"
+#include "G4BetheHeitler5DModel.hh"
 
 #include "G4HadronPhysicsQGSP_FTFP_BERT.hh"
 #include "G4OpticalProcessIndex.hh"
 
+#include <GlueXBeamConversionProcess.hh>
+#include <GlueXBernardConversionProcess.hh>
+
 GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
                                    G4int verbosity)
  : G4VModularPhysicsList(),
-#  if USING_DIRACXX
    fBeamConversion(0),
-#  endif
+   fBernardConversion(0),
    fOpticalPhysics(0)
 {
    if (geometry == 0) {
@@ -132,11 +135,12 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
 
 GlueXPhysicsList::~GlueXPhysicsList()
 {
-#if USING_DIRACXX
    if (fBeamConversion)
       delete fBeamConversion;
-#endif
+   if (fBernardConversion)
+      delete fBernardConversion;
 }
+
 
 void GlueXPhysicsList::ConstructParticle()
 {
@@ -195,9 +199,12 @@ void GlueXPhysicsList::ConstructProcess()
    // Construct all of the standard physics processes
    G4VModularPhysicsList::ConstructProcess();
 
+   // Add a process for genbeam photon pair conversion process
 #if USING_DIRACXX
-   // Add a process for TPOL beam photon pair conversion process
-   fBeamConversion = new GlueXBeamConversionProcess("TPolBeamConversion");
+   fBeamConversion = new GlueXBeamConversionProcess("BeamConversion");
+#endif
+#if USING_BERNARD
+   fBernardConversion = new GlueXBernardConversionProcess("BernardConversion");
 #endif
 
    // create the special cuts processes and register them
@@ -213,9 +220,32 @@ void GlueXPhysicsList::ConstructProcess()
          exit(1);
       }
       else if (particleName == "gamma") {
+         if (fBeamConversion) {
 #if USING_DIRACXX
-         mgr->AddDiscreteProcess(fBeamConversion);
+            mgr->AddDiscreteProcess(fBeamConversion);
+            G4VEmModel *modelpp = new G4PairProductionRelModel();
+            fBeamConversion->SetEmModel(modelpp);
+#else
+            G4cerr << "Error in GlueXPhysicsList::ConstructProcess - "
+                   << "BeamConversion process requested, but build "
+                   << "was made without Dirac++ package support, "
+                   << "cannot continue." << G4endl;
+            exit(1);
 #endif
+         }
+         if (fBernardConversion) {
+#if USING_BERNARD
+            mgr->AddDiscreteProcess(fBernardConversion);
+            G4VEmModel *model5D = new G4BetheHeitler5DModel();
+            fBernardConversion->SetEmModel(model5D);
+#else
+            G4cerr << "Error in GlueXPhysicsList::ConstructProcess - "
+                   << "BernardConversion process requested, but build "
+                   << "was made without G4BetheHeitler5D process support, "
+                   << "cannot continue." << G4endl;
+            exit(1);
+#endif
+         }
          if (KEcut_gamma > 0) {
             G4UserLimits *glimits = new G4UserLimits();
             glimits->SetUserMaxTime(tcut);
