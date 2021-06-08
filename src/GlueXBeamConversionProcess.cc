@@ -12,6 +12,7 @@
 #include "GlueXUserTrackInformation.hh"
 #include "GlueXUserOptions.hh"
 #include "G4ParallelWorldProcess.hh"
+#include "G4PairProductionRelModel.hh"
 
 #define VERBOSE_PAIRS_SPLITTING 1
 #define DO_PAIRCOH_IMPORTANCE_SAMPLE 1
@@ -29,12 +30,13 @@
 #define FORCED_LIH2_PAIR_CONVERSION 0
 
 #include <G4SystemOfUnits.hh>
+#include "G4PhysicalConstants.hh"
+#include "G4Gamma.hh"
 #include "G4Positron.hh"
 #include "G4Electron.hh"
 #include "G4Proton.hh"
 #include "G4RunManager.hh"
 #include "G4TrackVector.hh"
-#include "G4Gamma.hh"
 
 #include <stdio.h>
 #include <iomanip>
@@ -59,20 +61,23 @@ G4Mutex GlueXBeamConversionProcess::fMutex = G4MUTEX_INITIALIZER;
 int GlueXBeamConversionProcess::fStopBeamBeforeConverter = 0;
 int GlueXBeamConversionProcess::fStopBeamAfterConverter = 0;
 int GlueXBeamConversionProcess::fStopBeamAfterTarget = 0;
-int GlueXBeamConversionProcess::fInitialized = 0;
+int GlueXBeamConversionProcess::fConfigured = 0;
 
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name, 
                                                        G4ProcessType aType)
- : G4VDiscreteProcess(name, aType),
+ : G4VEmProcess(name, aType),
 #  ifdef USING_DIRACXX
    fPairsGeneration(0),
 #  endif
    fPaircohPDF(0),
    fTripletPDF(0),
-   fAdaptiveSampler(0)
+   fAdaptiveSampler(0),
+   isInitialised(false)
 {
+   verboseLevel = 0;
+
    G4AutoLock barrier(&fMutex);
-   if (fInitialized)
+   if (fConfigured)
       return;
 
    GlueXUserOptions *user_opts = GlueXUserOptions::GetInstance();
@@ -123,7 +128,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
       }
    }
 
-   fInitialized = 1;
+   fConfigured = 1;
 
    if (verboseLevel > 0) {
        G4cout << GetProcessName() << " is created " << G4endl
@@ -134,18 +139,6 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
 	      << "    Stop beam after target? "
 	      << (fStopBeamAfterTarget? "yes" : "no") << G4endl;
    }
-}
-
-GlueXBeamConversionProcess::GlueXBeamConversionProcess(
-                            GlueXBeamConversionProcess &src)
- : G4VDiscreteProcess(src),
-#  ifdef USING_DIRACXX
-   fPairsGeneration(0),
-#  endif
-   fPaircohPDF(0),
-   fTripletPDF(0),
-   fAdaptiveSampler(0)
-{
 }
 
 GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
@@ -162,26 +155,85 @@ GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
    int nsamplers = fAdaptiveSamplerRegistry.size();
    if (nsamplers > 0) {
       fAdaptiveSampler = fAdaptiveSamplerRegistry[0];
-      for (int i=1; i < nsamplers; ++i) {
+      for (int i=nsamplers-1; i > 0; --i) {
          std::stringstream astatefile;
          astatefile << "BHgen_thread_" << i << ".astate";
          fAdaptiveSamplerRegistry[i]->saveState(astatefile.str());
          fAdaptiveSampler->mergeState(astatefile.str());
          delete fAdaptiveSamplerRegistry[i];
+         fAdaptiveSamplerRegistry.erase(fAdaptiveSamplerRegistry.begin() + i);
       }
-   }
-   if (fAdaptiveSampler) {
-      fAdaptiveSampler->saveState("BHgen_stats.astate");
-      delete fAdaptiveSampler;
+      fAdaptiveSamplerRegistry[0]->saveState("BHgen_stats.astate");
+      delete fAdaptiveSamplerRegistry[0];
+      fAdaptiveSamplerRegistry.clear();
    }
 }
 
-GlueXBeamConversionProcess GlueXBeamConversionProcess::operator=(
-                           GlueXBeamConversionProcess &src)
+G4bool GlueXBeamConversionProcess::IsApplicable(const G4ParticleDefinition& p)
 {
-   GlueXBeamConversionProcess copy(src);
-   return copy;
+   return (&p == G4Gamma::Gamma());
 }
+
+void GlueXBeamConversionProcess::InitialiseProcess(const G4ParticleDefinition*)
+{
+   if (!isInitialised) {
+      isInitialised = true;
+      G4EmParameters* param = G4EmParameters::Instance();
+      G4double emin = std::max(param->MinKinEnergy(), 2*electron_mass_c2);
+      SetMinKinEnergy(emin);
+
+      if (!EmModel(0)) {
+         SetEmModel(new G4PairProductionRelModel());
+      }
+      EmModel(0)->SetLowEnergyLimit(emin);
+      AddEmModel(1, EmModel(0));
+
+#ifdef USING_DIRACXX
+      std::vector<double> Z;
+      std::vector<double> A;
+      std::vector<double> w;
+      Z.push_back(4);    // assumes 4Be converter target for TPOL
+      A.push_back(9.012);
+      w.push_back(1);
+      fPairsGeneration = new PairConversionGeneration(Z, A, w);
+
+#if defined DO_TRIPLET_IMPORTANCE_SAMPLE || defined DO_PAIRCOH_IMPORTANCE_SAMPLE
+      if (fTripletPDF == 0 || fPaircohPDF == 0) {
+         G4cout << "GlueXBeamConversionProcess::InitialiseProcess:"
+                << G4endl
+                << "   Setting up cross section tables, please wait... "
+                << std::flush;
+         prepareImportanceSamplingPDFs();
+         G4cout << "finished." << G4endl;
+      }
+#endif
+
+#if USE_ADAPTIVE_SAMPLER
+      if (fAdaptiveSampler == 0) {
+         prepareAdaptiveSampler();
+      }
+#endif
+
+#endif
+   }
+}
+
+G4double GlueXBeamConversionProcess::MinPrimaryEnergy(const G4ParticleDefinition*,
+                                                      const G4Material*)
+{
+  return 2 * electron_mass_c2;
+}
+
+void GlueXBeamConversionProcess::PrintInfo()
+{}         
+
+
+void GlueXBeamConversionProcess::ProcessDescription(std::ostream& out) const
+{
+  out << "  Dirac++ Gamma conversion (forced)";
+  G4VEmProcess::ProcessDescription(out);
+}
+
 
 G4double GlueXBeamConversionProcess::GetMeanFreePath(
                                      const G4Track &track, 
@@ -203,6 +255,8 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
         fStopBeamBeforeConverter ||
         fStopBeamAfterConverter ))
    {
+      fPIL = G4VEmProcess::PostStepGetPhysicalInteractionLength(
+                             track, previousStepSize, condition);
       *condition = Forced;
       return 100*cm;
    }
@@ -210,6 +264,8 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
        (FORCED_LIH2_PAIR_CONVERSION || 
         fStopBeamAfterTarget ))
    {
+      fPIL = G4VEmProcess::PostStepGetPhysicalInteractionLength(
+                             track, previousStepSize, condition);
       *condition = Forced;
       return 100*cm;
    }
@@ -462,27 +518,6 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    exit(1);
 
 #else
-
-   if (fPairsGeneration == 0) {
-      std::vector<double> Z;
-      std::vector<double> A;
-      std::vector<double> w;
-      Z.push_back(4);    // 4Be converter target
-      A.push_back(9.012);
-      w.push_back(1);
-      fPairsGeneration = new PairConversionGeneration(Z, A, w);
-   }
-
-#if defined DO_TRIPLET_IMPORTANCE_SAMPLE || defined DO_PAIRCOH_IMPORTANCE_SAMPLE
-   if (fTripletPDF == 0 || fPaircohPDF == 0) {
-      G4cout << "GlueXBeamConversionProcess::GenerateBeamPairConversion:"
-             << G4endl
-             << "   Setting up cross section tables, please wait... "
-             << std::flush;
-      prepareImportanceSamplingPDFs();
-      G4cout << "finished." << G4endl;
-   }
-#endif
 
    TPhoton gIn;
    TLepton p1(mElectron);
@@ -781,8 +816,9 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    G4ThreeVector x0(track->GetPosition());
    double t0 = track->GetGlobalTime();
    double uvtx = G4UniformRand();
-   x0 -= uvtx * steplength * direction;
-   t0 -= uvtx * steplength / beamVelocity;
+   double lvtx = steplength + fPIL * log(1 - uvtx * (1 - exp(-steplength / fPIL)));
+   x0 -= lvtx * direction;
+   t0 -= lvtx / beamVelocity;
    G4PrimaryVertex vertex(x0, t0);
    G4ParticleDefinition *positron = G4Positron::Definition();
    G4ParticleDefinition *electron = G4Electron::Definition();
@@ -818,7 +854,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    if (event_info) {
       int mech[2];
       char *cmech = (char*)mech;
-      snprintf(cmech, 5, "%c%c%c%c", 'C', 'O', 'N', 'V');
+      snprintf(cmech, 5, "%c%c%c%c", 'B', 'E', 'A', 'M');
       event_info->AddSecondaryVertex(secondaries, 1, mech[0]);
    }
 
@@ -878,12 +914,6 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    exit(1);
 
 #else
-
-#if USE_ADAPTIVE_SAMPLER
-   if (fAdaptiveSampler == 0) {
-      prepareAdaptiveSampler();
-   }
-#endif
 
    TPhoton gIn;
    TLepton eOut(mElectron);
@@ -1180,12 +1210,6 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
    exit(1);
 
 #else
-
-#if USE_ADAPTIVE_SAMPLER
-   if (fAdaptiveSampler == 0) {
-      prepareAdaptiveSampler();
-   }
-#endif
 
    TPhoton gIn;
    TLepton eOut(mElectron);
