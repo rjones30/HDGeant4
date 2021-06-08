@@ -32,6 +32,9 @@
 #if USING_BERNARD
 #include "G4BetheHeitler5DModel.hh"
 #endif
+#if USING_DIRACXX
+#include "G4PairProductionRelModel.hh"
+#endif
 
 #include "G4HadronPhysicsQGSP_FTFP_BERT.hh"
 #include "G4OpticalProcessIndex.hh"
