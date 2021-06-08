@@ -29,7 +29,9 @@
 #include "G4StoppingPhysics.hh"
 #include "G4HadronElasticPhysics.hh"
 #include "G4NeutronTrackingCut.hh"
+#if USING_BERNARD
 #include "G4BetheHeitler5DModel.hh"
+#endif
 
 #include "G4HadronPhysicsQGSP_FTFP_BERT.hh"
 #include "G4OpticalProcessIndex.hh"
