@@ -736,7 +736,8 @@ int AdaptiveSampler::mergeState(const std::string filename)
    if (fNdim != keyval["fNdim"]) {
       std::cerr << "AdaptiveSampler::mergeState error - "
                 << "cannot merge with state saved in " << filename
-                << " because they have different dimensions."
+                << " because they have different dimensions,"
+                << " this Ndim=" << fNdim << ", file Ndim=" << keyval["fNdim"]
                 << std::endl;
       return 0;
    }

@@ -184,6 +184,9 @@ class AdaptiveSampler {
    void display_tree(bool optimized=false);
    int check_subsets(bool optimized=false);
 
+ private:
+   AdaptiveSampler() = delete;
+
  protected:
    int fNdim;
    int fNfixed;
