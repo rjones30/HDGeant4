@@ -13,7 +13,8 @@
 #ifndef _GLUEXBEAMCONVERSIONPROCESS_H_
 #define _GLUEXBEAMCONVERSIONPROCESS_H_
 
-#include <G4VDiscreteProcess.hh>
+#include "globals.hh"
+#include <G4VEmProcess.hh>
 #include <G4VParticleChange.hh>
 #include <ImportanceSampler.hh>
 #include <PairConversionGeneration.hh>
@@ -21,27 +22,41 @@
 #include <G4AutoLock.hh>
 #include <G4Step.hh>
 
-class GlueXBeamConversionProcess: public G4VDiscreteProcess
+class GlueXBeamConversionProcess: public G4VEmProcess
 {
  public:
-   GlueXBeamConversionProcess(const G4String &name, 
-                              G4ProcessType aType=fGeneral);
-   GlueXBeamConversionProcess(GlueXBeamConversionProcess &src);
+   explicit GlueXBeamConversionProcess(const G4String &name = "beam_conversion", 
+                                       G4ProcessType aType=fElectromagnetic);
    virtual ~GlueXBeamConversionProcess();
 
    virtual G4double PostStepGetPhysicalInteractionLength(const G4Track &track,
-                                                  G4double previousStepSize,
-                                                  G4ForceCondition *condition);
+                                       G4double previousStepSize,
+                                       G4ForceCondition *condition) override;
    virtual G4VParticleChange *PostStepDoIt(const G4Track &track, 
-                                           const G4Step &step);
+                                           const G4Step &step) override;
+
+   virtual G4bool IsApplicable(const G4ParticleDefinition&) final;
+
+   virtual G4double MinPrimaryEnergy(const G4ParticleDefinition*,
+				    const G4Material*) override;
+
+   // Print few lines of informations about the process: validity range,
+   virtual void PrintInfo() override;
+
+   // print documentation in html format
+   virtual void ProcessDescription(std::ostream&) const override;
 
  protected:
-   void GenerateBeamPairConversion(const G4Step &step);
+   virtual void InitialiseProcess(const G4ParticleDefinition*) override;
    virtual G4double GetMeanFreePath(const G4Track &track, 
                                     G4double previousStepSize,
-                                    G4ForceCondition *condition);
-   void GenerateBetheHeitlerProcess(const G4Step &step);
-   void GenerateTripletProcess(const G4Step &step);
+                                    G4ForceCondition *condition) override;
+
+   virtual void GenerateBeamPairConversion(const G4Step &step);
+   virtual void GenerateBetheHeitlerProcess(const G4Step &step);
+   virtual void GenerateTripletProcess(const G4Step &step);
+
+   G4double fPIL;
 
 #ifdef USING_DIRACXX
    PairConversionGeneration *fPairsGeneration;
@@ -57,15 +72,18 @@ class GlueXBeamConversionProcess: public G4VDiscreteProcess
    ImportanceSampler *fPaircohPDF;
    ImportanceSampler *fTripletPDF;
 
-
    AdaptiveSampler *fAdaptiveSampler;
    void prepareAdaptiveSampler();
 
  private:
-   GlueXBeamConversionProcess operator=(GlueXBeamConversionProcess &src);
+   GlueXBeamConversionProcess() = delete;
+   GlueXBeamConversionProcess(const GlueXBeamConversionProcess &src) = delete;
+   GlueXBeamConversionProcess operator=(const GlueXBeamConversionProcess &src) = delete;
+
+   G4bool  isInitialised;
 
    static G4Mutex fMutex;
-   static int fInitialized;
+   static int fConfigured;
    static std::vector<AdaptiveSampler*> fAdaptiveSamplerRegistry;
 };
 
