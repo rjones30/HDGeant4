@@ -183,7 +183,7 @@ void GlueXBeamConversionProcess::InitialiseProcess(const G4ParticleDefinition*)
       SetMinKinEnergy(emin);
 
       if (!EmModel(0)) {
-         SetEmModel(new G4PairProductionRelModel());
+         SetEmModel(new G4PairProductionRelModel(), 0);
       }
       EmModel(0)->SetLowEnergyLimit(emin);
       AddEmModel(1, EmModel(0));
