@@ -1091,6 +1091,8 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
                                                   F2_spacelike,
                                                   F1_timelike,
                                                   F2_timelike);
+      fPairsGeneration->SetConverterZ(1);
+      diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
 #if USE_ADAPTIVE_SAMPLER
       fAdaptiveSampler->feedback(u, weight * diffXS);
 #endif
@@ -1373,6 +1375,8 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
       // Compute the polarized differential cross section (barnes/GeV^4)
       // returned as d(sigma)/(dE+ dphi+ d^3qR)
       diffXS = TCrossSection::TripletProduction(gIn, eIn, pOut, eOut, eOut3);
+      fPairsGeneration->SetConverterZ(1);
+      diffXS *= 1 - sqr(fPairsGeneration->FFatomic(qR));
 #if USE_ADAPTIVE_SAMPLER
       fAdaptiveSampler->feedback(u, weight * diffXS);
 #endif
