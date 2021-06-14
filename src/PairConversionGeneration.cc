@@ -83,7 +83,7 @@ LDouble_t PairConversionGeneration::FFatomic(LDouble_t qRecoil)
    LDouble_t ff(0);
    if (fConverterZ == 1) {
       LDouble_t a0Bohr = 0.529177 / 1.97327e-6;
-      ff = 1 / pow(1 + pow(a0Bohr * qRecoil, 2), 2);
+      ff = 1 / pow(1 + pow(a0Bohr * qRecoil / 2, 2), 2);
    }
    else if (fConverterZ == 4) {
       // parameterization for 4Be given by online database at
