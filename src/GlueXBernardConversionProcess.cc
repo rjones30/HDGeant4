@@ -259,6 +259,16 @@ G4VParticleChange *GlueXBernardConversionProcess::PostStepDoIt(
 void GlueXBernardConversionProcess::GenerateConversionVertex(const G4Track &track,
                                                              const G4Step &step)
 {
+   G4ThreeVector pol = step.GetPreStepPoint()->GetPolarization();
+   double pmag = pol.mag();
+   if (G4UniformRand() > pmag) {
+      G4Track *mtrack = (G4Track*)&track;
+      mtrack->SetPolarization(G4ThreeVector(0,0,0));
+   }
+   else {
+      G4Track *mtrack = (G4Track*)&track;
+      mtrack->SetPolarization(pol / pmag); 
+   }
    G4VParticleChange *pchange = G4VEmProcess::PostStepDoIt(track, step);
 
    // Generate a new vertex for the pair
