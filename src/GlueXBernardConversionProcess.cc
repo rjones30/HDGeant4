@@ -13,6 +13,11 @@
 #include "GlueXUserOptions.hh"
 #include "G4ParallelWorldProcess.hh"
 
+#include "G4Positron.hh"
+#include "G4Electron.hh"
+#include "G4MuonPlus.hh"
+#include "G4MuonMinus.hh"
+
 // If you set this flag to 1 then all beam photons that reach
 // the TPOL converter target will convert to e+e- pairs inside,
 // otherwise the standard pair conversion probabilities apply.
@@ -43,6 +48,7 @@ G4Mutex GlueXBernardConversionProcess::fMutex = G4MUTEX_INITIALIZER;
 int GlueXBernardConversionProcess::fStopBeamBeforeConverter = 0;
 int GlueXBernardConversionProcess::fStopBeamAfterConverter = 0;
 int GlueXBernardConversionProcess::fStopBeamAfterTarget = 0;
+int GlueXBernardConversionProcess::fLeptonPairFamily = 0;
 int GlueXBernardConversionProcess::fConfigured = 0;
 
 GlueXBernardConversionProcess::GlueXBernardConversionProcess(
@@ -97,6 +103,14 @@ GlueXBernardConversionProcess::GlueXBernardConversionProcess(
                genbeampars[1] == "bhgen_bernard" ))
       {
          fStopBeamAfterTarget = 1;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons_Bernard" ||
+               genbeampars[1] == "BHmuons_BERNARD" ||
+               genbeampars[1] == "bhmuons_bernard" ))
+      {
+         fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
       }
    }
 
@@ -311,4 +325,20 @@ void GlueXBernardConversionProcess::GenerateConversionVertex(const G4Track &trac
          rea(0).setWeight(1.0);
       }
    }
+}
+
+G4ParticleDefinition *GlueXBernardConversionProcess::GetLepton(int charge) {
+   if (fLeptonPairFamily == 0) {
+      if (charge > 0)
+         return G4Positron::Definition();
+      else
+         return G4Electron::Definition();
+   }
+   else if (fLeptonPairFamily == 1) {
+      if (charge > 0)
+         return G4MuonPlus::Definition();
+      else
+         return G4MuonMinus::Definition();
+   }
+   return 0;
 }
