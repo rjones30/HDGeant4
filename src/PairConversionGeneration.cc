@@ -112,10 +112,10 @@ LDouble_t PairConversionGeneration::DiffXS_pair(const TPhoton &gIn,
                                                 const TLepton &pOut,
                                                 const TLepton &eOut)
 {
-   // Calculates the e+e- pair production cross section for a
+   // Calculates the lepton pair production cross section for a
    // gamma ray off an atom at a particular recoil momentum vector q.
    // The cross section is returned as d(sigma)/(dE dphi d^3q) where E is
-   // the energy of the final-state electron and phi is its azimuthal angle.
+   // the energy of the final-state lepton and phi is its azimuthal angle.
    // The polar angles of the pair are fixed by momentum conservation.
    // It is assumed that gIn.Mom()[0] = eOut.Mom()[0]+pOut.Mom()[0], that
    // the energy carried away by the recoil is zero in the laboratory frame,
@@ -142,9 +142,10 @@ LDouble_t PairConversionGeneration::DiffXS_pair(const TPhoton &gIn,
    // The unpolarized Bethe-Heitler cross section is given here for comparison
    LDouble_t kin = gIn.Mom()[0];
    LDouble_t Epos = pOut.Mom()[0];
-   LDouble_t Eele = eOut.Mom()[0];
-   LDouble_t delta = 136 * mElectron / pow(fConverterZ, 0.33333) *
-                     kin / (Eele * Epos);
+   LDouble_t Eneg = eOut.Mom()[0];
+   LDouble_t mLepton = eOut.Mass();
+   LDouble_t delta = 136 * mLepton / pow(fConverterZ, 0.33333) *
+                     kin / (Eneg * Epos);
    LDouble_t aCoul = sqr(alphaQED * fConverterZ);
    LDouble_t fCoul = aCoul * (1 / (1 + aCoul) + 0.20206 - 0.0369 * aCoul +
                               0.0083 * pow(aCoul, 2) - 0.002 * pow(aCoul, 3));
@@ -157,11 +158,11 @@ LDouble_t PairConversionGeneration::DiffXS_pair(const TPhoton &gIn,
    if (delta > 1) {
       Phi1 = Phi2 = Phi0;
    }
-   result = hbarcSqr / sqr(mElectron) * pow(alphaQED, 3) / kin
+   result = hbarcSqr / sqr(mLepton) * pow(alphaQED, 3) / kin
             * fConverterZ * (fConverterZ + xsi)
             * (
-                 (sqr(Eele) + sqr(Epos)) / sqr(kin) * (Phi1 - FofZ/2) +
-                 (2./3.) * (Eele * Epos) / sqr(kin) * (Phi2 - FofZ/2)
+                 (sqr(Eneg) + sqr(Epos)) / sqr(kin) * (Phi1 - FofZ/2) +
+                 (2./3.) * (Eneg * Epos) / sqr(kin) * (Phi2 - FofZ/2)
               );
    return result * 1e-6;
 }
@@ -189,7 +190,7 @@ LDouble_t PairConversionGeneration::DiffXS_triplet(const TPhoton &gIn,
 
    // Avoid double-counting due to identical fs electrons by requiring
    // that e3 (recoil e-) have a lower momentum magnitude than e2.
-   if (e3.Mom().Length() > e2.Mom().Length()) 
+   if (e2.Mass() == e3.Mass() && e3.Mom().Length() > e2.Mom().Length())
       return 0;
 
    // Set the initial,final polarizations
