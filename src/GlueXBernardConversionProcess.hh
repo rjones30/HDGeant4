@@ -37,6 +37,8 @@ class GlueXBernardConversionProcess: public G4VEmProcess
    virtual G4double MinPrimaryEnergy(const G4ParticleDefinition*,
 				    const G4Material*) override;
 
+   virtual G4ParticleDefinition *GetLepton(int charge);
+
    // Print few lines of informations about the process: validity range,
    virtual void PrintInfo() override;
 
@@ -57,6 +59,7 @@ class GlueXBernardConversionProcess: public G4VEmProcess
    static int fStopBeamBeforeConverter;
    static int fStopBeamAfterConverter;
    static int fStopBeamAfterTarget;
+   static int fLeptonPairFamily;
 
  private:
    GlueXBernardConversionProcess operator=(GlueXBernardConversionProcess &src) = delete;

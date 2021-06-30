@@ -65,6 +65,7 @@ class GlueXBeamConversionProcess: public G4VEmProcess
    static int fStopBeamBeforeConverter;
    static int fStopBeamAfterConverter;
    static int fStopBeamAfterTarget;
+   static int fLeptonPairFamily;
    static G4double fBHpair_mass_min;
 
    void prepareImportanceSamplingPDFs();

@@ -34,6 +34,8 @@
 #include "G4Gamma.hh"
 #include "G4Positron.hh"
 #include "G4Electron.hh"
+#include "G4MuonPlus.hh"
+#include "G4MuonMinus.hh"
 #include "G4Proton.hh"
 #include "G4RunManager.hh"
 #include "G4TrackVector.hh"
@@ -61,6 +63,7 @@ G4Mutex GlueXBeamConversionProcess::fMutex = G4MUTEX_INITIALIZER;
 int GlueXBeamConversionProcess::fStopBeamBeforeConverter = 0;
 int GlueXBeamConversionProcess::fStopBeamAfterConverter = 0;
 int GlueXBeamConversionProcess::fStopBeamAfterTarget = 0;
+int GlueXBeamConversionProcess::fLeptonPairFamily = 0;
 int GlueXBeamConversionProcess::fConfigured = 0;
 
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name, 
@@ -126,6 +129,18 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
       }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons" ||
+               genbeampars[1] == "BHmuons" ||
+               genbeampars[1] == "BHmuons" ||
+               genbeampars[1] == "bhmuons" ))
+      {
+         fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+      }
    }
 
    fConfigured = 1;
@@ -180,6 +195,8 @@ void GlueXBeamConversionProcess::InitialiseProcess(const G4ParticleDefinition*)
       isInitialised = true;
       G4EmParameters* param = G4EmParameters::Instance();
       G4double emin = std::max(param->MinKinEnergy(), 2*electron_mass_c2);
+      if (fLeptonPairFamily == 1)
+         emin = std::max(emin, 2*G4MuonMinus::Definition()->GetPDGMass());
       SetMinKinEnergy(emin);
 
       if (!EmModel(0)) {
@@ -221,6 +238,8 @@ void GlueXBeamConversionProcess::InitialiseProcess(const G4ParticleDefinition*)
 G4double GlueXBeamConversionProcess::MinPrimaryEnergy(const G4ParticleDefinition*,
                                                       const G4Material*)
 {
+  if (fLeptonPairFamily == 1)
+      return 2 * G4MuonMinus::MuonMinus()->GetPDGMass();
   return 2 * electron_mass_c2;
 }
 
@@ -387,10 +406,13 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
 #if USING_DIRACXX
 
    LDouble_t kin = 9.; // GeV
+   LDouble_t mLepton = mElectron;
+   if (fLeptonPairFamily == 1)
+      mLepton = mMuon;
    TPhoton g0;
-   TLepton p1(mElectron);
-   TLepton e2(mElectron);
-   TLepton e3(mElectron);
+   TLepton p1(mLepton);
+   TLepton e2(mLepton);
+   TLepton e3(mLepton);
    TThreeVectorReal p;
    g0.SetMom(p.SetPolar(kin,0,0));
    g0.SetPol(TThreeVector(0,0,0));
@@ -399,10 +421,10 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
    e3.AllPol();
 
    LDouble_t Epos = kin / 2;
-   LDouble_t Mmin = 2 * mElectron;
-   LDouble_t Mcut = 5e-3; // 5 MeV cutoff parameter
+   LDouble_t Mmin = 2 * mLepton;
+   LDouble_t Mcut = 10 * mLepton; // 5 MeV cutoff parameter
    LDouble_t um0 = 1 + sqr(Mcut / Mmin);
-   LDouble_t qRcut = 1e-3; // 1 MeV/c cutoff parameter
+   LDouble_t qRcut = 2 * mLepton; // 1 MeV/c cutoff parameter
 
    int Nbins = 50;
    fTripletPDF->Psum = 0;
@@ -411,7 +433,7 @@ void GlueXBeamConversionProcess::prepareImportanceSamplingPDFs()
       LDouble_t u0 = (i0 + 0.5) / Nbins;
       LDouble_t um = pow(um0, u0);
       LDouble_t Mpair = Mcut / sqrt(um - 1);
-      LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+      LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mLepton);
       LDouble_t qRmin = sqr(Mpair) / (2 * kin);
       LDouble_t uq0 = qRmin / (qRcut + sqrt(sqr(qRcut) + sqr(qRmin)));
       LDouble_t weight0 = sqr(Mpair) * (sqr(Mcut) + sqr(Mpair));
@@ -519,9 +541,12 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 
 #else
 
+   LDouble_t mLepton = mElectron;
+   if (fLeptonPairFamily == 1)
+      mLepton = mMuon;
    TPhoton gIn;
-   TLepton p1(mElectron);
-   TLepton e2(mElectron);
+   TLepton p1(mLepton);
+   TLepton e2(mLepton);
    TLepton e3(mElectron);
    p1.AllPol();
    e2.AllPol();
@@ -531,7 +556,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 
    // If we are below pair production threshold, do nothing
    const double mTarget = step.GetPreStepPoint()->GetMaterial()->GetA() * 0.932;
-   if (kin < 2 * mElectron * (1 + mElectron / mTarget))
+   if (kin < 2 * mLepton * (1 + mLepton / mTarget))
       return;
 
    G4ThreeVector mom(track->GetMomentum());
@@ -555,10 +580,10 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 
       // Generate uniform in E+, phi12, phiR
       LDouble_t Epos = kin * G4UniformRand();
-      while (Epos < mElectron) {
+      while (Epos < mLepton) {
          Epos = kin * G4UniformRand();
       }
-      weight *= kin - mElectron;
+      weight *= kin - mLepton;
       LDouble_t phi12 = 2*M_PI * G4UniformRand();
       weight *= 2*M_PI;
       LDouble_t phiR = 2*M_PI * G4UniformRand();
@@ -596,8 +621,8 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
 #endif
    
       // Generate Mpair as 1 / (M [M^2 + Mcut^2])
-      LDouble_t Mmin = 2 * mElectron;
-      LDouble_t Mcut = 0.005;  // GeV
+      LDouble_t Mmin = 2 * mLepton;
+      LDouble_t Mcut = 10 * mLepton;  // 5 MeV for electrons
       LDouble_t um0 = 1 + sqr(Mcut / Mmin);
       LDouble_t um = pow(um0, u0);
       LDouble_t Mpair = Mcut / sqrt(um - 1 + 1e-99);
@@ -605,7 +630,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    
       // Generate qR^2 with weight 1 / [qR^2 sqrt(qRcut^2 + qR^2)]
       LDouble_t qRmin = sqr(Mpair) /(2 * kin);
-      LDouble_t qRcut = 1e-3; // GeV
+      LDouble_t qRcut = 2 * mLepton; // 1 MeV for electrons
       LDouble_t uq0 = qRmin / (qRcut + sqrt(sqr(qRcut) + sqr(qRmin)));
       LDouble_t uq = pow(uq0, u1);
       LDouble_t qR = 2 * qRcut * uq / (1 - sqr(uq));
@@ -624,7 +649,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
          ++fTripletPDF->Ntested;
    
          // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
-         LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+         LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mLepton);
          if (k12star2 < 0) {
             // try again (this should never happen!)
             continue;
@@ -638,8 +663,8 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
          }
          LDouble_t q12mag = sqrt(sqr(E12) - sqr(Mpair));
          LDouble_t costhetastar = (Epos - E12 / 2) * Mpair / (k12star * q12mag);
-         if (Epos > E12 - mElectron) {
-            // no kinematic solution because Epos > E12 - mElectron, try again
+         if (Epos > E12 - mLepton) {
+            // no kinematic solution because Epos > E12 - mLepton, try again
             continue;
          }
          else if (fabs(costhetastar) > 1) {
@@ -672,7 +697,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    
          // To avoid double-counting, return zero if recoil electron
          // momentum is greater than the momentum of the pair electron.
-         if (q2.Length() < qR) {
+         if (fLeptonPairFamily == 0 && q2.Length() < qR) {
             // recoil/pair electrons switched, try again
             continue;
          }
@@ -732,19 +757,19 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    
          // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
          // assuming that the atomic target absorbs zero energy
-         LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+         LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mLepton);
          if (k12star2 < 0) {
             // try again (this should never happen!)
             continue;
          }
          LDouble_t k12star = sqrt(k12star2);
-         LDouble_t Eele = kin - Epos;
+         LDouble_t Eneg = kin - Epos;
          if (kin < Mpair) {
             // no kinematic solution because kin < Mpair, try again
             continue;
          }
-         else if (Eele < mElectron) {
-            // no kinematic solution because Eele < mElectron, try again
+         else if (Eneg < mLepton) {
+            // no kinematic solution because Eneg < mLepton, try again
             continue;
          }
          LDouble_t q12mag = sqrt(sqr(kin) - sqr(Mpair));
@@ -822,11 +847,17 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    G4PrimaryVertex vertex(x0, t0);
    G4ParticleDefinition *positron = G4Positron::Definition();
    G4ParticleDefinition *electron = G4Electron::Definition();
+   G4ParticleDefinition *leptonplus = positron;
+   G4ParticleDefinition *leptonminus = electron;
+   if (fLeptonPairFamily == 1) {
+      leptonplus = G4MuonPlus::Definition();
+      leptonminus = G4MuonMinus::Definition();
+   }
    G4ThreeVector psec1(p1.Mom()[1]*GeV, p1.Mom()[2]*GeV, p1.Mom()[3]*GeV);
    G4ThreeVector psec2(e2.Mom()[1]*GeV, e2.Mom()[2]*GeV, e2.Mom()[3]*GeV);
    G4ThreeVector psec3(e3.Mom()[1]*GeV, e3.Mom()[2]*GeV, e3.Mom()[3]*GeV);
-   G4DynamicParticle *sec1 = new G4DynamicParticle(positron, psec1);
-   G4DynamicParticle *sec2 = new G4DynamicParticle(electron, psec2);
+   G4DynamicParticle *sec1 = new G4DynamicParticle(leptonplus, psec1);
+   G4DynamicParticle *sec2 = new G4DynamicParticle(leptonminus, psec2);
    G4DynamicParticle *sec3 = new G4DynamicParticle(electron, psec3);
    G4TrackVector secondaries;
    secondaries.push_back(new G4Track(sec1, t0, x0));
@@ -915,9 +946,12 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 
 #else
 
+   LDouble_t mLepton = mElectron;
+   if (fLeptonPairFamily == 1)
+      mLepton = mMuon;
    TPhoton gIn;
-   TLepton eOut(mElectron);
-   TLepton pOut(mElectron);
+   TLepton eOut(mLepton);
+   TLepton pOut(mLepton);
    TLepton nIn(mProton);
    TLepton nOut(mProton);
    LDouble_t diffXS(0);
@@ -931,7 +965,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    LDouble_t kin = track->GetKineticEnergy()/GeV;
 
    // If we are below pair production threshold, do nothing
-   if (kin < 2 * mElectron * (1 + mElectron / mProton))
+   if (kin < 2 * mLepton * (1 + mLepton / mProton))
       return;
 
    G4ThreeVector mom(track->GetMomentum());
@@ -974,8 +1008,8 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    weight *= 2*M_PI;
 
    // Generate Mpair as 1 / (M [M^2 + Mcut^2])
-   LDouble_t Mthresh = 2 * mElectron;
-   LDouble_t Mcut = 0.005;  // GeV
+   LDouble_t Mthresh = 2 * mLepton;
+   LDouble_t Mcut = 10 * mLepton;  // 5 MeV for electron pairs
    LDouble_t um0 = 1 + sqr(Mcut / Mthresh);
    LDouble_t umax = 1;
    if (fBHpair_mass_min > Mthresh)
@@ -987,7 +1021,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 
    // Generate qR^2 with weight 1 / [qR^2 sqrt(qRcut^2 + qR^2)]
    LDouble_t qRmin = sqr(Mpair) /(2 * kin);
-   LDouble_t qRcut = 1e-3; // GeV
+   LDouble_t qRcut = 2 * mLepton; // 1 MeV for electron pairs
    LDouble_t uq0 = qRmin / (qRcut + sqrt(sqr(qRcut) + sqr(qRmin)));
    LDouble_t uq = pow(uq0, u[5]);
    LDouble_t qR = 2 * qRcut * uq / (1 - sqr(uq));
@@ -998,12 +1032,12 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    weight *= Mpair / (2 * kin);
 
    try {
-      if (Epos < mElectron) {
+      if (Epos < mLepton) {
          throw std::runtime_error("positron energy less than its rest mass.");
       }
 
       // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
-      LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+      LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mLepton);
       if (k12star2 < 0) {
          throw std::runtime_error("no kinematic solution because k12star2 < 0");
       }
@@ -1015,8 +1049,8 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       }
       LDouble_t q12mag = sqrt(sqr(E12) - sqr(Mpair));
       LDouble_t costhetastar = (Epos - E12 / 2) * Mpair / (k12star * q12mag);
-      if (Epos > E12 - mElectron) {
-         throw std::runtime_error("no kinematic solution because Epos > E12 - mElectron");
+      if (Epos > E12 - mLepton) {
+         throw std::runtime_error("no kinematic solution because Epos > E12 - mLepton");
       }
       else if (fabs(costhetastar) > 1) {
          throw std::runtime_error("no kinematic solution because |costhetastar| > 1");
@@ -1121,14 +1155,18 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    x0 -= uvtx * steplength * direction;
    t0 -= uvtx * steplength / beamVelocity;
    G4PrimaryVertex vertex(x0, t0);
-   G4ParticleDefinition *positron = G4Positron::Definition();
-   G4ParticleDefinition *electron = G4Electron::Definition();
+   G4ParticleDefinition *leptonplus = G4Positron::Definition();
+   G4ParticleDefinition *leptonminus = G4Electron::Definition();
+   if (fLeptonPairFamily == 1) {
+      leptonplus = G4MuonPlus::Definition();
+      leptonminus = G4MuonMinus::Definition();
+   }
    G4ParticleDefinition *proton = G4Proton::Definition();
    G4ThreeVector psec1(pOut.Mom()[1]*GeV, pOut.Mom()[2]*GeV, pOut.Mom()[3]*GeV);
    G4ThreeVector psec2(eOut.Mom()[1]*GeV, eOut.Mom()[2]*GeV, eOut.Mom()[3]*GeV);
    G4ThreeVector psec3(nOut.Mom()[1]*GeV, nOut.Mom()[2]*GeV, nOut.Mom()[3]*GeV);
-   G4DynamicParticle *sec1 = new G4DynamicParticle(positron, psec1);
-   G4DynamicParticle *sec2 = new G4DynamicParticle(electron, psec2);
+   G4DynamicParticle *sec1 = new G4DynamicParticle(leptonplus, psec1);
+   G4DynamicParticle *sec2 = new G4DynamicParticle(leptonminus, psec2);
    G4DynamicParticle *sec3 = new G4DynamicParticle(proton, psec3);
    G4TrackVector secondaries;
    secondaries.push_back(new G4Track(sec1, t0, x0));
@@ -1213,9 +1251,12 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
 
 #else
 
+   LDouble_t mLepton = mElectron;
+   if (fLeptonPairFamily == 1)
+      mLepton = mMuon;
    TPhoton gIn;
-   TLepton eOut(mElectron);
-   TLepton pOut(mElectron);
+   TLepton eOut(mLepton);
+   TLepton pOut(mLepton);
    TLepton eIn(mElectron);
    TLepton eOut3(mElectron);
    LDouble_t diffXS(0);
@@ -1229,7 +1270,7 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
    LDouble_t kin = track->GetKineticEnergy()/GeV;
 
    // If we are below pair production threshold, do nothing
-   if (kin < 4 * mElectron)
+   if (kin < 2 * mLepton * (1 + mLepton / mElectron))
       return;
 
    G4ThreeVector mom(track->GetMomentum());
@@ -1272,8 +1313,8 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
    weight *= 2*M_PI;
 
    // Generate Mpair as 1 / (M [M^2 + Mcut^2])
-   LDouble_t Mthresh = 2 * mElectron;
-   LDouble_t Mcut = 0.005;  // GeV
+   LDouble_t Mthresh = 2 * mLepton;
+   LDouble_t Mcut = 10 * mLepton;  // 5 MeV for electrons
    LDouble_t um0 = 1 + sqr(Mcut / Mthresh);
    LDouble_t umax = 1;
    if (fBHpair_mass_min > Mthresh)
@@ -1285,7 +1326,7 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
 
    // Generate qR^2 with weight 1 / [qR^2 sqrt(qRcut^2 + qR^2)]
    LDouble_t qRmin = sqr(Mpair) /(2 * kin);
-   LDouble_t qRcut = 1e-3; // GeV
+   LDouble_t qRcut = 2 * mLepton; // 1 MeV for electrons
    LDouble_t uq0 = qRmin / (qRcut + sqrt(sqr(qRcut) + sqr(qRmin)));
    LDouble_t uq = pow(uq0, u[5]);
    LDouble_t qR = 2 * qRcut * uq / (1 - sqr(uq));
@@ -1296,12 +1337,12 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
    weight *= Mpair / (2 * kin);
 
    try {
-      if (Epos < mElectron) {
-         throw std::runtime_error("positron energy less than its rest mass.");
+      if (Epos < mLepton) {
+         throw std::runtime_error("positive lepton energy less than its rest mass.");
       }
 
       // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
-      LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mElectron);
+      LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mLepton);
       if (k12star2 < 0) {
          throw std::runtime_error("no kinematic solution because k12star2 < 0");
       }
@@ -1313,14 +1354,14 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
       }
       LDouble_t q12mag = sqrt(sqr(E12) - sqr(Mpair));
       LDouble_t costhetastar = (Epos - E12 / 2) * Mpair / (k12star * q12mag);
-      if (Epos > E12 - mElectron) {
-         throw std::runtime_error("no kinematic solution because Epos > E12 - mElectron");
+      if (Epos > E12 - mLepton) {
+         throw std::runtime_error("no kinematic solution because Epos > E12 - mLepton");
       }
       else if (fabs(costhetastar) > 1) {
          throw std::runtime_error("no kinematic solution because |costhetastar| > 1");
       }
 
-      // Solve for the recoil nucleon kinematics
+      // Solve for the recoil electron kinematics
       LDouble_t costhetaR = (sqr(Mpair) / 2 + (kin + mElectron) *
                             (Erec - mElectron)) / (kin * qR);
       if (fabs(costhetaR) > 1) {
@@ -1407,11 +1448,17 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
    G4PrimaryVertex vertex(x0, t0);
    G4ParticleDefinition *positron = G4Positron::Definition();
    G4ParticleDefinition *electron = G4Electron::Definition();
+   G4ParticleDefinition *leptonplus = positron;
+   G4ParticleDefinition *leptonminus = electron;
+   if (fLeptonPairFamily == 1) {
+      leptonplus = G4MuonPlus::Definition();
+      leptonminus = G4MuonMinus::Definition();
+   }
    G4ThreeVector psec1(pOut.Mom()[1]*GeV, pOut.Mom()[2]*GeV, pOut.Mom()[3]*GeV);
    G4ThreeVector psec2(eOut.Mom()[1]*GeV, eOut.Mom()[2]*GeV, eOut.Mom()[3]*GeV);
    G4ThreeVector psec3(eOut3.Mom()[1]*GeV, eOut3.Mom()[2]*GeV, eOut3.Mom()[3]*GeV);
-   G4DynamicParticle *sec1 = new G4DynamicParticle(positron, psec1);
-   G4DynamicParticle *sec2 = new G4DynamicParticle(electron, psec2);
+   G4DynamicParticle *sec1 = new G4DynamicParticle(leptonplus, psec1);
+   G4DynamicParticle *sec2 = new G4DynamicParticle(leptonminus, psec2);
    G4DynamicParticle *sec3 = new G4DynamicParticle(electron, psec3);
    G4TrackVector secondaries;
    secondaries.push_back(new G4Track(sec1, t0, x0));
