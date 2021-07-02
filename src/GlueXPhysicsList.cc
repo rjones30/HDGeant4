@@ -241,10 +241,10 @@ void GlueXPhysicsList::ConstructProcess()
          if (fBernardConversion) {
 #if USING_BERNARD
             mgr->AddDiscreteProcess(fBernardConversion);
-            G4VEmModel *model5D = new G4BetheHeitler5DModel();
+            auto *model5D = new G4BetheHeitler5DModel();
             fBernardConversion->SetEmModel(model5D);
-            model5D->SetLeptonPair(fBernardConversion->GetLepton(+1),
-                                   fBernardConversion->GetLepton(-1));
+            auto *proc = (GlueXBernardConversionProcess*)fBernardConversion;
+            model5D->SetLeptonPair(proc->GetLepton(+1), proc->GetLepton(-1));
 #else
             G4cerr << "Error in GlueXPhysicsList::ConstructProcess - "
                    << "BernardConversion process requested, but build "
