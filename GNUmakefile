@@ -205,10 +205,15 @@ $(G4LIBDIR)/../../../g4py/G4fixes/libG4fixes.so: $(G4LIBDIR)/libG4fixes.so
 
 utils: $(G4BINDIR)/beamtree $(G4BINDIR)/genBH $(G4BINDIR)/adapt
 
+utils: $(G4BINDIR)/beamtree $(G4BINDIR)/geneBH $(G4BINDIR)/adapt
+
 $(G4BINDIR)/beamtree: src/utils/beamtree.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
 
 $(G4BINDIR)/genBH: src/utils/genBH.cc
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(DANALIBS) $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
+
+$(G4BINDIR)/geneBH: src/utils/geneBH.cc
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ -L$(G4LIBDIR) -lhdgeant4 $(DANALIBS) $(ROOTLIBS) -Wl,-rpath=$(G4LIBDIR)
 
 $(G4BINDIR)/adapt: src/utils/adapt.cc
