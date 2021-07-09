@@ -35,8 +35,15 @@
 //     must be carried with the event. They have units of microbarns,
 //     defined such that the total Bethe Heitler cross section can be
 //     estimated by Monte Carlo integration as the average value of
-//     these weights.
-//
+//     these weights. To get the average right, do not drop events
+//     from the output that have zero weight, as these contribute to
+//     the denominator of the average, although not the numerator.
+//  5) Support has been added for pair production from electrons in
+//     the target, in addition to coherent scattering from the atom
+//     as a whole which is dominated by the nucleus. This process is
+//     sometimes called triplet production rather than pair because
+//     there are 3 leptons that emerge from the target along with
+//     the incident electron.
 
 #include <HDDM/hddm_mc_s.hpp>
 
@@ -55,6 +62,8 @@
 #include <vector>
 #include <thread>
 #include <stdexcept>
+
+#define TRIPLET_FRACTION 1
 
 double Ebeam(11.0);
 LDouble_t M12_minimum(0);
@@ -169,6 +178,17 @@ int generate(int nevents)
       // generate phiq uniform on [0,2pi]
       LDouble_t phiq = randoms->Uniform(2*PI_);
       weight *= 2*PI_;
+
+      // fork between coherent pair and triplet process
+      LDouble_t target_mass;
+      if (randoms->Uniform(1) < TRIPLET_FRACTION) {
+         weight /= TRIPLET_FRACTION;
+         target_mass = mElectron;
+      }
+      else {
+         weight /= 1 - TRIPLET_FRACTION + 1e-99;
+         target_mass = mTarget;
+      }
    
       // overall measure Jacobian factors
       weight *= Mpair / (2 * sqrt(sqr(nu) + Q2));
@@ -177,6 +197,7 @@ int generate(int nevents)
       // compute the differential cross section
       TLepton eIn(mElectron), eOut(mElectron);
       TLepton lnOut(mLepton), lpOut(mLepton);
+      TLepton tIn(mElectron), tOut(mElectron);
       TFourVectorReal qRecoil;
       LDouble_t diffXS(0);
 
@@ -199,14 +220,14 @@ int generate(int nevents)
                                qin * costhetaq);
 
          LDouble_t qR = sqrt(qR2);
-         LDouble_t Erec = sqrt(sqr(mTarget) + qR2);
-         LDouble_t costhetaqR = (2 * (mTarget + nu) * (Erec - mTarget) +
+         LDouble_t Erec = sqrt(sqr(target_mass) + qR2);
+         LDouble_t costhetaqR = (2 * (target_mass + nu) * (Erec - target_mass) +
                                 sqr(Mpair) + Q2) / (2 * qin * qR);
          if (costhetaqR > 1) {
             throw std::runtime_error("no kinematic solution because costhetaR > 1");
          }
          LDouble_t sinthetaqR = sqrt(1 - sqr(costhetaqR));
-         qRecoil = TFourVectorReal(Erec - mTarget,
+         qRecoil = TFourVectorReal(Erec - target_mass,
                                    qR * sinthetaqR * cos(phiR),
                                    qR * sinthetaqR * sin(phiR),
                                    qR * costhetaqR);
@@ -217,7 +238,7 @@ int generate(int nevents)
             throw std::runtime_error("no kinematic solution because pStar2 < 0");
          }
          LDouble_t pStar = sqrt(pStar2);
-         LDouble_t E12 = nu + mTarget - Erec;
+         LDouble_t E12 = nu + target_mass - Erec;
          LDouble_t p12mag = sqrt(sqr(E12) - sqr(Mpair));
          LDouble_t costhetastar = (Epos - E12 / 2) * Mpair / (pStar * p12mag);
          if (fabs(costhetastar) > 1) {
@@ -251,17 +272,33 @@ int generate(int nevents)
          lpOut.AllPol();
          lnOut.AllPol();
 
-         // Compute the polarized differential cross section
-         diffXS = TCrossSection::ePairProduction(eIn, eOut, lpOut, lnOut);
-         diffXS *= sqr(TargetZ);
+         if (target_mass == mElectron) {
+            tIn.SetMom(TThreeVectorReal(0,0,0));
+            tIn.SetPol(TThreeVectorReal(0,0,0));
+            tOut.SetMom((TThreeVectorReal)qRecoil);
+            tOut.AllPol();
+            diffXS = TCrossSection::eTripletProduction(eIn, eOut, lpOut, lnOut, tIn, tOut);
+            diffXS = TargetZ;
 
-         // Include the atomic and nuclear form factors
-         diffXS *= sqr(1 - FFatomic(qR));
-         diffXS *= sqr(FFnuclear(qR));
+            // Include the atomic form factor
+            diffXS *= 1 - sqr(FFatomic(qR));
  
-         // Suppress double counting of the forward electron, assumes e+e-
-         if (eOut.Mom()[0] < lnOut.Mom()[0])
-            weight = 0;
+            // Suppress over-counting due to identical electrons in final state
+            if (eOut.Mom()[0] < lnOut.Mom()[0] || lnOut.Mom()[0] < tOut.Mom()[0])
+               weight = 0;
+         }
+         else {
+            diffXS = TCrossSection::ePairProduction(eIn, eOut, lpOut, lnOut);
+            diffXS *= sqr(TargetZ);
+
+            // Include the atomic and nuclear form factors
+            diffXS *= sqr(1 - FFatomic(qR));
+            diffXS *= sqr(FFnuclear(qR));
+ 
+            // Suppress double counting of the forward electron, assumes e+e-
+            if (eOut.Mom()[0] < lnOut.Mom()[0])
+               weight = 0;
+         }
       }
       catch (const std::exception &e) {
 
@@ -345,8 +382,14 @@ int generate(int nevents)
       prods(3).setId(4);
       prods(3).setMech(0);
       prods(3).setParentid(0);
-      prods(3).setPdgtype(TargetPDG);
-      prods(3).setType(Target);
+      if (target_mass == mElectron) {
+         prods(3).setPdgtype(11);
+         prods(3).setType(Electron);
+      }
+      else {
+         prods(3).setPdgtype(TargetPDG);
+         prods(3).setType(Target);
+      }
       for (int i=0; i < 4; ++i) {
          prods(i).addMomenta();
          prods(i).addPropertiesList();
@@ -373,8 +416,13 @@ int generate(int nevents)
       prods(3).getMomentum().setPx(qRecoil[1]);
       prods(3).getMomentum().setPy(qRecoil[2]);
       prods(3).getMomentum().setPz(qRecoil[3]);
-      prods(3).getProperties().setMass(mTarget);
-      prods(3).getProperties().setCharge(0);
+      prods(3).getProperties().setMass(target_mass);
+      if (target_mass == mElectron) {
+         prods(3).getProperties().setCharge(-1);
+      }
+      else {
+         prods(3).getProperties().setCharge(TargetZ);
+      }
       verts(0).addOrigins();
       verts(0).getOrigin().setT(0);
       verts(0).getOrigin().setVx(0);
