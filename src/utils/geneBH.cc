@@ -63,7 +63,7 @@
 #include <thread>
 #include <stdexcept>
 
-#define TRIPLET_FRACTION 1
+#define TRIPLET_FRACTION 0.1
 
 double Ebeam(11.0);
 LDouble_t M12_minimum(0);
