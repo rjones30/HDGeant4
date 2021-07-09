@@ -278,7 +278,7 @@ int generate(int nevents)
             tOut.SetMom((TThreeVectorReal)qRecoil);
             tOut.AllPol();
             diffXS = TCrossSection::eTripletProduction(eIn, eOut, lpOut, lnOut, tIn, tOut);
-            diffXS = TargetZ;
+            diffXS *= TargetZ;
 
             // Include the atomic form factor
             diffXS *= 1 - sqr(FFatomic(qR));
