@@ -155,22 +155,6 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
 	      << "    Stop beam after target? "
 	      << (fStopBeamAfterTarget? "yes" : "no") << G4endl;
    }
-
-
-setConverterMaterial(82, 208);
-for (int i=0; i < 1000; ++i) {
-  double Q2_GeV = pow(10, -10 + i / 50.);
-  std::cout << Q2_GeV << "  " << nuclearFormFactor(Q2_GeV)
-                  << "  " << nucleonFormFactor(Q2_GeV, kGEp)
-                  << "  " << nucleonFormFactor(Q2_GeV, kGMp)
-                  << "  " << nucleonFormFactor(Q2_GeV, kGEn)
-                  << "  " << nucleonFormFactor(Q2_GeV, kGMn)
-                  << "  " << nucleonFormFactor(Q2_GeV, kF1p)
-                  << "  " << nucleonFormFactor(Q2_GeV, kF2p)
-                  << "  " << nucleonFormFactor(Q2_GeV, kF1n)
-                  << "  " << nucleonFormFactor(Q2_GeV, kF2n)
-                  << std::endl;
-}
 }
 
 GlueXBeamConversionProcess::~GlueXBeamConversionProcess()
