@@ -28,6 +28,7 @@
 // pairs inside, otherwise the standard pair conversion
 // probabilities apply.
 #define FORCED_LIH2_PAIR_CONVERSION 0
+#define FORCED_TGT0_PAIR_CONVERSION 0
 
 #include <G4SystemOfUnits.hh>
 #include "G4PhysicalConstants.hh"
@@ -276,6 +277,7 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
    {
       fPIL = G4VEmProcess::PostStepGetPhysicalInteractionLength(
                              track, previousStepSize, condition);
+      setConverterMaterial(4, 8);
       *condition = Forced;
       return 100*cm;
    }
@@ -285,6 +287,17 @@ G4double GlueXBeamConversionProcess::PostStepGetPhysicalInteractionLength(
    {
       fPIL = G4VEmProcess::PostStepGetPhysicalInteractionLength(
                              track, previousStepSize, condition);
+      setConverterMaterial(1, 1);
+      *condition = Forced;
+      return 100*cm;
+   }
+   else if (track.GetTrackID() == 1 && pvol && pvol->GetName() == "TGT0" &&
+       (FORCED_TGT0_PAIR_CONVERSION || 
+        fStopBeamAfterTarget ))
+   {
+      fPIL = G4VEmProcess::PostStepGetPhysicalInteractionLength(
+                             track, previousStepSize, condition);
+      setConverterMaterial(82, 208);
       *condition = Forced;
       return 100*cm;
    }
@@ -934,7 +947,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 
    G4cerr << "GlueXBeamConversionProcess::GenerateBetheHeitlerProcess error:"
           << G4endl
-          << "  You have enabled Bethe-Heitler conversion in the LIH2 target,"
+          << "  You have enabled beam Bethe-Heitler conversion in the target,"
           << G4endl
           << "  but your have built HDGeant4 without support for the Dirac++"
 		  << G4endl
@@ -1111,21 +1124,17 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       // Compute the polarized differential cross section (barnes/GeV^4)
       // returned as d(sigma)/(dE+ dphi+ d^3qR)
       LDouble_t t = sqr(Erec - mProton) - qR2;
-      LDouble_t tau = -t / sqr(2 * mProton);
-      LDouble_t proton_magnetic_moment = 2.793;
       LDouble_t F1_timelike = 1;
       LDouble_t F2_timelike = 0;
-      LDouble_t F1_spacelike = (1 / sqr(1 - t/0.71)) / (1 + tau) *
-                               (1 + proton_magnetic_moment * tau);
-      LDouble_t F2_spacelike = (1 / sqr(1 - t/0.71)) / (1 + tau) * 
-                               (proton_magnetic_moment - 1);
+      LDouble_t F1_spacelike = nucleonFormFactor(-t, kF1p);
+      LDouble_t F2_spacelike = nucleonFormFactor(-t, kF2p);
       diffXS = TCrossSection::BetheHeitlerNucleon(gIn, nIn,
                                                   pOut, eOut, nOut,
                                                   F1_spacelike,
                                                   F2_spacelike,
                                                   F1_timelike,
                                                   F2_timelike);
-      fPairsGeneration->SetConverterZ(1);
+      fPairsGeneration->SetConverterZ(fTargetZ);
       diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
 #if USE_ADAPTIVE_SAMPLER
       fAdaptiveSampler->feedback(u, weight * diffXS);
@@ -1239,7 +1248,7 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
 
    G4cerr << "GlueXBeamConversionProcess::GenerateTripletProcess error:"
           << G4endl
-          << "  You have enabled triplet conversion in the LIH2 target,"
+          << "  You have enabled beam triplet conversion in the target,"
           << G4endl
           << "  but your have built HDGeant4 without support for the Dirac++"
 		  << G4endl
@@ -1416,7 +1425,7 @@ void GlueXBeamConversionProcess::GenerateTripletProcess(const G4Step &step)
       // Compute the polarized differential cross section (barnes/GeV^4)
       // returned as d(sigma)/(dE+ dphi+ d^3qR)
       diffXS = TCrossSection::TripletProduction(gIn, eIn, pOut, eOut, eOut3);
-      fPairsGeneration->SetConverterZ(1);
+      fPairsGeneration->SetConverterZ(fTargetZ);
       diffXS *= 1 - sqr(fPairsGeneration->FFatomic(qR));
 #if USE_ADAPTIVE_SAMPLER
       fAdaptiveSampler->feedback(u, weight * diffXS);
@@ -1523,4 +1532,130 @@ void GlueXBeamConversionProcess::prepareAdaptiveSampler()
 
    G4AutoLock barrier(&fMutex);
    fAdaptiveSamplerRegistry.push_back(fAdaptiveSampler);
+}
+
+double GlueXBeamConversionProcess::nucleonFormFactor(double Q2_GeV,
+                       GlueXBeamConversionProcess::FormFactorType t)
+{
+   // The following fits were taken from J.J. Kelly, Simple Parameterization
+   // of Nucleon Form Factors, PHYSICAL REVIEW C 70, 068202 (2004)
+
+   const double proton_magnetic_moment = 2.793;
+   const double neutron_magnetic_moment = -1.913;
+
+   const std::map<GlueXBeamConversionProcess::FormFactorType, std::vector<double> >
+      a = {{kGEp, { 0.24 }},
+           {kGMp, { 0.12 }},
+           {kGMn, { 2.33 }},
+           {kGEn, { 1.70 }}
+          };
+   const std::map<GlueXBeamConversionProcess::FormFactorType, std::vector<double> >
+      b = {{kGEp, { 10.98, 12.82, 21.97 }},
+           {kGMp, { 10.97, 18.86,  6.55 }},
+           {kGMn, { 14.72, 24.20, 84.10 }},
+           {kGEn, { 3.30 }}
+          };
+
+   double tau = Q2_GeV / sqr(2 * mProton);
+   if (t == kGEp || t == kGMp || t == kGMn) {
+      double numer = 1;
+      double denom = 1;
+      for (unsigned n=0; n < a.at(t).size(); ++n)
+         numer += a.at(t)[n] * pow(tau, n+1);
+      for (unsigned n=0; n < b.at(t).size(); ++n)
+         denom += b.at(t)[n] * pow(tau, n+1);
+      if (t == kGMp)
+         numer *= proton_magnetic_moment;
+      else if (t == kGMn)
+         numer *= neutron_magnetic_moment;
+      return numer / denom;
+   }
+   else if (t == kGEn) {
+      double GDipole = 1 / sqr(1 + Q2_GeV/0.71);
+      return GDipole * a.at(t)[0] * tau / (1 + b.at(t)[0] * tau);
+   }
+   else if (t == kF1p) {
+      return (nucleonFormFactor(Q2_GeV, kGEp) + 
+              nucleonFormFactor(Q2_GeV, kGMp) * tau) / (1 + tau);
+   }
+   else if (t == kF2p) {
+      return (nucleonFormFactor(Q2_GeV, kGMp) -
+              nucleonFormFactor(Q2_GeV, kGEp)) / (1 + tau);
+   }
+   else if (t == kF1n) {
+      return (nucleonFormFactor(Q2_GeV, kGEn) + 
+              nucleonFormFactor(Q2_GeV, kGMn) * tau) / (1 + tau);
+   }
+   else if (t == kF2n) {
+      return (nucleonFormFactor(Q2_GeV, kGMn) -
+              nucleonFormFactor(Q2_GeV, kGEn)) / (1 + tau);
+   }
+
+   std::cerr << "GlueXBeamConversionProcess::nucleonFormFactor error - "
+             << "unknown form factor requested, returning zero!" << std::endl;
+   return 0;
+}
+
+double GlueXBeamConversionProcess::nuclearFormFactor(double Q2_GeV)
+{
+   // This fit to the parameterization of the nuclear charge form factor 
+   // was provided by Rory Miskimen, with attribution to Bernard Frois.
+   // It was translated from the original Fortran into C++ by
+   // R.T. Jones, July 17, 2021.
+
+   const std::map<double, double>
+      A = {{0.1, 0.003845},
+           {0.7, 0.009724},
+           {1.6, 0.033093},
+           {2.1, 0.000120},
+           {2.7, 0.083107},
+           {3.5, 0.080869},
+           {4.2, 0.139957},
+           {5.1, 0.260892},
+           {6.0, 0.336013},
+           {6.6, 0.033637},
+           {7.6, 0.018729},
+           {8.7, 0.000020}
+         };
+   const double gamma(1.388);
+   const double hbarc(0.197);
+
+   double q = sqrt(Q2_GeV);
+   double FF = 0;
+   if (fTargetZ == 82) {
+      for (auto rA : A) {
+          double r = rA.first;
+          FF +=  A.at(r) * (sqr(gamma) * cos(q * r/hbarc) +
+                         2 * r * hbarc/q * sin(q * r/hbarc))
+                        / (sqr(gamma) + 2 * sqr(r)) *
+                        exp(-sqr(q) / 4 * sqr(gamma/hbarc));
+      }
+   }
+#if 0 // this part of the code is missing some unknowns
+   else {
+      double adent = a_den(fTargetZ);
+      double adent2 = adent * adent;
+      double adent3 = adent2 * adent;
+      double cdent = c_den(fTargetZ);
+      FF = 4 * sqr(M_PI) * rho0 * adent3
+           / sqr(q * adent * sinh(M_PI * q * adent2))
+           * (M_PI * q * adent * cosh(M_PI * q * adent)
+                               * sin(q * cdent)
+                   - q * cdent * sinh(M_PI * q * adent)
+                                  * cos(q * cdent));
+      for (int i=0; i < 10; ++i) {
+         FF += 8. * M_PI * rho0 * adent3 * pow(-1., i-1)
+                  * i * exp(-i * cdent / adent)
+                  / sqr(i*i + sqr(q * adent));
+   }
+#else
+   else {
+      std::cerr << "GlueXBeamConversionProcess::nuclearFormFactor error - "
+                << "cannot currently handle target with Z=" << fTargetZ
+                << " A=" << fTargetA << ", cannot continue!"
+                << std::endl;
+      exit(92);
+   }
+#endif
+   return FF;
 }

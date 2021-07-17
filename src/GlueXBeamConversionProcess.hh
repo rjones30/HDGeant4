@@ -46,6 +46,11 @@ class GlueXBeamConversionProcess: public G4VEmProcess
    // print documentation in html format
    virtual void ProcessDescription(std::ostream&) const override;
 
+   enum FormFactorType {kGEp, kGMp, kF1p, kF2p,
+                        kGEn, kGMn, kF1n, kF2n};
+   virtual double nucleonFormFactor(double Q2_GeV, FormFactorType t);
+   virtual double nuclearFormFactor(double Q2_GeV);
+
  protected:
    virtual void InitialiseProcess(const G4ParticleDefinition*) override;
    virtual G4double GetMeanFreePath(const G4Track &track, 
@@ -76,6 +81,8 @@ class GlueXBeamConversionProcess: public G4VEmProcess
    AdaptiveSampler *fAdaptiveSampler;
    void prepareAdaptiveSampler();
 
+   void setConverterMaterial(double Z, double A);
+
  private:
    GlueXBeamConversionProcess() = delete;
    GlueXBeamConversionProcess(const GlueXBeamConversionProcess &src) = delete;
@@ -86,6 +93,15 @@ class GlueXBeamConversionProcess: public G4VEmProcess
    static G4Mutex fMutex;
    static int fConfigured;
    static std::vector<AdaptiveSampler*> fAdaptiveSamplerRegistry;
+
+   double fTargetZ;
+   double fTargetA;
 };
+
+inline void GlueXBeamConversionProcess::setConverterMaterial(double Z, double A)
+{
+   fTargetZ = Z;
+   fTargetA = A;
+}
 
 #endif
