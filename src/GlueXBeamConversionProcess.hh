@@ -50,6 +50,9 @@ class GlueXBeamConversionProcess: public G4VEmProcess
                         kGEn, kGMn, kF1n, kF2n};
    virtual double nucleonFormFactor(double Q2_GeV, FormFactorType t);
    virtual double nuclearFormFactor(double Q2_GeV);
+   virtual double nuclearFermiMomentum_GeV();
+   virtual double nuclearBindingEnergy_GeV();
+   virtual double nuclearMass_GeV();
 
  protected:
    virtual void InitialiseProcess(const G4ParticleDefinition*) override;

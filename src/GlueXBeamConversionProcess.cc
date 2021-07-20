@@ -4,6 +4,32 @@
 // author: richard.t.jones at uconn.edu
 // version: december 24, 2016
 //
+// programmer's notes
+// 1) may 5, 2021 [rtj]
+//    Added support for pair conversion off the electrons in the target,
+//    also called triplet production.
+// 1) july 5, 2021 [rtj]
+//    Added the ability to generate muon pairs instead of e+e- pairs,
+//    enabled using the control.in flag 'BHmuons' instead of 'BHgen'.
+// 2) july 19, 2021 [rtj]
+//    I extended the functionality of the GenerateBetheHeitlerConversion
+//    method to cover the case of nuclear targets, eg. 208Pb for the CPP
+//    experiment. This necessarily raises the question of how to handle
+//    recoil nuclear excitations. To keep things simple, I handle just
+//    three discrete cases:
+//        a. coherent nuclear recoil in the ground state
+//        b. single proton knock-out (quasi-elastic)
+//        c. single neutron knock-out (quasi-elastic)
+//    Each of the three cases is weighted by the appropriate production
+//    cross section for that reaction, governed by the nuclear charge
+//    form factor. In the case of quasi-elastic scattering, Pauli blocking
+//    by the other nucleons at low Q is taken into account in an approximate
+//    way by weighting the cross section by |1 - FF(Q)^2|. Other than that,
+//    the remaining A-1 nucleons are treated as spectators in the process.
+//    I recognize that the quasi-deuteron process is probably just as
+//    important at the relevant Q-scale as the quasi-neutron process, but
+//    I am not interested in getting into that level of detail in this
+//    generator.
 
 #include "GlueXBeamConversionProcess.hh"
 #include "GlueXPhotonBeamGenerator.hh"
@@ -13,6 +39,7 @@
 #include "GlueXUserOptions.hh"
 #include "G4ParallelWorldProcess.hh"
 #include "G4PairProductionRelModel.hh"
+#include "G4NistManager.hh"
 
 #define VERBOSE_PAIRS_SPLITTING 1
 #define DO_PAIRCOH_IMPORTANCE_SAMPLE 1
@@ -30,6 +57,25 @@
 #define FORCED_LIH2_PAIR_CONVERSION 0
 #define FORCED_TGT0_PAIR_CONVERSION 0
 
+// If the pair conversion target is a nucleus, the generator
+// needs to know what fraction of the events to throw as
+// elastic-nuclear vs quasi-elastic-nucleon, and in the case
+// of quasi-elestic-nucleon, what fraction to throw as
+// quasi-elastic-proton vs quasi-elastic-neutron. The output
+// events are properly weighted by the respective production
+// rates no matter what values are assigned here, provided
+// that none of the values are 0 or 1. Adjusting these
+// values enables the user to improve the statistics of one
+// of these output channels at the expense of others. The
+// values below should be good initial values for most targets.
+// The three values should be >0 and should sum up to unity.
+// If the target is hydogen, these values are ignored.
+#define ELASTIC_NUCLEAR_FRACTION 0.75
+#define QUASIELASTIC_PROTON_FRACTION 0.20
+#define QUASIELASTIC_NEUTRON_FRACTION 0.05
+
+#define AMU_GEV 0.9313680888469
+
 #include <G4SystemOfUnits.hh>
 #include "G4PhysicalConstants.hh"
 #include "G4Gamma.hh"
@@ -38,6 +84,7 @@
 #include "G4MuonPlus.hh"
 #include "G4MuonMinus.hh"
 #include "G4Proton.hh"
+#include "G4Neutron.hh"
 #include "G4RunManager.hh"
 #include "G4TrackVector.hh"
 
@@ -76,7 +123,9 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
    fPaircohPDF(0),
    fTripletPDF(0),
    fAdaptiveSampler(0),
-   isInitialised(false)
+   isInitialised(false),
+   fTargetZ(0),
+   fTargetA(0)
 {
    verboseLevel = 0;
 
@@ -352,9 +401,9 @@ G4VParticleChange *GlueXBeamConversionProcess::PostStepDoIt(
       G4ThreeVector mom = step.GetPreStepPoint()->GetMomentum();
       G4ThreeVector pol = step.GetPreStepPoint()->GetPolarization();
       eventinfo->AddBeamParticle(1, tvtx, vtx, mom, pol);
-      double BetheHeitler_fraction = 0.5;
       double maxTripletMass2 = 2 * 0.511*MeV *
                                step.GetPreStepPoint()->GetKineticEnergy();
+      double BetheHeitler_fraction = fTargetZ / (fTargetZ + 1);
       if (fBHpair_mass_min*GeV > sqrt(maxTripletMass2))
          BetheHeitler_fraction = 1;
       double weight_factor;
@@ -977,8 +1026,25 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
    const G4Track *track = step.GetTrack();
    LDouble_t kin = track->GetKineticEnergy()/GeV;
 
+   // Decide which nuclear recoil state to generate
+   enum recoilType { kNucleus, kProton, kNeutron };
+   double mRecoil;
+   if (fTargetA == 1) {
+      mRecoil = (fTargetZ == 1)? mProton : mNeutron;
+   }
+   else {
+      double uchan;
+      unif01(1, &uchan);
+      if (uchan < ELASTIC_NUCLEAR_FRACTION)
+         mRecoil = nuclearMass_GeV();
+      else if (uchan - ELASTIC_NUCLEAR_FRACTION < QUASIELASTIC_PROTON_FRACTION)
+         mRecoil = mProton;
+      else
+         mRecoil = mNeutron;
+   }
+
    // If we are below pair production threshold, do nothing
-   if (kin < 2 * mLepton * (1 + mLepton / mProton))
+   if (kin < 2 * mLepton * (1 + mLepton / mRecoil))
       return;
 
    G4ThreeVector mom(track->GetMomentum());
@@ -1049,14 +1115,18 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          throw std::runtime_error("positron energy less than its rest mass.");
       }
 
+      LDouble_t Etarget(mRecoil);
+      if (Etarget < nuclearMass_GeV())
+         Etarget -= nuclearBindingEnergy_GeV();
+
       // Solve for the c.m. momentum of e+ in the pair 1,2 rest frame
       LDouble_t k12star2 = sqr(Mpair / 2) - sqr(mLepton);
       if (k12star2 < 0) {
          throw std::runtime_error("no kinematic solution because k12star2 < 0");
       }
       LDouble_t k12star = sqrt(k12star2);
-      LDouble_t Erec = sqrt(qR2 + sqr(mProton));
-      LDouble_t E12 = kin + mProton - Erec;
+      LDouble_t Erecoil = sqrt(qR2 + sqr(mRecoil));
+      LDouble_t E12 = kin + Etarget - Erecoil;
       if (E12 < Mpair) {
          throw std::runtime_error("no kinematic solution because E12 < Mpair");
       }
@@ -1070,15 +1140,26 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       }
 
       // Solve for the recoil nucleon kinematics
-      LDouble_t costhetaR = (sqr(Mpair) / 2 + (kin + mProton) *
-                            (Erec - mProton)) / (kin * qR);
+      double fermiMomentum = nuclearFermiMomentum_GeV() / sqrt(3);
+      if (fermiMomentum > 0) {
+         LDouble_t p[3];
+         p[0] = G4RandGauss::shoot(0, fermiMomentum);
+         p[1] = G4RandGauss::shoot(0, fermiMomentum);
+         p[2] = G4RandGauss::shoot(0, fermiMomentum);
+         nIn.SetMom(TThreeVectorReal(p));
+      }
+      LDouble_t costhetaR = (sqr(Mpair) / 2 - sqr(mRecoil) / 2
+                             - (sqr(Etarget) - nIn.Mom().LengthSqr()) / 2
+                             + Erecoil * (kin + Etarget)
+                             - kin * (Etarget - nIn.Mom()[2])
+                            ) / (kin * qR);
       if (fabs(costhetaR) > 1) {
          throw std::runtime_error("no kinematic solution because |costhetaR| > 1");
       }
       LDouble_t sinthetaR = sqrt(1 - sqr(costhetaR));
-      TFourVectorReal q3(Erec, qR * sinthetaR * cos(phiR),
-                               qR * sinthetaR * sin(phiR),
-                               qR * costhetaR);
+      TFourVectorReal q3(Erecoil, qR * sinthetaR * cos(phiR),
+                                  qR * sinthetaR * sin(phiR),
+                                  qR * costhetaR);
 
       // Boost the pair momenta into the lab
       TLorentzBoost toLab(q3[1] / E12, q3[2] / E12, (q3[3] - kin) / E12);
@@ -1123,19 +1204,49 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 
       // Compute the polarized differential cross section (barnes/GeV^4)
       // returned as d(sigma)/(dE+ dphi+ d^3qR)
-      LDouble_t t = sqr(Erec - mProton) - qR2;
-      LDouble_t F1_timelike = 1;
-      LDouble_t F2_timelike = 0;
-      LDouble_t F1_spacelike = nucleonFormFactor(-t, kF1p);
-      LDouble_t F2_spacelike = nucleonFormFactor(-t, kF2p);
-      diffXS = TCrossSection::BetheHeitlerNucleon(gIn, nIn,
-                                                  pOut, eOut, nOut,
-                                                  F1_spacelike,
-                                                  F2_spacelike,
-                                                  F1_timelike,
-                                                  F2_timelike);
-      fPairsGeneration->SetConverterZ(fTargetZ);
-      diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
+      LDouble_t diffXS;
+      LDouble_t t = sqr(Erecoil - Etarget) - qR2;
+      if (fTargetA > 1 && mRecoil == nuclearMass_GeV()) {
+         diffXS = TCrossSection::PairProduction(gIn, eOut, pOut);
+         diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
+         diffXS *= nuclearFormFactor(-t);
+      }
+      else if (mRecoil == mProton) {
+         LDouble_t F1_timelike = 1;
+         LDouble_t F2_timelike = 0;
+         LDouble_t F1_spacelike = nucleonFormFactor(-t, kF1p);
+         LDouble_t F2_spacelike = nucleonFormFactor(-t, kF2p);
+         diffXS = TCrossSection::BetheHeitlerNucleon(gIn, nIn,
+                                                     pOut, eOut, nOut,
+                                                     F1_spacelike,
+                                                     F2_spacelike,
+                                                     F1_timelike,
+                                                     F2_timelike);
+         if (fTargetZ == 1)
+            diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
+         else
+            diffXS *= 1 - sqr(nuclearFormFactor(-t));
+      }
+      else if (mRecoil == mNeutron) {
+         LDouble_t F1_timelike = 1;
+         LDouble_t F2_timelike = 0;
+         LDouble_t F1_spacelike = nucleonFormFactor(-t, kF1n);
+         LDouble_t F2_spacelike = nucleonFormFactor(-t, kF2n);
+         diffXS = TCrossSection::BetheHeitlerNucleon(gIn, nIn,
+                                                     pOut, eOut, nOut,
+                                                     F1_spacelike,
+                                                     F2_spacelike,
+                                                     F1_timelike,
+                                                     F2_timelike);
+         if (fTargetA > 1)
+            diffXS *= 1 - sqr(nuclearFormFactor(-t));
+      }
+      else {
+         G4cerr << "GlueXBeamConversionProcess::GenerateBetheHeitlerProcess error:"
+                << "  Unknown recoil particle of mass " << mRecoil
+                 << ", cannot continue!" << G4endl;
+		 exit(82);
+      }
 #if USE_ADAPTIVE_SAMPLER
       fAdaptiveSampler->feedback(u, weight * diffXS);
 #endif
@@ -1658,4 +1769,45 @@ double GlueXBeamConversionProcess::nuclearFormFactor(double Q2_GeV)
    }
 #endif
    return FF;
+}
+
+double GlueXBeamConversionProcess::nuclearMass_GeV()
+{
+   return G4NistManager::Instance()->GetAtomicMassAmu(fTargetZ) * AMU_GEV;
+}
+
+double GlueXBeamConversionProcess::nuclearFermiMomentum_GeV()
+{
+   // use a simple Fermi gas model of the nucleus to find
+   // the RMS momentum of bound nucleons in the nucleus.
+
+   double fermiEnergy(0);
+   if (fTargetA == 2)
+      fermiEnergy = 5;
+   else if (fTargetA == 3)
+      fermiEnergy = 15;
+   else
+      fermiEnergy = 33;
+   return sqrt(2 * AMU_GEV * fermiEnergy);
+}
+
+double GlueXBeamConversionProcess::nuclearBindingEnergy_GeV()
+{
+   // use the Bethe-Weiztacher formula
+
+   double a=14.0;
+   double b=13.0;
+   double c=0.585;
+   double d=19.3;
+   double e=33.0;
+   double B_MeV = a - b / pow(fTargetA, 1/3.) 
+                    - c * pow(fTargetZ, 2) / pow(fTargetA, 4/3.)
+                    - d * pow((fTargetA - 2 * fTargetZ) / fTargetA, 2);
+   if ((int(fTargetA + 0.5) % 2) == 0) {
+      if ((int(fTargetZ + 0.5) % 2) == 0)
+         B_MeV += e / pow(fTargetA, 7/4.);
+      else
+         B_MeV -= e / pow(fTargetA, 7/4.);
+   }
+   return B_MeV * 1e-3;
 }
