@@ -1775,6 +1775,10 @@ double GlueXBeamConversionProcess::nuclearFormFactor(double Q2_GeV)
 
 double GlueXBeamConversionProcess::nuclearMass_GeV()
 {
+   if (fTargetA == 1 and fTargetZ == 0)
+      return mNeutron;
+   else if (fTargetA == 1 and fTargetZ == 1)
+      return mProton;
    return G4NistManager::Instance()->GetAtomicMassAmu(fTargetZ) * AMU_GEV;
 }
 
@@ -1784,15 +1788,11 @@ double GlueXBeamConversionProcess::nuclearFermiMomentum_GeV()
    // the RMS momentum of bound nucleons in the nucleus.
 
    double fermiEnergy(0);
-   if (fTargetA == 1 and fTargetZ == 0)
-      return mNeutron;
-   else if (fTargetA == 1 and fTargetZ == 1)
-      return mProton;
-   else if (fTargetA == 2)
-      fermiEnergy = 5;
+   if (fTargetA == 2)
+      fermiEnergy = 9;
    else if (fTargetA == 3)
-      fermiEnergy = 15;
-   else
+      fermiEnergy = 20;
+   else if (fTargetA > 3)
       fermiEnergy = 33;
    return sqrt(2 * AMU_GEV * fermiEnergy);
 }
