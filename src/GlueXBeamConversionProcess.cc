@@ -1042,6 +1042,8 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       else
          mRecoil = mNeutron;
    }
+   nIn.SetMass(mRecoil);
+   nOut.SetMass(mRecoil);
 
    // If we are below pair production threshold, do nothing
    if (kin < 2 * mLepton * (1 + mLepton / mRecoil))
@@ -1782,7 +1784,11 @@ double GlueXBeamConversionProcess::nuclearFermiMomentum_GeV()
    // the RMS momentum of bound nucleons in the nucleus.
 
    double fermiEnergy(0);
-   if (fTargetA == 2)
+   if (fTargetA == 1 and fTargetZ == 0)
+      return mNeutron;
+   else if (fTargetA == 1 and fTargetZ == 1)
+      return mProton;
+   else if (fTargetA == 2)
       fermiEnergy = 5;
    else if (fTargetA == 3)
       fermiEnergy = 15;
