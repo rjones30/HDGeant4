@@ -736,7 +736,7 @@ void GlueXBeamConversionProcess::GenerateBeamPairConversion(const G4Step &step)
    
          // Solve for the recoil electron kinematics
          LDouble_t costhetaR = (sqr(Mpair) / 2 + (kin + mElectron) *
-                             (E3 - mElectron)) / (kin * qR);
+                                (E3 - mElectron)) / (kin * qR);
          if (fabs(costhetaR) > 1) {
             // no kinematic solution because |costhetaR| > 1, try again
             continue;
@@ -1164,7 +1164,9 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
                                   qR * costhetaR);
 
       // Boost the pair momenta into the lab
-      TLorentzBoost toLab(q3[1] / E12, q3[2] / E12, (q3[3] - kin) / E12);
+      TLorentzBoost toLab((q3[1] - nIn.Mom()[1]) / E12,
+                          (q3[2] - nIn.Mom()[2]) / E12,
+                          (q3[3] - nIn.Mom()[3] - kin) / E12);
       LDouble_t sinthetastar = sqrt(1 - sqr(costhetastar));
       TThreeVectorReal k12(k12star * sinthetastar * cos(phi12),
                            k12star * sinthetastar * sin(phi12),
@@ -1210,6 +1212,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       LDouble_t t = sqr(Erecoil - Etarget) - qR2;
       if (fTargetA > 1 && mRecoil == nuclearMass_GeV()) {
          diffXS = TCrossSection::PairProduction(gIn, eOut, pOut);
+         fPairsGeneration->SetConverterZ(fTargetZ);
          diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
          diffXS *= nuclearFormFactor(-t);
       }
@@ -1224,10 +1227,13 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
                                                      F2_spacelike,
                                                      F1_timelike,
                                                      F2_timelike);
-         if (fTargetZ == 1)
+         if (fTargetZ == 1) {
+            fPairsGeneration->SetConverterZ(fTargetZ);
             diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
-         else
+         }
+         else {
             diffXS *= 1 - sqr(nuclearFormFactor(-t));
+         }
       }
       else if (mRecoil == mNeutron) {
          LDouble_t F1_timelike = 1;
