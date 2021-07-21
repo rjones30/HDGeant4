@@ -99,6 +99,12 @@ LDouble_t PairConversionGeneration::FFatomic(LDouble_t qRecoil)
       }
       ff /= fConverterZ;
    }
+   else if (fConverterZ > 1 && fConverterZ < 93) {
+      // parameterization implemented by Bernard et al
+      // in Geant4 class G4BetheHeitler5DModel.
+      const LDouble_t beta = 2.17e5 / pow(fConverterZ, 1/3.);
+	  ff = 1 / (1 + sqr(beta * qRecoil));
+   }
    else {
       std::cerr << "PairConversionGeneration::FFatomic error: "
                 << "no model currently implemented for element "
