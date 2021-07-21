@@ -1208,7 +1208,6 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
 
       // Compute the polarized differential cross section (barnes/GeV^4)
       // returned as d(sigma)/(dE+ dphi+ d^3qR)
-      LDouble_t diffXS;
       LDouble_t t = sqr(Erecoil - Etarget) - qR2;
       if (fTargetA > 1 && mRecoil == nuclearMass_GeV()) {
          diffXS = TCrossSection::PairProduction(gIn, eOut, pOut);
