@@ -1794,11 +1794,11 @@ double GlueXBeamConversionProcess::nuclearFermiMomentum_GeV()
 
    double fermiEnergy(0);
    if (fTargetA == 2)
-      fermiEnergy = 9;
+      fermiEnergy = 9e-3;
    else if (fTargetA == 3)
-      fermiEnergy = 20;
+      fermiEnergy = 20e-3;
    else if (fTargetA > 3)
-      fermiEnergy = 33;
+      fermiEnergy = 33e-3;
    return sqrt(2 * AMU_GEV * fermiEnergy);
 }
 
