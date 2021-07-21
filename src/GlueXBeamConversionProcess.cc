@@ -1142,35 +1142,46 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       }
 
       // Solve for the initial state target kinematics
-      LDouble_t Ptarget[3] = {0,0,0};
+      TFourVectorReal q0(Etarget, 0, 0, 0);
       if (Etarget < nuclearMass_GeV()) {
          double fermiMomentum = nuclearFermiMomentum_GeV() / sqrt(3);
          if (fermiMomentum > 0) {
-            Ptarget[0] = G4RandGauss::shoot(0, fermiMomentum);
-            Ptarget[1] = G4RandGauss::shoot(0, fermiMomentum);
-            Ptarget[2] = G4RandGauss::shoot(0, fermiMomentum);
+            q0[1] = G4RandGauss::shoot(0, fermiMomentum);
+            q0[2] = G4RandGauss::shoot(0, fermiMomentum);
+            q0[3] = G4RandGauss::shoot(0, fermiMomentum);
          }
       }
-      nIn.SetMom(TFourVectorReal(Etarget, Ptarget[0], Ptarget[1], Ptarget[2]));
 
       // Solve for the recoil target kinematics
+      TFourVectorReal q3(Erecoil, 0, 0, 0);
+      LDouble_t q3dotq0(0);
+      LDouble_t qRkin(qR * kin);
       LDouble_t costhetaR = (sqr(Mpair) / 2 - sqr(mRecoil) / 2
-                             - (sqr(Etarget) - nIn.Mom().LengthSqr()) / 2
+                             - q0.InvariantSqr() / 2
                              + Erecoil * (kin + Etarget)
-                             - kin * (Etarget - nIn.Mom()[2])
-                            ) / (kin * qR);
-      if (fabs(costhetaR) > 1) {
-         throw std::runtime_error("no kinematic solution because |costhetaR| > 1");
+                             - kin * (Etarget - q0[3])
+                             - q3dotq0
+                            ) / qRkin;
+      for (int i=0; i < 99; ++i) {
+         if (fabs(costhetaR) > 1) {
+            throw std::runtime_error("no kinematic solution because |costhetaR| > 1");
+         }
+         LDouble_t sinthetaR = sqrt(1 - sqr(costhetaR));
+         q3[1] = qR * sinthetaR * cos(phiR);
+         q3[2] = qR * sinthetaR * sin(phiR),
+         q3[3] = qR * costhetaR;
+         LDouble_t delta = q3.Dot(q0) - q3dotq0;
+         if (fabs(delta) < qRkin * 1e-12)
+            break;
+         costhetaR -= delta / qRkin;
+         q3dotq0 += delta;
       }
-      LDouble_t sinthetaR = sqrt(1 - sqr(costhetaR));
-      TFourVectorReal q3(Erecoil, qR * sinthetaR * cos(phiR),
-                                  qR * sinthetaR * sin(phiR),
-                                  qR * costhetaR);
 
       // Boost the pair momenta into the lab
-      TLorentzBoost toLab((q3[1] - nIn.Mom()[1]) / E12,
-                          (q3[2] - nIn.Mom()[2]) / E12,
-                          (q3[3] - nIn.Mom()[3] - kin) / E12);
+      TThreeVectorReal beta((q3[1] - q0[1]) / E12,
+                            (q3[2] - q0[2]) / E12,
+                            (q3[3] - q0[3] - kin) / E12);
+      TLorentzBoost toLab(beta);
       LDouble_t sinthetastar = sqrt(1 - sqr(costhetastar));
       TThreeVectorReal k12(k12star * sinthetastar * cos(phi12),
                            k12star * sinthetastar * sin(phi12),
@@ -1180,11 +1191,16 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       q1.Boost(toLab);
       q2.Boost(toLab);
 
-      // Rotate final state momenta to the lab frame
-      pOut.SetMom(q1.Rotate(rockaxis, rockangle));
-      eOut.SetMom(q2.Rotate(rockaxis, rockangle));
-      nOut.SetMom(q3.Rotate(rockaxis, rockangle));
-
+      // Rotate all momenta to the lab frame
+      q0.Rotate(rockaxis, rockangle);
+      q1.Rotate(rockaxis, rockangle);
+      q2.Rotate(rockaxis, rockangle);
+      q3.Rotate(rockaxis, rockangle);
+      nIn.SetMom(q0);
+      pOut.SetMom(q1);
+      eOut.SetMom(q2);
+      nOut.SetMom(q3);
+ 
       // Check 4-momentum conservation
       TFourVectorReal pIn(gIn.Mom() + nIn.Mom());
       TFourVectorReal pFi(pOut.Mom() + eOut.Mom() + nOut.Mom());
@@ -1217,7 +1233,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          diffXS = TCrossSection::PairProduction(gIn, eOut, pOut);
          fPairsGeneration->SetConverterZ(fTargetZ);
          diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
-         diffXS *= nuclearFormFactor(-t);
+         diffXS *= sqr(fTargetZ * nuclearFormFactor(-t));
       }
       else if (mRecoil == mProton) {
          LDouble_t F1_timelike = 1;
@@ -1235,7 +1251,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
             diffXS *= sqr(1 - fPairsGeneration->FFatomic(qR));
          }
          else {
-            diffXS *= 1 - sqr(nuclearFormFactor(-t));
+            diffXS *= fTargetZ * (1 - sqr(nuclearFormFactor(-t)));
          }
       }
       else if (mRecoil == mNeutron) {
@@ -1250,7 +1266,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
                                                      F1_timelike,
                                                      F2_timelike);
          if (fTargetA > 1)
-            diffXS *= 1 - sqr(nuclearFormFactor(-t));
+            diffXS *= (fTargetA - fTargetZ) * (1 - sqr(nuclearFormFactor(-t)));
       }
       else {
          G4cerr << "GlueXBeamConversionProcess::GenerateBetheHeitlerProcess error:"
@@ -1292,13 +1308,25 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       leptonplus = G4MuonPlus::Definition();
       leptonminus = G4MuonMinus::Definition();
    }
-   G4ParticleDefinition *proton = G4Proton::Definition();
    G4ThreeVector psec1(pOut.Mom()[1]*GeV, pOut.Mom()[2]*GeV, pOut.Mom()[3]*GeV);
    G4ThreeVector psec2(eOut.Mom()[1]*GeV, eOut.Mom()[2]*GeV, eOut.Mom()[3]*GeV);
    G4ThreeVector psec3(nOut.Mom()[1]*GeV, nOut.Mom()[2]*GeV, nOut.Mom()[3]*GeV);
    G4DynamicParticle *sec1 = new G4DynamicParticle(leptonplus, psec1);
    G4DynamicParticle *sec2 = new G4DynamicParticle(leptonminus, psec2);
-   G4DynamicParticle *sec3 = new G4DynamicParticle(proton, psec3);
+   G4DynamicParticle *sec3;
+   if (mRecoil == mProton) {
+      G4ParticleDefinition *proton = G4Proton::Definition();
+      sec3 = new G4DynamicParticle(proton, psec3);
+   }
+   else if (mRecoil == mNeutron) {
+      G4ParticleDefinition *neutron = G4Neutron::Definition();
+      sec3 = new G4DynamicParticle(neutron, psec3);
+   }
+   else {
+      G4ParticleDefinition *ion = G4ParticleTable::GetParticleTable()
+                           ->GetIonTable()->GetIon(fTargetZ, fTargetA);
+      sec3 = new G4DynamicParticle(ion, psec3);
+   }
    G4TrackVector secondaries;
    secondaries.push_back(new G4Track(sec1, t0, x0));
    secondaries.push_back(new G4Track(sec2, t0, x0));
