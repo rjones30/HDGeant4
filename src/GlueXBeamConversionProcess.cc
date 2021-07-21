@@ -1141,15 +1141,19 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          throw std::runtime_error("no kinematic solution because |costhetastar| > 1");
       }
 
-      // Solve for the recoil nucleon kinematics
-      double fermiMomentum = nuclearFermiMomentum_GeV() / sqrt(3);
-      if (fermiMomentum > 0) {
-         LDouble_t p[3];
-         p[0] = G4RandGauss::shoot(0, fermiMomentum);
-         p[1] = G4RandGauss::shoot(0, fermiMomentum);
-         p[2] = G4RandGauss::shoot(0, fermiMomentum);
-         nIn.SetMom(TFourVectorReal(Etarget, p[0], p[1], p[2]));
+      // Solve for the initial state target kinematics
+      LDouble_t Ptarget[3] = {0,0,0};
+      if (Etarget < nuclearMass_GeV()) {
+         double fermiMomentum = nuclearFermiMomentum_GeV() / sqrt(3);
+         if (fermiMomentum > 0) {
+            Ptarget[0] = G4RandGauss::shoot(0, fermiMomentum);
+            Ptarget[1] = G4RandGauss::shoot(0, fermiMomentum);
+            Ptarget[2] = G4RandGauss::shoot(0, fermiMomentum);
+         }
       }
+      nIn.SetMom(TFourVectorReal(Etarget, Ptarget[0], Ptarget[1], Ptarget[2]));
+
+      // Solve for the recoil target kinematics
       LDouble_t costhetaR = (sqr(Mpair) / 2 - sqr(mRecoil) / 2
                              - (sqr(Etarget) - nIn.Mom().LengthSqr()) / 2
                              + Erecoil * (kin + Etarget)
