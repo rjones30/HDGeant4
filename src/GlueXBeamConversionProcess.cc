@@ -1148,7 +1148,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          p[0] = G4RandGauss::shoot(0, fermiMomentum);
          p[1] = G4RandGauss::shoot(0, fermiMomentum);
          p[2] = G4RandGauss::shoot(0, fermiMomentum);
-         nIn.SetMom(TThreeVectorReal(p));
+         nIn.SetMom(TFourVectorReal(Etarget, p[0], p[1], p[2]));
       }
       LDouble_t costhetaR = (sqr(Mpair) / 2 - sqr(mRecoil) / 2
                              - (sqr(Etarget) - nIn.Mom().LengthSqr()) / 2
