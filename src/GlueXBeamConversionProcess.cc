@@ -1156,10 +1156,14 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       TFourVectorReal q3(Erecoil, 0, 0, 0);
       LDouble_t q3dotq0(0);
       LDouble_t qRkin(qR * kin);
-      LDouble_t costhetaR = (sqr(Mpair) / 2 - sqr(mRecoil) / 2
-                             - q0.InvariantSqr() / 2
-                             + Erecoil * (kin + Etarget)
-                             - kin * (Etarget - q0[3])
+      LDouble_t mTarget(Etarget);
+      if (q0.Length() > 0) {
+         mTarget = q0.Invariant();
+      }
+      LDouble_t costhetaR = (sqr(Mpair) / 2 - sqr(mRecoil - mTarget) / 2
+                             + kin * (Erecoil - Etarget + q0[3])
+                             + Etarget * (Erecoil - mRecoil)
+                             + mRecoil * (Etarget - mTarget)
                              - q3dotq0
                             ) / qRkin;
       for (int i=0; i < 99; ++i) {
@@ -1171,7 +1175,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          q3[2] = qR * sinthetaR * sin(phiR),
          q3[3] = qR * costhetaR;
          LDouble_t delta = q3.Dot(q0) - q3dotq0;
-         if (fabs(delta) < qRkin * 1e-12)
+         if (fabs(delta) < qRkin * 1e-15)
             break;
          costhetaR -= delta / qRkin;
          q3dotq0 += delta;
@@ -1182,6 +1186,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
                             (q3[2] - q0[2]) / E12,
                             (q3[3] - q0[3] - kin) / E12);
       TLorentzBoost toLab(beta);
+      toLab.SetGamma(E12 / Mpair);
       LDouble_t sinthetastar = sqrt(1 - sqr(costhetastar));
       TThreeVectorReal k12(k12star * sinthetastar * cos(phi12),
                            k12star * sinthetastar * sin(phi12),
@@ -1206,6 +1211,8 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
       TFourVectorReal pFi(pOut.Mom() + eOut.Mom() + nOut.Mom());
       TFourVectorReal::SetResolution(1e-10);
       if (pIn != pFi) {
+         std::streamsize defprec = std::cout.precision();
+         std::cout << std::setprecision(12);
          std::cout << "Warning in GenerateBetheHeitlerConversion - "
                    << "momentum conservation violated." << std::endl
                    << "   pIn = "; 
@@ -1224,6 +1231,7 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          nOut.Mom().Print();
          std::cout << "   pIn - pFi = ";
          (pIn-pFi).Print();
+         std::cout << std::setprecision(defprec);
       }
 
       // Compute the polarized differential cross section (barnes/GeV^4)
