@@ -28,6 +28,7 @@
 // pairs inside, otherwise the standard pair conversion
 // probabilities apply.
 #define FORCED_LIH2_PAIR_CONVERSION 0
+#define FORCED_TGT0_PAIR_CONVERSION 0
 
 #include <G4SystemOfUnits.hh>
 #include "G4PhysicalConstants.hh"
@@ -197,6 +198,15 @@ G4double GlueXBernardConversionProcess::PostStepGetPhysicalInteractionLength(
    }
    else if (track.GetTrackID() == 1 && pvol && pvol->GetName() == "LIH2" &&
        (FORCED_LIH2_PAIR_CONVERSION || 
+        fStopBeamAfterTarget ))
+   {
+      fPIL = G4VEmProcess::PostStepGetPhysicalInteractionLength(
+                             track, previousStepSize, condition);
+      *condition = Forced;
+      return 100*cm;
+   }
+   else if (track.GetTrackID() == 1 && pvol && pvol->GetName() == "TGT0" &&
+       (FORCED_TGT0_PAIR_CONVERSION || 
         fStopBeamAfterTarget ))
    {
       fPIL = G4VEmProcess::PostStepGetPhysicalInteractionLength(
