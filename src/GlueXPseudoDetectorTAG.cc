@@ -132,9 +132,6 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(const G4Event *event,
          E = (MICRO_CHANNEL_EMIN[i] + MICRO_CHANNEL_EMAX[i]) / 2;
          micro_channel = MICRO_CHANNEL_NUMBER[i];
       }
-      else {
-         micro_channel = 0;
-      }
    }
    else if (E < HODO_LIMITS_ERANGE[0] && E > HODO_LIMITS_ERANGE[1]) {
       int i = HODO_NCHANNELS * (E - HODO_LIMITS_ERANGE[0]) /
@@ -146,9 +143,6 @@ int GlueXPseudoDetectorTAG::addTaggerPhoton(const G4Event *event,
       if (E >= HODO_CHANNEL_EMIN[i] && E <= HODO_CHANNEL_EMAX[i]) {
          E = (HODO_CHANNEL_EMIN[i] + HODO_CHANNEL_EMAX[i]) / 2;
          hodo_channel = HODO_CHANNEL_NUMBER[i];
-      }
-      else {
-         hodo_channel = 0;
       }
    }
    if (micro_channel < 0 && hodo_channel < 0)
