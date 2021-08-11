@@ -65,7 +65,7 @@
 
 #define TRIPLET_FRACTION 0.1
 
-double Ebeam(11.0);
+double Ebeam(3.4);
 LDouble_t M12_minimum(0);
 int seedVal(0);
 uint runno(9000);
