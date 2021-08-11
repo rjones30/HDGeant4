@@ -77,10 +77,10 @@ int nLeptonPDG(11);
 int pLeptonPDG(-11);
 
 // Define the properties of the target
-Particle_t Target(Pb208);
-int TargetPDG(1000822080);
-LDouble_t mTarget(207.976627 * 0.93149410242);
-LDouble_t TargetZ(82);
+Particle_t Target(Ta181);
+int TargetPDG(1000721810);
+LDouble_t mTarget(180.94788 * 0.93149410242);
+LDouble_t TargetZ(73);
 
 LDouble_t FFatomic(LDouble_t qrec) {
    // A crude parameterization of the electron cloud form factor
@@ -424,7 +424,7 @@ int generate(int nevents)
          prods(3).getProperties().setCharge(TargetZ);
       }
       verts(0).addOrigins();
-      verts(0).getOrigin().setT(0);
+      verts(0).getOrigin().setT(Q2);
       verts(0).getOrigin().setVx(0);
       verts(0).getOrigin().setVy(0);
       verts(0).getOrigin().setVz(0);
