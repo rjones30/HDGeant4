@@ -18,7 +18,7 @@ ifndef G4SYSTEM
 endif
 
 ifdef DIRACXX_HOME
-    CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
+    CPPFLAGS += -I$(DIRACXX_HOME)/include -DUSING_DIRACXX -L$(DIRACXX_HOME)/lib -lDirac
 endif
 
 PYTHON_CONFIG = python-config
