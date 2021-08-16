@@ -18,7 +18,12 @@ ifndef G4SYSTEM
 endif
 
 ifdef DIRACXX_HOME
-    CPPFLAGS += -I$(DIRACXX_HOME)/include -DUSING_DIRACXX -L$(DIRACXX_HOME)/lib -lDirac
+    DIRACXX_CMAKE := $(shell if [ -f $(DIRACXX_HOME)/CMakeLists.txt ]; then echo true; else echo false; fi)
+    ifeq ($(DIRACXX_CMAKE), true)
+        CPPFLAGS += -I$(DIRACXX_HOME)/include -DUSING_DIRACXX -L$(DIRACXX_HOME)/lib -lDirac
+    else
+        CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
+    endif
 endif
 
 PYTHON_CONFIG = python-config
