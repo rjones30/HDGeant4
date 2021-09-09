@@ -748,7 +748,7 @@ int AdaptiveSampler::mergeState(const std::string filename)
       fMaximum_cells = keyval.at("fMaximum_cells");
       fEfficiency_target = keyval.at("fEfficiency_target");
    }
-   catch (std::exception e) {
+   catch (std::exception &e) {
       std::cerr << "AdaptiveSampler::mergeState warning - "
                 << "required keyword missing in " << filename
                 << std::endl;
