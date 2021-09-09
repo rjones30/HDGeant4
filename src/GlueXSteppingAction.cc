@@ -219,7 +219,7 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
       try {
          proftree = bgprofiles.at(det);
       }
-      catch(std::out_of_range err) {
+      catch(std::out_of_range &err) {
          std::stringstream names;
          names << "det" << det;
          std::stringstream titles;
