@@ -18,7 +18,12 @@ ifndef G4SYSTEM
 endif
 
 ifdef DIRACXX_HOME
-    CPPFLAGS += -I$(DIRACXX_HOME)/include -DUSING_DIRACXX -L$(DIRACXX_HOME)/lib -lDirac
+    DIRACXX_CMAKE := $(shell if [ -d $(DIRACXX_HOME)/lib ]; then echo true; else echo false; fi)
+    ifeq ($(DIRACXX_CMAKE), true)
+        CPPFLAGS += -I$(DIRACXX_HOME)/include -DUSING_DIRACXX -L$(DIRACXX_HOME)/lib -lDirac
+    else
+        CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
+    endif
 endif
 
 PYTHON_CONFIG = python-config
@@ -66,12 +71,20 @@ HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/
 
 ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer -ltbb
 
+ifdef SQLITECPP_VERSION
+    SQLITECPP_MAJOR_VERSION := $(shell echo $(SQLITECPP_VERSION) | awk -F. '{print $$1}')
+    SQLITECPP_MINOR_VERSION := $(shell echo $(SQLITECPP_VERSION) | awk -F. '{print $$2}')
+    SQLITECPP_LIBDIR := $(shell if [[ $(SQLITECPP_MAJOR_VERSION) -ge 3 || $(SQLITECPP_MAJOR_VERSION) -eq 2 && $(SQLITECPP_MINOR_VERSION) -ge 5 ]]; then echo lib64; else echo lib; fi)
+else
+    SQLITECPP_LIBDIR = lib64
+endif
+
 DANALIBS = -L$(HALLD_RECON_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -lANALYSIS -lBCAL -lCCAL -lCDC -lCERE -lTRD -lDIRC -lFCAL \
            -lFDC -lFMWPC -lHDDM -lPAIR_SPECTROMETER -lPID -lRF \
            -lSTART_COUNTER -lTAGGER -lTOF -lTPOL -lTRACKING \
            -lTRIGGER -lDAQ -lTTAB -lEVENTSTORE -lKINFITTER -lTAC \
-           -L$(SQLITECPP_HOME)/lib -lSQLiteCpp -L$(SQLITE_HOME)/lib -Wl,-rpath=$(SQLITE_HOME)/lib -lsqlite3 \
+           -L$(SQLITECPP_HOME)/$(SQLITECPP_LIBDIR) -lSQLiteCpp -L$(SQLITE_HOME)/lib -Wl,-rpath=$(SQLITE_HOME)/lib -lsqlite3 \
            -lxstream -lbz2 -lz \
            -L/usr/lib64/mysql -lmysqlclient\
            -L$(JANA_HOME)/lib -lJANA \
