@@ -97,6 +97,8 @@ class GlueXBeamConversionProcess: public G4VEmProcess
    static int fConfigured;
    static std::vector<AdaptiveSampler*> fAdaptiveSamplerRegistry;
 
+   int fFormFactorChoice;
+
    double fTargetZ;
    double fTargetA;
 };

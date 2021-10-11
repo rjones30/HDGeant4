@@ -124,6 +124,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
    fTripletPDF(0),
    fAdaptiveSampler(0),
    isInitialised(false),
+   fFormFactorChoice(0),
    fTargetZ(0),
    fTargetA(0)
 {
@@ -178,6 +179,78 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
          if (genbeampars.find(2) != genbeampars.end()) {
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHgen_A" ||
+               genbeampars[1] == "BHGEN_A" ||
+               genbeampars[1] == "BHGen_A" ||
+               genbeampars[1] == "bhgen_a" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 1;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHgen_C" ||
+               genbeampars[1] == "BHGEN_C" ||
+               genbeampars[1] == "BHGen_C" ||
+               genbeampars[1] == "bhgen_c" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 3;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHgen_D" ||
+               genbeampars[1] == "BHGEN_D" ||
+               genbeampars[1] == "BHGen_D" ||
+               genbeampars[1] == "bhgen_d" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 4;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHgen_E" ||
+               genbeampars[1] == "BHGEN_E" ||
+               genbeampars[1] == "BHGen_E" ||
+               genbeampars[1] == "bhgen_e" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 5;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHgen_F" ||
+               genbeampars[1] == "BHGEN_F" ||
+               genbeampars[1] == "BHGen_F" ||
+               genbeampars[1] == "bhgen_f" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 6;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHgen_G" ||
+               genbeampars[1] == "BHGEN_G" ||
+               genbeampars[1] == "BHGen_G" ||
+               genbeampars[1] == "bhgen_g" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 7;
       }
       else if (genbeampars.find(1) != genbeampars.end() &&
               (genbeampars[1] == "BHmuons" ||
@@ -1248,6 +1321,48 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          LDouble_t F2_timelike = 0;
          LDouble_t F1_spacelike = nucleonFormFactor(-t, kF1p);
          LDouble_t F2_spacelike = nucleonFormFactor(-t, kF2p);
+         if (fFormFactorChoice == 1) {
+            F1_timelike = 1;
+            F2_timelike = 0;
+            F1_spacelike = nucleonFormFactor(-t, kF1p);
+            F2_spacelike = nucleonFormFactor(-t, kF2p);
+         }
+         else if (fFormFactorChoice == 3) {
+            F1_timelike = 0;
+            F2_timelike = 0;
+            F1_spacelike = nucleonFormFactor(-t, kF1p);
+            F2_spacelike = nucleonFormFactor(-t, kF2p);
+         }
+         else if (fFormFactorChoice == 4) {
+            F1_timelike = 0;
+            F2_timelike = 0;
+            F1_spacelike = nucleonFormFactor(-t, kF1p);
+            F2_spacelike = 0;
+         }
+         else if (fFormFactorChoice == 5) {
+            F1_timelike = 1;
+            F2_timelike = 1;
+            F1_spacelike = 0;
+            F2_spacelike = 0;
+         }
+         else if (fFormFactorChoice == 6) {
+            F1_timelike = 1;
+            F2_timelike = 0;
+            F1_spacelike = 0;
+            F2_spacelike = 0;
+         }
+         else if (fFormFactorChoice == 7) {
+            F1_timelike = 0;
+            F2_timelike = 1;
+            F1_spacelike = 0;
+            F2_spacelike = 0;
+         }
+         else {
+            G4cerr << "GlueXBeamConversionProcess::GenerateBetheHeitlerProcess"
+                   << " error: Unsupported nucleon form factor option" 
+                    << ", cannot continue!" << G4endl;
+		    exit(89);
+         }
          diffXS = TCrossSection::BetheHeitlerNucleon(gIn, nIn,
                                                      pOut, eOut, nOut,
                                                      F1_spacelike,
