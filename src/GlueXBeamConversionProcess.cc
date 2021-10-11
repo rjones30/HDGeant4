@@ -1322,7 +1322,6 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          LDouble_t F2_timelike;
          LDouble_t F1_spacelike;
          LDouble_t F2_spacelike;
-std::cout << "fFormFactorChoice=" << fFormFactorChoice << std::endl;
          if (fFormFactorChoice == 0) {
             F1_timelike = 1;
             F2_timelike = 0;
