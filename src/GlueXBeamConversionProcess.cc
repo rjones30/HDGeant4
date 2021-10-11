@@ -114,6 +114,8 @@ int GlueXBeamConversionProcess::fStopBeamAfterTarget = 0;
 int GlueXBeamConversionProcess::fLeptonPairFamily = 0;
 int GlueXBeamConversionProcess::fConfigured = 0;
 
+int GlueXBeamConversionProcess::fFormFactorChoice = 0;
+
 GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name, 
                                                        G4ProcessType aType)
  : G4VEmProcess(name, aType),
@@ -124,7 +126,6 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
    fTripletPDF(0),
    fAdaptiveSampler(0),
    isInitialised(false),
-   fFormFactorChoice(0),
    fTargetZ(0),
    fTargetA(0)
 {
@@ -1317,11 +1318,18 @@ void GlueXBeamConversionProcess::GenerateBetheHeitlerProcess(const G4Step &step)
          diffXS *= sqr(fTargetZ * nuclearFormFactor(-t));
       }
       else if (mRecoil == mProton) {
-         LDouble_t F1_timelike = 1;
-         LDouble_t F2_timelike = 0;
-         LDouble_t F1_spacelike = nucleonFormFactor(-t, kF1p);
-         LDouble_t F2_spacelike = nucleonFormFactor(-t, kF2p);
-         if (fFormFactorChoice == 1) {
+         LDouble_t F1_timelike;
+         LDouble_t F2_timelike;
+         LDouble_t F1_spacelike;
+         LDouble_t F2_spacelike;
+std::cout << "fFormFactorChoice=" << fFormFactorChoice << std::endl;
+         if (fFormFactorChoice == 0) {
+            F1_timelike = 1;
+            F2_timelike = 0;
+            F1_spacelike = nucleonFormFactor(-t, kF1p);
+            F2_spacelike = nucleonFormFactor(-t, kF2p);
+         }
+         else if (fFormFactorChoice == 1) {
             F1_timelike = 1;
             F2_timelike = 0;
             F1_spacelike = nucleonFormFactor(-t, kF1p);
