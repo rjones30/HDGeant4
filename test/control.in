@@ -177,7 +177,7 @@ c type insert the Geant particle type code plus 100 (eg. 101=gamma,
 c 103=electron, 107=pi0, 108=pi+, 109=pi-, 114=proton).  If you use
 c the particle code but do not add 100 then theta,phi are ignored
 c and the particle direction is generated randomly over 4pi sr.
-c For a listing of the Geant particle types, see CONS300 section of
+c For a listing of the Geant particle types, see the CONS300 section of
 c the GEANT User's Guide at the following URL.
 c     http://cds.cern.ch/record/1082634
 c The meaning of the arguments to KINE are as follows.
