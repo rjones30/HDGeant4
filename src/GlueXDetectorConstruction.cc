@@ -25,6 +25,8 @@
 #include "GlueXSensitiveDetectorPSC.hh"
 #include "GlueXSensitiveDetectorPS.hh"
 #include "GlueXSensitiveDetectorTPOL.hh"
+#include "GlueXSensitiveDetectorCTOF.hh"
+
 
 #include "G4Version.hh"
 #include "G4LogicalVolume.hh"
@@ -286,6 +288,7 @@ void GlueXDetectorConstruction::ConstructSDandField()
    GlueXSensitiveDetectorPSC* pscHandler = 0;
    GlueXSensitiveDetectorPS* psHandler = 0;
    GlueXSensitiveDetectorTPOL* tpolHandler = 0;
+   GlueXSensitiveDetectorCTOF* ctofHandler = 0;
 
    // During geometry building, certain logical volumes were marked as
    // sensitive by adding them to a list. Now we need to go down that
@@ -383,6 +386,14 @@ void GlueXDetectorConstruction::ConstructSDandField()
             SDman->AddNewDetector(ftofHandler);
          }
          iter->second->SetSensitiveDetector(ftofHandler);
+      }
+      else if (volname == "CTOF")
+      {
+         if (ctofHandler == 0) {
+            ctofHandler = new GlueXSensitiveDetectorCTOF("ctof");
+            SDman->AddNewDetector(ctofHandler);
+         }
+         iter->second->SetSensitiveDetector(ctofHandler);
       }
       // radiator volume: BNNM (NN = bar number 0-47 and M is sub-bar character A-D)
       else if (volname == "PIXV" || 
