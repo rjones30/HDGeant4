@@ -120,7 +120,7 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
       if (primeID > 0) {
          const G4VProcess* process;
          process = step->GetPostStepPoint()->GetProcessDefinedStep();
-         if (process->GetProcessType() == fDecay) {
+         if (process && process->GetProcessType() == fDecay) {
             G4TrackVector &secondary = *(G4TrackVector*)
                                         step->GetSecondaryInCurrentStep();
             G4TrackVector::iterator iter;
