@@ -145,27 +145,32 @@ G4bool GlueXSensitiveDetectorGCAL::ProcessHits(G4Step* step,
       GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                              track->GetUserInformation();
    int itrack = trackinfo->GetGlueXTrackID();
+   if (track->GetCurrentStepNumber() == 1)
+      trackinfo->SetGlueXHistory(3);
    if (trackinfo->GetGlueXHistory() == 0 && itrack > 0 &&
        xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
    {
-      int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-      int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-      GlueXHitGCALpoint newPoint;
-      newPoint.ptype_G3 = g3type;
-      newPoint.track_ = trackID;
-      newPoint.trackID_ = itrack;
-      newPoint.primary_ = (track->GetParentID() == 0);
-      newPoint.t_ns = t/ns;
-      newPoint.z_cm = x[2]/cm;
-      newPoint.r_cm = x.perp()/cm;
-      newPoint.phi_rad = x.phi();
-      newPoint.px_GeV = pin[0]/GeV;
-      newPoint.py_GeV = pin[1]/GeV;
-      newPoint.pz_GeV = pin[2]/GeV;
-      newPoint.E_GeV = Ein/GeV;
       G4int key = fPointsMap->entries();
-      fPointsMap->add(key, newPoint);
-      trackinfo->SetGlueXHistory(3);
+      GlueXHitGCALpoint* lastPoint = (*fPointsMap)[key - 1];
+      // Limit gcal truthPoints to one per track
+      if (lastPoint == 0 || lastPoint->track_ != trackID) {
+         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+         GlueXHitGCALpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.z_cm = x[2]/cm;
+         newPoint.r_cm = x.perp()/cm;
+         newPoint.phi_rad = x.phi();
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         fPointsMap->add(key, newPoint);
+      }
    }
 
    // Post the hit to the hits map, ordered by module index
