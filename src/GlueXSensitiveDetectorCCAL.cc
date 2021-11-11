@@ -148,27 +148,32 @@ G4bool GlueXSensitiveDetectorCCAL::ProcessHits(G4Step* step,
    GlueXUserTrackInformation *trackinfo = (GlueXUserTrackInformation*)
                                           track->GetUserInformation();
    int itrack = trackinfo->GetGlueXTrackID();
+   if (track->GetCurrentStepNumber() == 1)
+      trackinfo->SetGlueXHistory(4);
    if (trackinfo->GetGlueXHistory() == 0 &&
        xin.dot(pin) > 0 && Ein/MeV > THRESH_MEV)
    {
-      int pdgtype = track->GetDynamicParticle()->GetPDGcode();
-      int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
-      GlueXHitCCALpoint newPoint;
-      newPoint.ptype_G3 = g3type;
-      newPoint.track_ = trackID;
-      newPoint.trackID_ = itrack;
-      newPoint.primary_ = (track->GetParentID() == 0);
-      newPoint.t_ns = t/ns;
-      newPoint.x_cm = xin[0]/cm;
-      newPoint.y_cm = xin[1]/cm;
-      newPoint.z_cm = xin[2]/cm;
-      newPoint.px_GeV = pin[0]/GeV;
-      newPoint.py_GeV = pin[1]/GeV;
-      newPoint.pz_GeV = pin[2]/GeV;
-      newPoint.E_GeV = Ein/GeV;
       G4int key = fPointsMap->entries();
-      fPointsMap->add(key, newPoint);
-      trackinfo->SetGlueXHistory(4);
+      GlueXHitCCALpoint* lastPoint = (*fPointsMap)[key - 1];
+      // Limit ccal truthPoints to one per track
+      if (lastPoint == 0 || lastPoint->track_ != trackID) {
+         int pdgtype = track->GetDynamicParticle()->GetPDGcode();
+         int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgtype);
+         GlueXHitCCALpoint newPoint;
+         newPoint.ptype_G3 = g3type;
+         newPoint.track_ = trackID;
+         newPoint.trackID_ = itrack;
+         newPoint.primary_ = (track->GetParentID() == 0);
+         newPoint.t_ns = t/ns;
+         newPoint.x_cm = xin[0]/cm;
+         newPoint.y_cm = xin[1]/cm;
+         newPoint.z_cm = xin[2]/cm;
+         newPoint.px_GeV = pin[0]/GeV;
+         newPoint.py_GeV = pin[1]/GeV;
+         newPoint.pz_GeV = pin[2]/GeV;
+         newPoint.E_GeV = Ein/GeV;
+         fPointsMap->add(key, newPoint);
+      }
    }
 
    // Post the hit to the hits map, ordered by sector index

@@ -166,26 +166,31 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
                                           track->GetUserInformation();
    int itrack = trackinfo->GetGlueXTrackID();
    if (touch->GetVolume()->GetName() == "BCL0") {
+      if (track->GetCurrentStepNumber() == 1)
+         trackinfo->SetGlueXHistory(1);
       if (trackinfo->GetGlueXHistory() == 0 &&
           xin[0] * pin[0] + xin[1] * pin[1] > 0 &&
           Ein > THRESH_MEV*MeV)
       {
-         GlueXHitBCALpoint newPoint;
-         newPoint.ptype_G3 = g3type;
-         newPoint.track_ = trackID;
-         newPoint.trackID_ = itrack;
-         newPoint.primary_ = (track->GetParentID() == 0);
-         newPoint.t_ns = t/ns;
-         newPoint.z_cm = xin[2]/cm;
-         newPoint.r_cm = xin.perp()/cm;
-         newPoint.phi_rad = xin.phi();
-         newPoint.px_GeV = pin[0]/GeV;
-         newPoint.py_GeV = pin[1]/GeV;
-         newPoint.pz_GeV = pin[2]/GeV;
-         newPoint.E_GeV = Ein/GeV;
          G4int key = fPointsMap->entries();
-         fPointsMap->add(key, newPoint);
-         trackinfo->SetGlueXHistory(1);
+         GlueXHitBCALpoint* lastPoint = (*fPointsMap)[key - 1];
+         // Limit bcal truthPoints to one per track
+         if (lastPoint == 0 || lastPoint->track_ != trackID) {
+            GlueXHitBCALpoint newPoint;
+            newPoint.ptype_G3 = g3type;
+            newPoint.track_ = trackID;
+            newPoint.trackID_ = itrack;
+            newPoint.primary_ = (track->GetParentID() == 0);
+            newPoint.t_ns = t/ns;
+            newPoint.z_cm = xin[2]/cm;
+            newPoint.r_cm = xin.perp()/cm;
+            newPoint.phi_rad = xin.phi();
+            newPoint.px_GeV = pin[0]/GeV;
+            newPoint.py_GeV = pin[1]/GeV;
+            newPoint.pz_GeV = pin[2]/GeV;
+            newPoint.E_GeV = Ein/GeV;
+            fPointsMap->add(key, newPoint);
+         }
  
          // The original HDGeant hits code for the BCal had a heavy-weight
          // recording system implemented to assign every hit to a particular
