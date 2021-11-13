@@ -272,6 +272,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "bhmuons_a" ))
       {
          fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
          if (genbeampars.find(2) != genbeampars.end()) {
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
@@ -284,6 +285,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "bhmuons_c" ))
       {
          fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
          if (genbeampars.find(2) != genbeampars.end()) {
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
@@ -296,6 +298,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "bhmuons_d" ))
       {
          fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
          if (genbeampars.find(2) != genbeampars.end()) {
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
@@ -308,6 +311,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "bhmuons_e" ))
       {
          fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
          if (genbeampars.find(2) != genbeampars.end()) {
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
@@ -320,6 +324,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "bhmuons_f" ))
       {
          fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
          if (genbeampars.find(2) != genbeampars.end()) {
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
@@ -332,6 +337,7 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
                genbeampars[1] == "bhmuons_g" ))
       {
          fStopBeamAfterTarget = 1;
+         fLeptonPairFamily = 1;
          if (genbeampars.find(2) != genbeampars.end()) {
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
