@@ -265,6 +265,78 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
             fBHpair_mass_min = std::atof(genbeampars[2].c_str());
          }
       }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons_A" ||
+               genbeampars[1] == "BHMUONS_A" ||
+               genbeampars[1] == "BHMuons_A" ||
+               genbeampars[1] == "bhmuons_a" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 1;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons_C" ||
+               genbeampars[1] == "BHMUONS_C" ||
+               genbeampars[1] == "BHMuons_C" ||
+               genbeampars[1] == "bhmuons_c" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 3;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons_D" ||
+               genbeampars[1] == "BHMUONS_D" ||
+               genbeampars[1] == "BHMuons_D" ||
+               genbeampars[1] == "bhmuons_d" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 4;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons_E" ||
+               genbeampars[1] == "BHMUONS_E" ||
+               genbeampars[1] == "BHMuons_E" ||
+               genbeampars[1] == "bhmuons_e" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 5;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons_F" ||
+               genbeampars[1] == "BHMUONS_F" ||
+               genbeampars[1] == "BHMuons_F" ||
+               genbeampars[1] == "bhmuons_f" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 6;
+      }
+      else if (genbeampars.find(1) != genbeampars.end() &&
+              (genbeampars[1] == "BHmuons_G" ||
+               genbeampars[1] == "BHMUONS_G" ||
+               genbeampars[1] == "BHMuons_G" ||
+               genbeampars[1] == "bhmuons_g" ))
+      {
+         fStopBeamAfterTarget = 1;
+         if (genbeampars.find(2) != genbeampars.end()) {
+            fBHpair_mass_min = std::atof(genbeampars[2].c_str());
+         }
+         fFormFactorChoice = 7;
+      }
    }
 
    fConfigured = 1;
