@@ -30,6 +30,15 @@
 
 #define sqr(x) ((x)*(x))
 
+#define GCC_VERSION (__GNUC__ * 10000 \
+                     + __GNUC_MINOR__ * 100 \
+                     + __GNUC_PATCHLEVEL__)
+
+/* Test for GCC > 6.3.0 */
+#if GCC_VERSION < 60300
+#error Minimum required GNU compiler version is 6.3
+#else
+
 std::map<std::string, std::vector<std::vector<double> > > sample;
 
 unsigned int Npartitions(1024);
@@ -90,13 +99,12 @@ void read_sample(const char *infile, const char *sample_name,
    tsample->SetBranchAddress("dsample", dsample);
    if (sample.find(sample_name) != sample.end())
       sample[sample_name].clear();
-   int scount(0);
    for (int i=0; tsample->GetEntry(i); ++i) {
       std::vector<double> d;
       for (int k=0; k < dlen - 1; ++k) {
          if (include_list.size() == 0)
             d.push_back(dsample[k]);
-         else if (k < include_list.size() && include_list[k] > 0)
+         else if (k < (int)include_list.size() && include_list[k] > 0)
             d.push_back(dsample[k]);
       }
       d.push_back(dsample[dlen - 1]);
@@ -144,7 +152,7 @@ void compute_energy(const char *sample1, const char *sample2,
    for (int k=0; k < sample_dim; ++k) {
       dMoments.push_back(z3);
    }
-   for (int i=0; i < sample[sample1].size(); ++i) {
+   for (int i=0; i < (int)sample[sample1].size(); ++i) {
       for (int k=0; k < sample_dim; ++k) {
          double a = sample[sample1][i][k];
          double w = sample[sample1][i].back();
@@ -153,7 +161,7 @@ void compute_energy(const char *sample1, const char *sample2,
          dMoments[k][2] += w * a * a;
       }
    }
-   for (int i=0; i < sample[sample2].size(); ++i) {
+   for (int i=0; i < (int)sample[sample2].size(); ++i) {
       for (int k=0; k < sample_dim; ++k) {
          double a = sample[sample2][i][k];
          double w = sample[sample2][i].back();
@@ -182,7 +190,7 @@ void compute_energy(const char *sample1, const char *sample2,
    }
 
    std::vector<std::vector<double> > dsample;
-   for (int i=0; i < sample[sample1].size(); ++i) {
+   for (int i=0; i < (int)sample[sample1].size(); ++i) {
       std::vector<double> d;
       std::vector<unsigned int> p;
       for (int k=0; k < sample_dim; ++k) {
@@ -191,7 +199,7 @@ void compute_energy(const char *sample1, const char *sample2,
       d.push_back(sample[sample1][i].back());
       dsample.push_back(d);
    }
-   for (int i=0; i < sample[sample2].size(); ++i) {
+   for (int i=0; i < (int)sample[sample2].size(); ++i) {
       std::vector<double> d;
       std::vector<unsigned int> p;
       for (int k=0; k < sample_dim; ++k) {
@@ -212,14 +220,14 @@ void compute_energy(const char *sample1, const char *sample2,
       std::srand(random_seed);
 
    std::vector<int> p0;
-   for (int i=0; i < dsample.size(); ++i)
+   for (int i=0; i < (int)dsample.size(); ++i)
       p0.push_back(i);
-   for (int n=0; n < Npartitions; ++n) {
+   for (int n=0; n < (int)Npartitions; ++n) {
       std::vector<int> p = p0;
       if (n > 0)
          std::random_shuffle(p.begin(), p.end());
-      for (int i=0; i < dsample.size(); ++i) {
-         if (p[i] < sample[sample1].size()) {
+      for (int i=0; i < (int)dsample.size(); ++i) {
+         if (p[i] < (int)sample[sample1].size()) {
             partition[i].push_back(0);
             aCharge[n] += dsample[i].back();
          }
@@ -232,7 +240,7 @@ void compute_energy(const char *sample1, const char *sample2,
    std::vector<double> aaNorm(Npartitions);
    std::vector<double> bbNorm(Npartitions);
    std::vector<double> abNorm(Npartitions);
-   for (int n=0; n < Npartitions; ++n) {
+   for (int n=0; n < (int)Npartitions; ++n) {
       aaNorm[n] = 1 / (aCharge[n] * aCharge[n]);
       bbNorm[n] = 1 / (bCharge[n] * bCharge[n]);
       abNorm[n] = 1 / (aCharge[n] * bCharge[n]);
@@ -264,14 +272,14 @@ void compute_energy(const char *sample1, const char *sample2,
       int block_idx = block - (N - 1) * block_idy + 
                       block_idy * (block_idy - 1) / 2;
       int i0 = block_idy * M;
-      int i1 = (i0 + M < dsample.size())? i0 + M : dsample.size();
+      int i1 = (i0 + M < (int)dsample.size())? i0 + M : dsample.size();
 
 #if USE_OPENMP_MULTITHREADING
   #pragma omp parallel for reduction(+:Ewsum_[:1024])
 #endif
       for (int i = i0; i < i1; ++i) {
          int j0 = block_idx * M;
-         int j1 = (j0 + M < dsample.size())? j0 + M : dsample.size();
+         int j1 = (j0 + M < (int)dsample.size())? j0 + M : dsample.size();
          j0 = (j0 > i)? j0 : i + 1;
          for (int j = j0; j < j1; ++j) {
             double r2(1e-4);
@@ -279,7 +287,7 @@ void compute_energy(const char *sample1, const char *sample2,
                r2 += sqr(dsample[i][k] - dsample[j][k]);
             double E = 1 / r2;
             double Ew = E * dsample[i].back() * dsample[j].back();
-            for (int n=0; n < Npartitions; ++n) {
+            for (int n=0; n < (int)Npartitions; ++n) {
                if (partition[i][n] == 0 && partition[j][n] == 0)
                   Ewsum_[n] += Ew * aaNorm[n];
                else if (partition[i][n] == 1 && partition[j][n] == 1)
@@ -294,7 +302,7 @@ void compute_energy(const char *sample1, const char *sample2,
                 << "(" << block_idx << "," << block_idy << ")"
                 << "\r" << std::flush;
    }
-   for (int n=0; n < Npartitions; ++n) {
+   for (int n=0; n < (int)Npartitions; ++n) {
       energy.push_back(Ewsum[n]);
    }
    std::cout << std::endl;
@@ -340,7 +348,7 @@ void compute_energy(const char *sample1, const char *sample2,
    for (int k=0; k < sample_dim; ++k) {
       dMoments.push_back(z3);
    }
-   for (int i=0; i < sample[sample1].size(); ++i) {
+   for (int i=0; i < (int)sample[sample1].size(); ++i) {
       for (int k=0; k < sample_dim; ++k) {
          double a = sample[sample1][i][k];
          double w = sample[sample1][i].back();
@@ -349,7 +357,7 @@ void compute_energy(const char *sample1, const char *sample2,
          dMoments[k][2] += w * a * a;
       }
    }
-   for (int i=0; i < sample[sample2].size(); ++i) {
+   for (int i=0; i < (int)sample[sample2].size(); ++i) {
       for (int k=0; k < sample_dim; ++k) {
          double a = sample[sample2][i][k];
          double w = sample[sample2][i].back();
@@ -378,7 +386,7 @@ void compute_energy(const char *sample1, const char *sample2,
    }
 
    std::vector<std::vector<float> > fsample;
-   for (int i=0; i < sample[sample1].size(); ++i) {
+   for (int i=0; i < (int)sample[sample1].size(); ++i) {
       std::vector<float> d;
       std::vector<unsigned int> p;
       for (int k=0; k < sample_dim; ++k) {
@@ -387,7 +395,7 @@ void compute_energy(const char *sample1, const char *sample2,
       d.push_back(sample[sample1][i].back());
       fsample.push_back(d);
    }
-   for (int i=0; i < sample[sample2].size(); ++i) {
+   for (int i=0; i < (int)sample[sample2].size(); ++i) {
       std::vector<float> d;
       std::vector<unsigned int> p;
       for (int k=0; k < sample_dim; ++k) {
@@ -408,14 +416,14 @@ void compute_energy(const char *sample1, const char *sample2,
       std::srand(random_seed);
 
    std::vector<int> p0;
-   for (int i=0; i < fsample.size(); ++i)
+   for (int i=0; i < (int)fsample.size(); ++i)
       p0.push_back(i);
-   for (int n=0; n < Npartitions; ++n) {
+   for (int n=0; n < (int)Npartitions; ++n) {
       std::vector<int> p = p0;
       if (n > 0)
          std::random_shuffle(p.begin(), p.end());
-      for (int i=0; i < fsample.size(); ++i) {
-         if (p[i] < sample[sample1].size()) {
+      for (int i=0; i < (int)fsample.size(); ++i) {
+         if (p[i] < (int)sample[sample1].size()) {
             partition[i].push_back(0);
             aCharge[n] += fsample[i].back();
          }
@@ -428,7 +436,7 @@ void compute_energy(const char *sample1, const char *sample2,
    std::vector<float> aaNorm(Npartitions);
    std::vector<float> bbNorm(Npartitions);
    std::vector<float> abNorm(Npartitions);
-   for (int n=0; n < Npartitions; ++n) {
+   for (int n=0; n < (int)Npartitions; ++n) {
       aaNorm[n] = 1 / (aCharge[n] * aCharge[n]);
       bbNorm[n] = 1 / (bCharge[n] * bCharge[n]);
       abNorm[n] = 1 / (aCharge[n] * bCharge[n]);
@@ -440,14 +448,14 @@ void compute_energy(const char *sample1, const char *sample2,
 #if USE_OPENMP_MULTITHREADING
   #pragma omp parallel for reduction(+:Ewsum_[:1024])
 #endif
-   for (int i=0; i < fsample.size(); ++i) {
-      for (int j=i+1; j < fsample.size(); ++j) {
+   for (int i=0; i < (int)fsample.size(); ++i) {
+      for (int j=i+1; j < (int)fsample.size(); ++j) {
          float r2(1e-4);
          for (int k=0; k < sample_dim; ++k)
             r2 += sqr(fsample[i][k] - fsample[j][k]);
          float E = 1 / r2;
          float Ew = E * fsample[i].back() * fsample[j].back();
-         for (int n=0; n < Npartitions; ++n) {
+         for (int n=0; n < (int)Npartitions; ++n) {
             if (partition[i][n] == 0 && partition[j][n] == 0)
                Ewsum_[n] += Ew * aaNorm[n];
             else if (partition[i][n] == 1 && partition[j][n] == 1)
@@ -458,7 +466,7 @@ void compute_energy(const char *sample1, const char *sample2,
       }
       std::cout << "outer loop index i=" << i << "\r" << std::flush;
    }
-   for (int n=0; n < Npartitions; ++n) {
+   for (int n=0; n < (int)Npartitions; ++n) {
       energy.push_back(Ewsum[n]);
    }
 }
@@ -492,7 +500,7 @@ void parse_ilist(const char *ilist, std::vector<int> &include_list)
       for (int i=include_list.size(); i <= limits.front(); ++i)
          include_list.push_back(0);
       for (int i=limits.front(); i <= limits.back(); ++i) {
-         if (i >= include_list.size())
+         if (i >= (int)include_list.size())
             include_list.push_back(1);
          else
             include_list[i] = 1;
@@ -565,7 +573,7 @@ int main(int argc, char *argv[]) {
       compute_energy_gpu(sname[0], sname[1], fenergy);
       if (fenergy.size() > 0) {
          double moment[3] = {0,0,0};
-         for (int i=1; i < fenergy.size(); ++i) {
+         for (int i=1; i < (int)fenergy.size(); ++i) {
             moment[0] += 1;
             moment[1] += fenergy[i];
             moment[2] += fenergy[i] * fenergy[i];
@@ -583,7 +591,7 @@ int main(int argc, char *argv[]) {
       compute_energy(sname[0], sname[1], fenergy);
       if (fenergy.size() > 0) {
          double moment[3] = {0,0,0};
-         for (int i=1; i < fenergy.size(); ++i) {
+         for (int i=1; i < (int)fenergy.size(); ++i) {
             moment[0] += 1;
             moment[1] += fenergy[i];
             moment[2] += fenergy[i] * fenergy[i];
@@ -601,7 +609,7 @@ int main(int argc, char *argv[]) {
       compute_energy(sname[0], sname[1], denergy);
       if (denergy.size() > 0) {
          double moment[3] = {0,0,0};
-         for (int i=1; i < denergy.size(); ++i) {
+         for (int i=1; i < (int)denergy.size(); ++i) {
             moment[0] += 1;
             moment[1] += denergy[i];
             moment[2] += denergy[i] * denergy[i];
@@ -625,11 +633,12 @@ int main(int argc, char *argv[]) {
       if (work_set != 0 or work_sets != 1)
          title << " part " << work_set << "/" << work_sets;
       TH1D hen("energy", title.str().c_str(), nenergy, 0, nenergy);
-      for (int i=0; i < fenergy.size(); ++i)
+      for (int i=0; i < (int)fenergy.size(); ++i)
          hen.SetBinContent(i+1, fenergy[i]);
-      for (int i=0; i < denergy.size(); ++i)
+      for (int i=0; i < (int)denergy.size(); ++i)
          hen.SetBinContent(i+1, denergy[i]);
       hen.Write();
    }
    return 0;
 }
+#endif
