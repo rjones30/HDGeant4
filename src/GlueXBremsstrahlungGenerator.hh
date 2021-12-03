@@ -44,13 +44,13 @@ class GlueXBremsstrahlungGenerator
    void GenerateBeamPhotons(int nevents);
    double AtomicFormFactor(double q2);
 
- protected:
-   double fBeamEnergy;
-   double fMinEnergy;
-
    // simply change this to TRandom to use
    // this class outside of the Geant4 context
    G4TRandom fRandom;
+
+ protected:
+   double fBeamEnergy;
+   double fMinEnergy;
 
  private:
    double Ebeam;
