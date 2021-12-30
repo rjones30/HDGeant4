@@ -37,7 +37,7 @@
 #endif
 
 #include "G4HadronPhysicsQGSP_FTFP_BERT.hh"
-#include "G4OpticalProcessIndex.hh"
+//#include "G4OpticalProcessIndex.hh"
 
 #include <GlueXBeamConversionProcess.hh>
 #include <GlueXBernardConversionProcess.hh>
