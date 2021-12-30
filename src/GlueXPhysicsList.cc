@@ -29,7 +29,6 @@
 #include "G4StoppingPhysics.hh"
 #include "G4HadronElasticPhysics.hh"
 #include "G4NeutronTrackingCut.hh"
-#include "G4HadronicParameters.hh"
 #if USING_BERNARD
 #include "G4BetheHeitler5DModel.hh"
 #endif
