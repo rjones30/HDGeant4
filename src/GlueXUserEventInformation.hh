@@ -16,6 +16,7 @@
 #include "G4ThreeVector.hh"
 #include "G4TrackVector.hh"
 #include "G4AutoLock.hh"
+#include "G4Step.hh"
 
 #include <HDDM/hddm_s.hpp>
 
