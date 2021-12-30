@@ -25,6 +25,7 @@
 #include <G4Timer.hh>
 #include <G4LogicalVolumeStore.hh>
 #include <G4HadronicProcessStore.hh>
+#include <G4HadronicParameters.hh>
 #include <G4StateManager.hh>
 
 #ifdef G4VIS_USE
@@ -202,6 +203,7 @@ int main(int argc,char** argv)
    GlueXUserActionInitialization *userinit;
    userinit = new GlueXUserActionInitialization(physicslist);
    runManager.SetUserInitialization(userinit);
+   G4HadronicParameters::Instance()->SetVerboseLevel(0);
 
    // Initialize G4 kernel
    std::cout << "Initializing the Geant4 kernel..." << std::endl;

@@ -29,6 +29,7 @@
 #include "G4StoppingPhysics.hh"
 #include "G4HadronElasticPhysics.hh"
 #include "G4NeutronTrackingCut.hh"
+#include "G4HadronicParameters.hh"
 #if USING_BERNARD
 #include "G4BetheHeitler5DModel.hh"
 #endif
@@ -78,8 +79,6 @@ GlueXPhysicsList::GlueXPhysicsList(const GlueXDetectorConstruction *geometry,
    defaultCutValue = 0.7*CLHEP::mm;  
    SetVerboseLevel(verbosity);
    DumpCutValuesTable(verbosity);
-   //G4HadronicParameters::Instance()->SetVerboseLevel(verbosity);
-
 
    // Parallel world transportation
    for (int para=1; para <= geometry->GetParallelWorldCount(); ++para) {
