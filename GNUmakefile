@@ -121,7 +121,7 @@ INTYLIBS += -lgfortran
 INTYLIBS += -L/usr/lib64
 INTYLIBS += -ltirpc
 
-EXTRALIBS += -lG4fixes
+EXTRALIBS += -lG4fixes -lGLU
 
 .PHONY: all
 all: hdds cobrems G4fixes_symlink g4fixes sharedlib exe lib bin g4py
