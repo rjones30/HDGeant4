@@ -630,8 +630,6 @@ void GlueXSensitiveDetectorCDC::add_cluster(hit_vector_t &hits,
 
    // drift radius 
    double dradius_cm = hit.d_cm;
-   double d2 = dradius_cm * dradius_cm;
-   double d3 = dradius_cm * d2;  
 
    // Find the drift time for this cluster. Drift time depends on B:
    // (dependence derived from Garfield calculations)
