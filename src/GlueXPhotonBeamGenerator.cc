@@ -100,12 +100,6 @@ GlueXPhotonBeamGenerator::GlueXPhotonBeamGenerator(CobremsGeneration *gen)
       }
    }
 
-   // These cutoffs should be set empirically, as low as possible
-   // for good efficiency, but not too low so as to avoid excessive
-   // warnings about Pcut violations.
-
-   double raddz = fCobrems->getTargetThickness() * m;
-
    prepareImportanceSamplingPDFs();
 
    // Create interface for interactive commands
