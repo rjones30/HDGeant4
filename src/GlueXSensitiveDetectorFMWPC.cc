@@ -11,6 +11,9 @@
 #include "GlueXUserTrackInformation.hh"
 #include "HddmOutput.hh"
 
+#include <CLHEP/Random/RandPoisson.h>
+#include <Randomize.hh>
+
 #include "G4VPhysicalVolume.hh"
 #include "G4PVPlacement.hh"
 #include "G4EventManager.hh"
@@ -35,6 +38,18 @@ double GlueXSensitiveDetectorFMWPC::WIRE_OFFSET = -(73.000*1.016)*cm;
 
 // Minimum photoelectron count for a hit
 double GlueXSensitiveDetectorFMWPC::WIRE_PITCH = 1.016*cm;
+
+const double fC = 1e-15 * coulomb;
+const double GlueXSensitiveDetectorFMWPC::ELECTRON_CHARGE = 1.6022e-4*fC;
+
+// Parameters for setting signal pulse height
+double GlueXSensitiveDetectorFMWPC::GAS_GAIN = 1e5;
+
+// Average number of secondary ion pairs for 90/10 Ar/CO2 mixture
+double GlueXSensitiveDetectorFMWPC::N_SECOND_PER_PRIMARY = 2.1; 
+
+// Average energy needed to produce an ion pair for 90/10 mixture
+double GlueXSensitiveDetectorFMWPC::W_EFF_PER_ION = 26.7*eV;
 
 int GlueXSensitiveDetectorFMWPC::instanceCount = 0;
 G4Mutex GlueXSensitiveDetectorFMWPC::fMutex = G4MUTEX_INITIALIZER;
@@ -308,10 +323,19 @@ void GlueXSensitiveDetectorFMWPC::EndOfEvent(G4HCofThisEvent*)
          wire(0).setLayer(siter->second->layer_);
          wire(0).setWire(siter->second->wire_);
          for (int ih=0; ih < (int)hits.size(); ++ih) {
-            hddm_s::FmwpcTruthHitList thit = wire(0).addFmwpcTruthHits(1);
-            thit(0).setDE(hits[ih].dE_keV);
-            thit(0).setDx(hits[ih].dx_cm);
-            thit(0).setT(hits[ih].t_ns);
+	   double dE=hits[ih].dE_keV;
+	   double n_p_mean=dE/W_EFF_PER_ION/(1.+N_SECOND_PER_PRIMARY);
+	   int n_p=CLHEP::RandPoisson::shoot(n_p_mean);
+	   double n_s_mean=n_p*N_SECOND_PER_PRIMARY;
+	   int n_s=CLHEP::RandPoisson::shoot(n_s_mean);
+	   int n_t=n_p+n_s;
+	   double q_fC=n_t*GAS_GAIN*ELECTRON_CHARGE/fC;
+	   
+	   hddm_s::FmwpcTruthHitList thit = wire(0).addFmwpcTruthHits(1);
+	   thit(0).setDE(dE);
+	   thit(0).setDx(hits[ih].dx_cm);
+	   thit(0).setT(hits[ih].t_ns);
+	   thit(0).setQ(q_fC);
          }
       }
    }
