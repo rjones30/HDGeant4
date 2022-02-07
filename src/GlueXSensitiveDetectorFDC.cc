@@ -53,7 +53,7 @@ double GlueXSensitiveDetectorFDC::FDC_TIME_WINDOW = 1000*ns;
 double GlueXSensitiveDetectorFDC::GAS_GAIN = 8e4;
 
 // Average number of secondary ion pairs for 40/60 Ar/CO2 mixture
-int GlueXSensitiveDetectorFDC::N_SECOND_PER_PRIMARY = 1.89; 
+double GlueXSensitiveDetectorFDC::N_SECOND_PER_PRIMARY = 1.89; 
 
 // Average energy needed to produce an ion pair for 40/60 mixture
 double GlueXSensitiveDetectorFDC::W_EFF_PER_ION = 30.2*eV;
