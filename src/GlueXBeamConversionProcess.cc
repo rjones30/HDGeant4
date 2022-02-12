@@ -153,7 +153,6 @@ GlueXBeamConversionProcess::GlueXBeamConversionProcess(const G4String &name,
    std::map<int,double> beampars;
    std::map<int,std::string> genbeampars;
    if (!user_opts->Find("INFI", infile) &&
-       user_opts->Find("BEAM", beampars) &&
        user_opts->Find("GENBEAM", genbeampars))
    {
       if (genbeampars.find(1) != genbeampars.end() &&
