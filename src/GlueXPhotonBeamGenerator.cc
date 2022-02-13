@@ -207,6 +207,9 @@ void GlueXPhotonBeamGenerator::prepareImportanceSamplingPDFs()
    fIncoherentPDFlogx.Psum = 0;
    fIncoherentPDFy.Pmax = 0;
    fIncoherentPDFy.Psum = 0;
+
+   // apply a correction based on endpoint energy
+   fIncoherentPDFy.Pcut *= 12*GeV / Emax;
 }
 
 void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
