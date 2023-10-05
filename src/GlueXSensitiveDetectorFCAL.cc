@@ -23,7 +23,7 @@
 
 // Scale factors to match reconstructed to generated
 double GlueXSensitiveDetectorFCAL::SHOWER_ENERGY_SCALE_FACTOR =  1.0;
-double GlueXSensitiveDetectorFCAL::MIP_ENERGY_SCALE_FACTOR = 1.35;
+double GlueXSensitiveDetectorFCAL::MIP_ENERGY_SCALE_FACTOR = 1.55;
 
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorFCAL::MAX_HITS = 100;
