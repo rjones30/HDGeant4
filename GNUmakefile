@@ -18,12 +18,12 @@ ifndef G4SYSTEM
     $(error Geant4 environment not set up, please source $(G4ROOT)/share/Geant4-10.*/geant4make/geant4make.sh and try again)
 endif
 
-ifdef DIRACXX_HOME
-    DIRACXX_CMAKE := $(shell if [ -f $(DIRACXX_HOME)/../CMakeLists.txt ]; then echo true; else echo false; fi)
+ifdef DIRACXX_DIR
+    DIRACXX_CMAKE := $(shell if [ -f $(DIRACXX_DIR)/../CMakeLists.txt ]; then echo true; else echo false; fi)
     ifeq ($(DIRACXX_CMAKE), true)
-        CPPFLAGS += -I$(DIRACXX_HOME)/include -DUSING_DIRACXX -L$(DIRACXX_HOME)/lib -lDirac
+        CPPFLAGS += -I$(DIRACXX_DIR)/include -DUSING_DIRACXX -L$(DIRACXX_DIR)/lib -lDirac
     else
-        CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
+        CPPFLAGS += -I$(DIRACXX_DIR) -DUSING_DIRACXX -L$(DIRACXX_DIR) -lDirac
     endif
 endif
 
