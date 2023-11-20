@@ -19,11 +19,11 @@ ifndef G4SYSTEM
 endif
 
 ifdef DIRACXX_HOME
-    DIRACXX_CMAKE := $(shell if [ -f $(DIRACXX_HOME)/../CMakeLists.txt ]; then echo true; else echo false; fi)
+    DIRACXX_CMAKE := $(shell if [ -f $(DIRACXX_HOME)/CMakeLists.txt ]; then echo true; else echo false; fi)
     ifeq ($(DIRACXX_CMAKE), true)
-        CPPFLAGS += -I$(DIRACXX_HOME)/include -DUSING_DIRACXX -L$(DIRACXX_HOME)/lib -lDirac
+        CPPFLAGS += -I$(DIRACXX_DIR)/include -DUSING_DIRACXX -L$(DIRACXX_DIR)/lib -lDirac
     else
-        CPPFLAGS += -I$(DIRACXX_HOME) -DUSING_DIRACXX -L$(DIRACXX_HOME) -lDirac
+        CPPFLAGS += -I$(DIRACXX_DIR) -DUSING_DIRACXX -L$(DIRACXX_DIR) -lDirac
     endif
 endif
 
