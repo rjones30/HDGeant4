@@ -72,7 +72,7 @@ HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/
 
 ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer
 ifeq ($(shell test -s $(ROOTSYS)/lib/libtbb.so && echo -n yes),yes)
-    ROOTLIBS += -ltbb
+    ROOTLIBS += $(ROOTSYS)/lib/libtbb.so.2
 endif
 ifeq ($(shell test -s $(VDTHOME)/lib/libvdt.so && echo -n yes),yes)
     ROOTLIBS += -L$(VDTHOME)/lib -lvdt
