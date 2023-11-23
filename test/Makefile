@@ -74,7 +74,7 @@
 # Reaction1:Flags B4_T1_S1_M7_M17_F4
 ##### end of sample reaction_example.spec
 
-nthreads = 4
+nthreads = 6
 batchmode = 0
 comma = ,
 
@@ -86,16 +86,14 @@ all:
 	@echo " bggen_%.hddm (requires user input file bggen_%.spec to be present)"
 	@echo " genr8_%.hddm (requires user input file genr8_%.spec to be present)"
 	@echo " hdgeant4_%.hddm (uses control file control_%.in, if present)"
-	@echo " hdgeant_%.hddm (uses control file  control_%.in, if present)"
-	@echo " smeared_%.hddm (assumes % starts with either hdgeant_ or hdgeant4_)"
+	@echo " hdgeant31_%.hddm (uses control file  control_%.in, if present)"
+	@echo " hdgeant34_%.hddm (uses control file  control_%.in, if present)"
+	@echo " smeared_%.hddm (assumes % starts with either hdgeant3*_ or hdgeant4_)"
 	@echo " rest_%.hddm (reads from smeared_%.hddm)"
 	@echo " reaction_<reaction>_%.root (assumes reaction_<reaction>.spec is present)"
 	@echo "  where <reaction> can be any of the following:"
-	@echo "   etaS2gammaS,pi0,p"
+	@echo "   etaS2gS,pi0,p"
 	@echo "   ... to be extended ..."
-
-clean:
-	@rm -rf pythia-geant.map pythia.dat particle.dat bggen.his fort.15 *.astate control.in *.his *.hbook *.rz smear.root
 
 bggen_%.hddm: bggen_%.spec
 	@test -f pythia-geant.map || wget $(BGGEN_URL)/pythia-geant.map || exit 1
@@ -105,11 +103,6 @@ bggen_%.hddm: bggen_%.spec
 	bggen || exit 1
 	@mv bggen.hddm $@ || exit 1
 	@rm fort.15
-
-bggen_%.hddm:
-	@echo "bggen_$*.spec not found, cannot build $@"
-	@echo "See Makefile header for sample bggen_example.spec"
-	@exit 1
 
 genr8_%.hddm: genr8_%.spec
 	@echo "genr8 -Agenr8_output.txt \
@@ -124,28 +117,33 @@ genr8_%.hddm: genr8_%.spec
 	@mv genr8_output.hddm $@
 	@rm -f genr8_output.txt
 
-genr8_%.hddm:
-	@echo "genr8_$*.spec not found, cannot build $@"
-	@echo "See Makefile header for sample genr8_example.spec"
-	@exit 1
-
 control_%.in: control.in_test_template
 	@sed "s/^INFI.*/INFILE '$*.hddm'/" $< > $@ || exit 1
-
-control_%.in:
-	@echo "control.in_test_template not found, cannot build $@"
-	@exit 1
 
 hdgeant4_%.hddm: control_%.in %.hddm
 	@sed "s/^OUTF.*/OUTFILE '$@'/" < $< > control.in
 	hdgeant4 -t$(nthreads) || exit 1
 
-hdgeant_%.hddm: control_%.in %.hddm
-	@sed "s/^OUTF.*/OUTFILE '$@'/" $< > control.in
-	@echo "hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
+hdgeant31_%.hddm: control_%.in %.hddm
+	@sed "s/^OUTF.*/OUTFILE '$@'/" $< > control.in || exit 1
+	@sed -i "s/^HADR .*/HADR 1/" control.in || exit 1
+	@echo hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
 	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
 	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}')"
+	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}')
+	@hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
+	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}') || \
+	exit 1
+
+hdgeant34_%.hddm: control_%.in %.hddm
+	@sed "s/^OUTF.*/OUTFILE '$@'/" $< > control.in || exit 1
+	@sed -i "s/^HADR .*/HADR 4/" control.in || exit 1
+	@echo hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
+	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}')
 	@hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
 	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
 	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
@@ -173,17 +171,11 @@ rest_%.hddm: hd_recon.config smeared_%.hddm
        	smeared_$*.hddm || exit 1
 	@mv dana_rest.hddm $@
 
-rest_%.hddm:
-	@test -f hd_recon.config || \
-	(echo "hd_recon.config not found, cannot build $@" && \
-	exit 1)
-	@make smeared_$*.hddm && make $@
+pi0eta2g = etaS2gS$(comma)pi0$(comma)p
+pi0eta3pi0 = etaS3pi0S$(comma)pi0$(comma)p
+pi0eta3pi = etaSpi+$(comma)pi-$(comma)pi0S$(comma)pi0$(comma)p
 
-eta2gchannel = etaS2gammaS$(comma)pi0$(comma)p
-eta3pi0channel = etaS3pi0S$(comma)pi0$(comma)p
-eta3pichannel = etaSpi+$(comma)pi-$(comma)pi0S$(comma)pi0$(comma)p
-
-reaction_$(eta2gchannel)_%.root: reaction_$(eta2gchannel).spec rest_%.hddm
+reaction_$(pi0eta2g)_%.root: reaction_$(pi0eta2g).spec rest_%.hddm
 	hd_root \
 		--config=$< \
         --nthreads=$(nthreads) \
@@ -194,14 +186,7 @@ reaction_$(eta2gchannel)_%.root: reaction_$(eta2gchannel).spec rest_%.hddm
        	rest_$*.hddm || exit 1
 	@mv hd_root.root $@
 
-reaction_$(eta2gchannel)_%.root:
-	@test -f reaction_$(etaS2gchannel).spec || \
-	(echo "reaction_$(eta2gchannel).spec not found, cannot build $@" && \
-	echo "See Makefile header for sample reaction_example.spec" && \
-	exit 1)
-	@make rest_$*.hddm && make $@
-
-reaction_$(eta3pi0channel)_%.root: reaction_$(eta3pi0channel).spec rest_%.hddm
+reaction_$(pi0eta3pi0)_%.root: reaction_$(pi0eta3pi0).spec rest_%.hddm
 	hd_root \
 		--config=$< \
         --nthreads=$(nthreads) \
@@ -212,15 +197,7 @@ reaction_$(eta3pi0channel)_%.root: reaction_$(eta3pi0channel).spec rest_%.hddm
        	rest_$*.hddm || exit 1
 	@mv hd_root.root $@
 
-reaction_$(eta3pi0channel)_%.root:
-	@test -f reaction_$(eta3pi0channel).spec || \
-	(echo "reaction_$(eta3pi0channel).spec not found, cannot build $@" && \
-	echo "See Makefile header for sample reaction_example.spec" && \
-	exit 1)
-	@echo "found reaction_$(eta3pi0channel).spec"
-	@make rest_$*.hddm && make $@
-
-reaction_$(eta3pichannel)_%.root: reaction_$(eta3pichannel).spec rest_%.hddm
+reaction_$(pi0eta3pi)_%.root: reaction_$(pi0eta3pi).spec rest_%.hddm
 	hd_root \
 		--config=$< \
         --nthreads=$(nthreads) \
@@ -231,9 +208,69 @@ reaction_$(eta3pichannel)_%.root: reaction_$(eta3pichannel).spec rest_%.hddm
        	rest_$*.hddm || exit 1
 	@mv hd_root.root $@
 
-reaction_$(eta3pichannel)_%.root:
-	@test -f reaction_$(eta3pichannel).spec || \
-	(echo "reaction_$(eta3pichannel).spec not found, cannot build $@" && \
-	echo "See Makefile header for sample reaction_example.spec" && \
-	exit 1)
-	@make rest_$*.hddm && make $@
+test:
+	@make reaction_$(pi0eta2g)_hdgeant4_bggen_10k.root
+	@make reaction_$(pi0eta3pi0)_hdgeant4_bggen_10k.root
+	@make reaction_$(pi0eta3pi)_hdgeant4_bggen_10k.root
+	@make reaction_$(pi0eta2g)_hdgeant34_bggen_10k.root
+	@make reaction_$(pi0eta3pi0)_hdgeant34_bggen_10k.root
+	@make reaction_$(pi0eta3pi)_hdgeant34_bggen_100k.root
+	@make reaction_$(pi0eta2g)_hdgeant4_genr8_eta,pi0,p_10k.root
+	@make reaction_$(pi0eta3pi0)_hdgeant4_genr8_eta,pi0,p_10k.root
+	@make reaction_$(pi0eta3pi)_hdgeant4_genr8_eta,pi0,p_10k.root
+	@make reaction_$(pi0eta2g)_hdgeant31_genr8_eta,pi0,p_10k.root
+	@make reaction_$(pi0eta3pi0)_hdgeant31_genr8_eta,pi0,p_10k.root
+	@make reaction_$(pi0eta3pi)_hdgeant31_genr8_eta,pi0,p_10k.root
+
+%.config:
+	@test -f ../$@ || (echo "$% not found, cannot continue" && exit 1)
+	@cp -s ../$@ .
+
+%.spec:
+	@test -f ../$@ || (echo "$% not found, cannot continue" && exit 1)
+	@cp -s ../$@ .
+
+control.in_test_template:
+	@test -f ../$@ || (echo "$% not found, cannot continue" && exit 1)
+	@cp -s ../$@ .
+
+clean:
+	@rm -rf pythia-geant.map pythia.dat particle.dat bggen.his fort.15 *.astate control.in *.his *.hbook *.rz smear.root
+
+#bggen_%.hddm:
+#	@echo "bggen_$*.spec not found, cannot build $@"
+#	@echo "See Makefile header for sample bggen_example.spec"
+#	@exit 1
+#
+#genr8_%.hddm:
+#	@echo "genr8_$*.spec not found, cannot build $@"
+#	@echo "See Makefile header for sample genr8_example.spec"
+#	@exit 1
+#
+#rest_%.hddm:
+#	@test -f hd_recon.config || \
+#	(echo "hd_recon.config not found, cannot build $@" && \
+#	exit 1)
+#	@make smeared_$*.hddm && make $@
+#
+#reaction_$(pi0eta2g)_%.root:
+#	@test -f reaction_$(pi0eta2g).spec || \
+#	(echo "reaction_$(pi0eta2g).spec not found, cannot build $@" && \
+#	echo "See Makefile header for sample reaction_example.spec" && \
+#	exit 1)
+#	@make rest_$*.hddm && make $@
+#
+#reaction_$(pi0eta3pi0)_%.root:
+#	@test -f reaction_$(pi0eta3pi0).spec || \
+#	(echo "reaction_$(pi0eta3pi0).spec not found, cannot build $@" && \
+#	echo "See Makefile header for sample reaction_example.spec" && \
+#	exit 1)
+#	@echo "found reaction_$(pi0eta3pi0).spec"
+#	@make rest_$*.hddm && make $@
+#
+#reaction_$(pi0eta3pi)_%.root:
+#	@test -f reaction_$(pi0eta3pi).spec || \
+#	(echo "reaction_$(pi0eta3pi).spec not found, cannot build $@" && \
+#	echo "See Makefile header for sample reaction_example.spec" && \
+#	exit 1)
+#	@make rest_$*.hddm && make $@
