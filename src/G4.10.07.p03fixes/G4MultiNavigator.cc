@@ -761,7 +761,7 @@ G4MultiNavigator::GetGlobalExitNormal(const G4ThreeVector& argPoint,
       } // end for over the Navigators
 
       // Report if no Normal was obtained
-      if( !oneObtained ) 
+      if( !oneObtained && fVerbose > 2 ) 
       {
         std::ostringstream message;
         message << "No Normal obtained despite having " << fNoLimitingStep
