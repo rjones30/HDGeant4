@@ -1,5 +1,5 @@
 //
-// GlueXSensitiveDetectorFCAL - class implementation
+// GlueXSensitiveDetectorFCAL - class implementation 
 //
 // author: richard.t.jones at uconn.edu
 // version: october 25, 2016
