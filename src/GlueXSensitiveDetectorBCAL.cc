@@ -29,6 +29,13 @@ double GlueXSensitiveDetectorBCAL::SHOWER_ENERGY_SCALE_FACTOR = 1.008;
 // Cutoff on the total number of allowed hits
 int GlueXSensitiveDetectorBCAL::MAX_HITS = 100;
 
+// To obtain a good description of the bcal response for small pulse height,
+// we need to set the hit threshold in simulation artificially low, and then
+// apply a higher threshold after gain adjustment and smearing. This factor
+// makes sure we keep enough hits from simulation that we can end up with
+// MAX_HITS after pulse height thresholds are applied.
+const double bcal_hits_mult_factor = 5;
+
 // Time resolution for full pulse digitization (unused at present)
 double GlueXSensitiveDetectorBCAL::SIPM_TIME_BIN_WIDTH = 0.1;
 
@@ -277,7 +284,7 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
          // correction factor makes shower yields match hdgeant
          hiter->E_GeV += dEsum/GeV * SHOWER_ENERGY_SCALE_FACTOR;
       }
-      else if ((int)cell->hits.size() < MAX_HITS) {
+      else if ((int)cell->hits.size() < MAX_HITS * bcal_hits_mult_factor) {
          // create new hit 
          hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
          // correction factor makes shower yields match hdgeant
@@ -288,8 +295,8 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
       }
       else {
          G4cerr << "GlueXSensitiveDetectorBCAL::ProcessHits error: "
-             << "max hit count " << MAX_HITS << " exceeded, truncating!"
-             << G4endl;
+             << "max hit count " << MAX_HITS * bcal_hits_mult_factor 
+             << " exceeded, truncating!" << G4endl;
       }
 
       // Add the hit to the upstream sipm hits list, with strict time ordering
@@ -321,7 +328,7 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
          // correction factor makes shower yields match hdgeant
          hiter->Eup_GeV += dEup/GeV * SHOWER_ENERGY_SCALE_FACTOR;
       }
-      else if ((int)cell->hits.size() < MAX_HITS) {
+      else if ((int)cell->hits.size() < MAX_HITS * bcal_hits_mult_factor) {
          // create new hit 
          hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
          // correction factor makes shower yields match hdgeant
@@ -330,8 +337,8 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
       }
       else {
          G4cerr << "GlueXSensitiveDetectorBCAL::ProcessHits error: "
-             << "max hit count " << MAX_HITS << " exceeded, truncating!"
-             << G4endl;
+             << "max hit count " << MAX_HITS * bcal_hits_mult_factor
+             << " exceeded, truncating!" << G4endl;
       }
 
       // Add the hit to the downstream sipm hits list, with strict time ordering
@@ -363,7 +370,7 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
          // correction factor makes shower yields match hdgeant
          hiter->Edown_GeV += dEdown/GeV * SHOWER_ENERGY_SCALE_FACTOR;
       }
-      else if ((int)cell->hits.size() < MAX_HITS) {
+      else if ((int)cell->hits.size() < MAX_HITS * bcal_hits_mult_factor) {
          // create new hit 
          hiter = cell->hits.insert(hiter, GlueXHitBCALcell::hitinfo_t());
          // correction factor makes shower yields match hdgeant
@@ -372,8 +379,8 @@ G4bool GlueXSensitiveDetectorBCAL::ProcessHits(G4Step* step,
       }
       else {
          G4cerr << "GlueXSensitiveDetectorBCAL::ProcessHits error: "
-             << "max hit count " << MAX_HITS << " exceeded, truncating!"
-             << G4endl;
+             << "max hit count " << MAX_HITS * bcal_hits_mult_factor
+             << " exceeded, truncating!" << G4endl;
       }
    }
    return true;
