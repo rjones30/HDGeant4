@@ -223,16 +223,18 @@ test:
 	@make reaction_$(pi0eta3pi)_hdgeant31_genr8_eta,pi0,p_10k.root
 
 %.config:
-	@test -f ../$@ || (echo "$% not found, cannot continue" && exit 1)
+	@test -f ../$@ || (echo "$@ not found, cannot continue" && exit 1)
 	@cp -s ../$@ .
 
 %.spec:
-	@test -f ../$@ || (echo "$% not found, cannot continue" && exit 1)
+	@test -f ../$@ || (echo "$@ not found, cannot continue" && exit 1)
 	@cp -s ../$@ .
 
 control.in_test_template:
-	@test -f ../$@ || (echo "$% not found, cannot continue" && exit 1)
+	@test -f ../$@ || (echo "$@ not found, cannot continue" && exit 1)
 	@cp -s ../$@ .
 
 clean:
-	@rm -rf pythia-geant.map pythia.dat particle.dat bggen.his fort.15 *.astate control.in *.his *.hbook *.rz smear.root
+	@rm -rf pythia-geant.map pythia.dat particle.dat bggen.his fort.15 *.astate control.in *.his *.hbook *.rz smear.root flukaerr.dat
+
+.SECONDARY: $(%.hddm) $(control_%.in)
