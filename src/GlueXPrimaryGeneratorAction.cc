@@ -1130,7 +1130,7 @@ int GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(int PDGtype)
 
    switch (PDGtype) {
       case          0 : return 50;    // old usage, optical photon
-      case        -22 : return 50     // optical photon
+      case        -22 : return 50;    // optical photon
       case         22 : return 1;     // photon
       case        -11 : return 2;     // e+
       case         11 : return 3;     // e-
