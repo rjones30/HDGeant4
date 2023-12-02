@@ -96,7 +96,7 @@ ChangeRotMatrix( G4VPhysicalVolume* physVol, G4double rotZ ) const
   if (!G4MT_fRot)
   {
     G4MT_fRot = new G4RotationMatrix();
-    G4AutoDelete::Register(G4MT_fRot);
+    //G4AutoDelete::Register(G4MT_fRot);
   }
   *G4MT_fRot = G4RotationMatrix::IDENTITY;
   G4MT_fRot->rotateZ( rotZ );
