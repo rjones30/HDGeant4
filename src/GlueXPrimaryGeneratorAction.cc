@@ -1288,6 +1288,9 @@ G4ParticleDefinition *GlueXPrimaryGeneratorAction::GetParticle(int PDGtype)
       if (PDGtype > 1000000000) {
          p = fParticleTable->GetIonTable()->GetIon(PDGtype);
       }
+      else if (PDGtype == -22) {
+         p = fParticleTable->FindParticle(22);
+      }
       else {
          G4cout << "unknown particle type " << PDGtype
                 << ", substituting geantino in its place!"
