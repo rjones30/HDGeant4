@@ -80,6 +80,14 @@ comma = ,
 
 BGGEN_URL = https://zeus.phys.uconn.edu/halld/bggen-3-2023/config
 
+ifeq ($(VALGRIND), "gdb")
+    exec = valgrind --vgdb-error=0
+else ifdef VALGRIND
+    exec = valgrind --leak-check=full
+else
+    exec = 
+endif
+
 all:
 	@echo "GENERAL TESTS OF CORE GLUEX SIMULATION+ANALYSIS FUNCTIONALITY"
 	@echo "A list of valid test targets:"
@@ -100,19 +108,19 @@ bggen_%.hddm: bggen_%.spec
 	@test -f pythia.dat || wget $(BGGEN_URL)/pythia.dat || exit 1
 	@test -f particle.dat || wget $(BGGEN_URL)/particle.dat || exit 1
 	@cp $< fort.15 || exit 1
-	bggen || exit 1
+	$(exec) bggen || exit 1
 	@mv bggen.hddm $@ || exit 1
 	@rm fort.15
 
 genr8_%.hddm: genr8_%.spec
 	@echo "genr8 -Agenr8_output.txt \
-	-M$$(awk '/^. events /{print $$3}' $<) \
-	-r$$(awk '/^. run /{print $$3}' $<) \
-	-s$$(awk '/^. seed /{print $$3}' $<) < $<"
-	@genr8 -Agenr8_output.txt \
-	-M$$(awk '/^. events /{print $$3}' $<) \
-	-r$$(awk '/^. run /{print $$3}' $<) \
-	-s$$(awk '/^. seed /{print $$3}' $<) < $< || exit 1
+	 -M$$(awk '/^. events /{print $$3}' $<) \
+	 -r$$(awk '/^. run /{print $$3}' $<) \
+	 -s$$(awk '/^. seed /{print $$3}' $<) < $<"
+	$(exec) genr8 -Agenr8_output.txt \
+	 -M$$(awk '/^. events /{print $$3}' $<) \
+	 -r$$(awk '/^. run /{print $$3}' $<) \
+	 -s$$(awk '/^. seed /{print $$3}' $<) < $< || exit 1
 	genr8_2_hddm -V"0 0 50 80" genr8_output.txt || exit 1
 	@mv genr8_output.hddm $@
 	@rm -f genr8_output.txt
@@ -122,36 +130,36 @@ control_%.in: control.in_test_template
 
 hdgeant4_%.hddm: control_%.in %.hddm
 	@sed "s/^OUTF.*/OUTFILE '$@'/" < $< > control.in
-	hdgeant4 -t$(nthreads) || exit 1
+	$(exec) hdgeant4 -t$(nthreads) || exit 1
 
 hdgeant31_%.hddm: control_%.in %.hddm
 	@sed "s/^OUTF.*/OUTFILE '$@'/" $< > control.in || exit 1
 	@sed -i "s/^HADR .*/HADR 1/" control.in || exit 1
 	@echo hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
-	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}')
-	@hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
-	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}') || \
-	exit 1
+	 awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}')
+	$(exec) hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
+	 awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}') || \
+	 exit 1
 
 hdgeant34_%.hddm: control_%.in %.hddm
 	@sed "s/^OUTF.*/OUTFILE '$@'/" $< > control.in || exit 1
 	@sed -i "s/^HADR .*/HADR 4/" control.in || exit 1
 	@echo hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
-	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}')
-	@hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
-	awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
-	hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}') || \
-	exit 1
+	 awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}')
+	$(exec) hdgeant -xml=ccdb://GEOMETRY/main_HDDS.xml,run=$$( \
+	 awk 'BEGIN{run=0}/^RUNNO /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 awk 'BEGIN{run=0}/^RUNG /{run=$$2}END{if(run>0){print run}else{exit 1}}' $< || \
+	 hddm-xml -n 1 $*.hddm | awk -F'"' '/runNo/{print $$4}') || \
+	 exit 1
 
 smeared_%.hddm: %.hddm
-	mcsmear \
+	$(exec) mcsmear \
         -PNTHREADS=$(nthreads) \
 		-Pprint -PJANA:BATCH_MODE=$(batchmode) \
         -PTHREAD_TIMEOUT_FIRST_EVENT=3600 \
@@ -160,7 +168,7 @@ smeared_%.hddm: %.hddm
 	@mv $*_smeared.hddm $@
 
 rest_%.hddm: hd_recon.config smeared_%.hddm
-	hd_root \
+	$(exec) hd_root \
 		--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
@@ -176,7 +184,7 @@ pi0eta3pi0 = etaS3pi0S$(comma)pi0$(comma)p
 pi0eta3pi = etaSpi+$(comma)pi-$(comma)pi0S$(comma)pi0$(comma)p
 
 reaction_$(pi0eta2g)_%.root: reaction_$(pi0eta2g).spec rest_%.hddm
-	hd_root \
+	$(exec) hd_root \
 		--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
@@ -187,7 +195,7 @@ reaction_$(pi0eta2g)_%.root: reaction_$(pi0eta2g).spec rest_%.hddm
 	@mv hd_root.root $@
 
 reaction_$(pi0eta3pi0)_%.root: reaction_$(pi0eta3pi0).spec rest_%.hddm
-	hd_root \
+	$(exec) hd_root \
 		--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
@@ -198,7 +206,7 @@ reaction_$(pi0eta3pi0)_%.root: reaction_$(pi0eta3pi0).spec rest_%.hddm
 	@mv hd_root.root $@
 
 reaction_$(pi0eta3pi)_%.root: reaction_$(pi0eta3pi).spec rest_%.hddm
-	hd_root \
+	$(exec) hd_root \
 		--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
