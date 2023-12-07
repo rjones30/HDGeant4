@@ -80,7 +80,7 @@ comma = ,
 
 BGGEN_URL = https://zeus.phys.uconn.edu/halld/bggen-3-2023/config
 
-ifeq ($(VALGRIND), "gdb")
+ifeq ($(VALGRIND), gdb)
     exec = valgrind --vgdb-error=0
 else ifdef VALGRIND
     exec = valgrind --leak-check=full
