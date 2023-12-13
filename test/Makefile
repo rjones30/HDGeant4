@@ -80,10 +80,18 @@ comma = ,
 
 BGGEN_URL = https://zeus.phys.uconn.edu/halld/bggen-3-2023/config
 
-ifeq ($(VALGRIND), gdb)
+ifeq ($(VALGRIND), "gdb")
     exec = valgrind --vgdb-error=0
 else ifdef VALGRIND
     exec = valgrind --leak-check=full
+else ifdef GDB
+    exec = @function run_with_gdb {\
+	       executable=$$1;\
+               shift;\
+	       echo $$executable $$*;\
+	       gdb $$executable;\
+	   };\
+	   run_with_gdb
 else
     exec = 
 endif
