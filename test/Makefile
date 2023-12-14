@@ -95,6 +95,11 @@ else ifdef GDB
 else
     exec = 
 endif
+ifdef VERBOSE
+    g4options = -V$(VERBOSE) -t$(nthreads)
+else
+    g4options = -t$(nthreads)
+endif
 
 all:
 	@echo "GENERAL TESTS OF CORE GLUEX SIMULATION+ANALYSIS FUNCTIONALITY"
@@ -138,7 +143,7 @@ control_%.in: control.in_test_template
 
 hdgeant4_%.hddm: control_%.in %.hddm
 	@sed "s/^OUTF.*/OUTFILE '$@'/" < $< > control.in
-	$(exec) hdgeant4 -t$(nthreads) || exit 1
+	$(exec) hdgeant4 $(g4options) || exit 1
 
 hdgeant31_%.hddm: control_%.in %.hddm
 	@sed "s/^OUTF.*/OUTFILE '$@'/" $< > control.in || exit 1
