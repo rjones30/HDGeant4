@@ -51,6 +51,7 @@ void usage()
           << "    -i : start the simulation in interactive mode" << G4endl
           << "    -tN : start N worker threads, default 1" << G4endl
           << "    -rN : set run to N, default taken from control.in" << G4endl
+          << "    -Vn : start the simulation with stepping verbose=n" << G4endl
           << G4endl;
    exit(9);
 }
@@ -68,10 +69,11 @@ int main(int argc,char** argv)
 
    // Interpret special command-line arguments
    int use_visualization = 0;
+   int stepping_verbose = 0;
    int interactive_mode = 0;
    int worker_threads = 1;
    int c;
-   while ((c = getopt(argc, argv, "vit:r:")) != -1) {
+   while ((c = getopt(argc, argv, "vit:r:V:")) != -1) {
       if (c == 'v') {
          use_visualization = 1;
       }
@@ -83,6 +85,9 @@ int main(int argc,char** argv)
       }
       else if (c == 'i') {
          interactive_mode = 1;
+      }
+      else if (c == 'V') {
+         stepping_verbose = atoi(optarg);
       }
       else {
          usage();
@@ -212,7 +217,7 @@ int main(int argc,char** argv)
    // Initialize G4 kernel
    std::cout << "Initializing the Geant4 kernel..." << std::endl;
    runManager.Initialize();
-   
+
    // Initialize graphics (option -v)
    G4VisManager* visManager = 0;
    if (use_visualization) {
@@ -226,6 +231,9 @@ int main(int argc,char** argv)
       exit(1);
 #endif
    }
+
+   G4EventManager::GetEventManager()->
+                   GetTrackingManager()->SetVerboseLevel(stepping_verbose);
 
    simtimer.Start();
 
