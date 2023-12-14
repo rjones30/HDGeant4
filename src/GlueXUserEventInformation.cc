@@ -116,6 +116,11 @@ GlueXUserEventInformation::GlueXUserEventInformation(hddm_s::HDDM *hddmevent)
    G4EventManager::GetEventManager()->
                    GetTrackingManager()->
                    SetVerboseLevel(fTrackingVerboseLevel);
+   if (fTrackingVerboseLevel > 0) {
+      hddm_s::PhysicsEventList pev = fOutputRecord->getPhysicsEvents();
+      G4cout << "GlueXUserEventInformation: new event " << pev(0).getEventNo()
+             << ", run " << pev(0).getRunNo() << G4endl;
+   }
 }
 
 GlueXUserEventInformation::~GlueXUserEventInformation()
