@@ -125,12 +125,14 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
                                         step->GetSecondaryInCurrentStep();
             G4TrackVector::iterator iter;
             for (iter = secondary.begin(); iter != secondary.end(); ++iter) {
-               int newID = eventinfo->AssignNextGlueXTrackID();
-               trackinfo = new GlueXUserTrackInformation();
-               if (eventinfo) {
-                  trackinfo->SetGlueXTrackID(newID);
+               if ((*iter)->GetCreatorProcess()->GetProcessType() == fDecay) {
+                  int newID = eventinfo->AssignNextGlueXTrackID();
+                  trackinfo = new GlueXUserTrackInformation();
+                  if (eventinfo) {
+                     trackinfo->SetGlueXTrackID(newID);
+                  }
+                  (*iter)->SetUserInformation(trackinfo);
                }
-               (*iter)->SetUserInformation(trackinfo);
             }
             if (eventinfo) {
                int mech[2];
