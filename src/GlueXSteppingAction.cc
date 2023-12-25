@@ -124,7 +124,7 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
             G4TrackVector &secondary = *(G4TrackVector*)
                                         step->GetSecondaryInCurrentStep();
             G4TrackVector::iterator iter;
-	    G4TrackVector decaySecondaries;
+            G4TrackVector decaySecondaries;
             for (iter = secondary.begin(); iter != secondary.end(); ++iter) {
                if ((*iter)->GetCreatorProcess()->GetProcessType() == fDecay) {
                   int newID = eventinfo->AssignNextGlueXTrackID();
@@ -133,7 +133,7 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
                      trackinfo->SetGlueXTrackID(newID);
                   }
                   (*iter)->SetUserInformation(trackinfo);
-		  decaySecondaries.push_back(*iter);
+                  decaySecondaries.push_back(*iter);
                }
             }
             if (eventinfo and decaySecondaries.size() > 0) {
