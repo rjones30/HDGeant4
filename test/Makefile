@@ -74,11 +74,31 @@
 # Reaction1:Flags B4_T1_S1_M7_M17_F4
 ##### end of sample reaction_example.spec
 
-nthreads = 6
-batchmode = 0
 comma = ,
 
-BGGEN_URL = https://zeus.phys.uconn.edu/halld/bggen-3-2023/config
+ifdef BGGEN_URL
+    bggen_url = $(BGGEN_URL)
+else
+    bggen_url = https://zeus.phys.uconn.edu/halld/bggen-3-2023/config
+endif
+
+ifdef NEVENTS
+    nevents = $(NEVENTS)
+else
+    nevents = 999999999999
+endif
+
+ifdef NTHREADS
+    nthreads = $(NTHREADS)
+else
+    nthreads = 6
+endif
+
+ifdef BATCHMODE
+    batchmode = $(BATCHMODE)
+else
+    batchmode = 0
+endif
 
 ifeq ($(VALGRIND), "gdb")
     exec = valgrind --vgdb-error=0
@@ -117,9 +137,9 @@ all:
 	@echo "   ... to be extended ..."
 
 bggen_%.hddm: bggen_%.spec
-	@test -f pythia-geant.map || wget $(BGGEN_URL)/pythia-geant.map || exit 1
-	@test -f pythia.dat || wget $(BGGEN_URL)/pythia.dat || exit 1
-	@test -f particle.dat || wget $(BGGEN_URL)/particle.dat || exit 1
+	@test -f pythia-geant.map || wget $(bggen_url)/pythia-geant.map || exit 1
+	@test -f pythia.dat || wget $(bggen_url)/pythia.dat || exit 1
+	@test -f particle.dat || wget $(bggen_url)/particle.dat || exit 1
 	@cp $< fort.15 || exit 1
 	$(exec) bggen || exit 1
 	@mv bggen.hddm $@ || exit 1
@@ -174,7 +194,8 @@ hdgeant34_%.hddm: control_%.in %.hddm
 smeared_%.hddm: %.hddm
 	$(exec) mcsmear \
         -PNTHREADS=$(nthreads) \
-		-Pprint -PJANA:BATCH_MODE=$(batchmode) \
+        -PEVENTS_TO_KEEP=$(nevents) \
+	-Pprint -PJANA:BATCH_MODE=$(batchmode) \
         -PTHREAD_TIMEOUT_FIRST_EVENT=3600 \
         -PTHREAD_TIMEOUT=600 \
         $< || exit 1
@@ -182,14 +203,15 @@ smeared_%.hddm: %.hddm
 
 rest_%.hddm: hd_recon.config smeared_%.hddm
 	$(exec) hd_root \
-		--config=$< \
+	--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
+        -PEVENTS_TO_KEEP=$(nevents) \
         -PJANA:BATCH_MODE=$(batchmode) \
         -PTHREAD_TIMEOUT_FIRST_EVENT=3600 \
         -PTHREAD_TIMEOUT=600 \
         -PTRK:SAVE_TRUNCATED_DEDX=1 \
-       	smeared_$*.hddm || exit 1
+        smeared_$*.hddm || exit 1
 	@mv dana_rest.hddm $@
 
 pi0eta2g = etaS2gS$(comma)pi0$(comma)p
@@ -198,35 +220,38 @@ pi0eta3pi = etaSpi+$(comma)pi-$(comma)pi0S$(comma)pi0$(comma)p
 
 reaction_$(pi0eta2g)_%.root: reaction_$(pi0eta2g).spec rest_%.hddm
 	$(exec) hd_root \
-		--config=$< \
+	--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
+        -PEVENTS_TO_KEEP=$(nevents) \
         -PJANA:BATCH_MODE=$(batchmode) \
         -PTHREAD_TIMEOUT_FIRST_EVENT=3600 \
         -PTHREAD_TIMEOUT=600 \
-       	rest_$*.hddm || exit 1
+        rest_$*.hddm || exit 1
 	@mv hd_root.root $@
 
 reaction_$(pi0eta3pi0)_%.root: reaction_$(pi0eta3pi0).spec rest_%.hddm
 	$(exec) hd_root \
-		--config=$< \
+	--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
+        -PEVENTS_TO_KEEP=$(nevents) \
         -PJANA:BATCH_MODE=$(batchmode) \
         -PTHREAD_TIMEOUT_FIRST_EVENT=3600 \
         -PTHREAD_TIMEOUT=600 \
-       	rest_$*.hddm || exit 1
+        rest_$*.hddm || exit 1
 	@mv hd_root.root $@
 
 reaction_$(pi0eta3pi)_%.root: reaction_$(pi0eta3pi).spec rest_%.hddm
 	$(exec) hd_root \
-		--config=$< \
+	--config=$< \
         --nthreads=$(nthreads) \
         -PNTHREADS=$(nthreads) \
+        -PEVENTS_TO_KEEP=$(nevents) \
         -PJANA:BATCH_MODE=$(batchmode) \
         -PTHREAD_TIMEOUT_FIRST_EVENT=3600 \
         -PTHREAD_TIMEOUT=600 \
-       	rest_$*.hddm || exit 1
+        rest_$*.hddm || exit 1
 	@mv hd_root.root $@
 
 test:
