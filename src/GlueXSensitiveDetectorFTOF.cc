@@ -262,11 +262,6 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
          }
 
          if (merge_hit) {
-            // sum the charge, do energy weighting of the time
-            //hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
-            //               dEnorth/GeV * tnorth/ns) /
-            //(hiter->dE_GeV += dEnorth/GeV);
-
 	    // Use the time from the earlier hit but add the charge
 	    hiter->dE_GeV += dEnorth/GeV;
 	    if (hiter->t_ns*ns > tnorth) {
@@ -333,11 +328,6 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
             }
          }
          if (merge_hit) {
-            // sum the charge, do energy weighting of the time
-            //hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
-            //               dEsouth/GeV * tsouth/ns) /
-            //(hiter->dE_GeV += dEsouth/GeV);
-
 	    // Use the time from the earlier hit but add the charge
 	    hiter->dE_GeV += dEsouth/GeV;
 	    if (hiter->t_ns*ns > tsouth) {
