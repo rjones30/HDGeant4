@@ -222,22 +222,22 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
       // column=0 is a full bar, column=1,2 are half paddles
       if (plane == 0) {
          if (column == 1) {
-	        tnorth = 0;
-	        dEnorth = 0;
+            tnorth = 0;
+            dEnorth = 0;
          }
-         else if (column == 2) {	
-	        tsouth = 0;
-	        dEsouth =0;
+         else if (column == 2) {    
+            tsouth = 0;
+            dEsouth =0;
          }
       }
       else {
          if (column == 2) {
-	        tnorth = 0;
-	        dEnorth = 0;
+            tnorth = 0;
+            dEnorth = 0;
          }
          else if (column == 1) {
-	        tsouth = 0;
-	        dEsouth = 0;
+            tsouth = 0;
+            dEsouth = 0;
          }
       }
 
@@ -262,11 +262,16 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
          }
 
          if (merge_hit) {
-	    // Use the time from the earlier hit but add the charge
-	    hiter->dE_GeV += dEnorth/GeV;
-	    if (hiter->t_ns*ns > tnorth) {
-		    hiter->t_ns = tnorth/ns;
-	    }
+            // sum the charge, do energy weighting of the time --disabled for bad behavior, rtj--
+            //hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
+            //               dEnorth/GeV * tnorth/ns) /
+            //(hiter->dE_GeV += dEnorth/GeV);
+ 
+            // Use the time from the earlier hit but add the charge
+            hiter->dE_GeV += dEnorth/GeV;
+            if (hiter->t_ns*ns > tnorth) {
+               hiter->t_ns = tnorth/ns;
+            }
 
             std::vector<GlueXHitFTOFbar::hitextra_t>::reverse_iterator xiter;
             xiter = hiter->extra.rbegin();
@@ -328,11 +333,16 @@ G4bool GlueXSensitiveDetectorFTOF::ProcessHits(G4Step* step,
             }
          }
          if (merge_hit) {
-	    // Use the time from the earlier hit but add the charge
-	    hiter->dE_GeV += dEsouth/GeV;
-	    if (hiter->t_ns*ns > tsouth) {
-		    hiter->t_ns = tsouth/ns;
-	    }
+            // sum the charge, do energy weighting of the time --disabled for bad behavior, rtj--
+            //hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
+            //               dEsouth/GeV * tsouth/ns) /
+            //(hiter->dE_GeV += dEsouth/GeV);
+
+            // Use the time from the earlier hit but add the charge
+            hiter->dE_GeV += dEsouth/GeV;
+            if (hiter->t_ns*ns > tsouth) {
+               hiter->t_ns = tsouth/ns;
+            }
 
             std::vector<GlueXHitFTOFbar::hitextra_t>::reverse_iterator xiter;
             xiter = hiter->extra.rbegin();

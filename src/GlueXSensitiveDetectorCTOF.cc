@@ -233,11 +233,15 @@ G4bool GlueXSensitiveDetectorCTOF::ProcessHits(G4Step* step,
          }
 
          if (merge_hit) {
-	    // Use the time from the earlier hit but add the charge
-	    hiter->dE_GeV += dEtop/GeV;
-	    if (hiter->t_ns*ns > ttop) {
-		    hiter->t_ns = ttop/ns;
-	    }
+            // sum the charge, do energy weighting of the time --disabled for bad behavior --rtj
+            //hiter->t_ns = (hiter->dE_GeV * hiter->t_ns + dEtop/GeV * ttop/ns) /
+            //(hiter->dE_GeV += dEtop/GeV);
+ 
+            // Use the time from the earlier hit but add the charge
+            hiter->dE_GeV += dEtop/GeV;
+            if (hiter->t_ns*ns > ttop) {
+                hiter->t_ns = ttop/ns;
+            }
          }
          else {
             // create new hit 
@@ -266,11 +270,16 @@ G4bool GlueXSensitiveDetectorCTOF::ProcessHits(G4Step* step,
             }
          }
          if (merge_hit) {
+            // sum the charge, do energy weighting of the time --disabled for bad behavior --rtj
+            // hiter->t_ns = (hiter->dE_GeV * hiter->t_ns +
+            //               dEbottom/GeV * tbottom/ns) /
+            //(hiter->dE_GeV += dEbottom/GeV);
+
             // Use the time from the earlier hit but add the charge
-	    hiter->dE_GeV += dEbottom/GeV;
-	    if (hiter->t_ns*ns > tbottom) {
-		    hiter->t_ns = tbottom/ns;
-	    }
+            hiter->dE_GeV += dEbottom/GeV;
+            if (hiter->t_ns*ns > tbottom) {
+               hiter->t_ns = tbottom/ns;
+            }
          }
          else {
             // create new hit 
