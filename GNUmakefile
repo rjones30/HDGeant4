@@ -1,4 +1,4 @@
-# $Id: GNUmakefile,v 1.1 1999-01-07 16:05:42 gunter Exp $
+ $Id: GNUmakefile,v 1.1 1999-01-07 16:05:42 gunter Exp $
 # --------------------------------------------------------------
 # GNUmakefile for examples module.  Gabriele Cosmo, 06/04/98.
 # --------------------------------------------------------------
@@ -18,7 +18,7 @@ ifndef G4SYSTEM
     $(error Geant4 environment not set up, please source $(G4ROOT)/share/Geant4-10.*/geant4make/geant4make.sh and try again)
 endif
 
-ifdef DIRACXX_HOME
+ifdef DIRACXX_DIR
     DIRACXX_CMAKE := $(shell if [ -f $(DIRACXX_HOME)/CMakeLists.txt ]; then echo true; else echo false; fi)
     ifeq ($(DIRACXX_CMAKE), true)
         CPPFLAGS += -I$(DIRACXX_DIR)/include -DUSING_DIRACXX -L$(DIRACXX_DIR)/lib -lDirac
