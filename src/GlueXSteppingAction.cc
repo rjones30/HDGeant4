@@ -260,8 +260,6 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
    assert(id < 256);
 
    if (track->GetCurrentStepNumber() == 1) {
-      prow[id].run = eventinfo->GetRunNo();
-      prow[id].event = eventinfo->GetEventNo();
       int trackId = track->GetTrackID();
       int parentId = track->GetParentID();
       G4StepPoint *point = step->GetPreStepPoint();
@@ -338,6 +336,8 @@ void GlueXSteppingAction::UserSteppingAction(const G4Step* step)
       double Etot = point->GetTotalEnergy();
       int pdgcode = track->GetDynamicParticle()->GetPDGcode();
       int g3type = GlueXPrimaryGeneratorAction::ConvertPdgToGeant3(pdgcode);
+      prow[0].run = eventinfo->GetRunNo();
+      prow[0].event = eventinfo->GetEventNo();
       prow[0].totE = Etot/GeV;
       prow[0].time = point->GetGlobalTime()/ns;
       prow[0].x[0] = pos[0]/cm;
