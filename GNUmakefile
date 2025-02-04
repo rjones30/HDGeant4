@@ -275,7 +275,7 @@ show_env:
 	@echo PYTHON_GE_3 = $(PYTHON_GE_3)
 
 diff:
-	diff -q -r ../jlab . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
+	diff -q -r ../alma9-MT . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
 
 check_flags:
 	@echo CPPFLAGS=$(CPPFLAGS)
