@@ -37,10 +37,13 @@ double GlueXPhotonBeamGenerator::fBeamStartZ = -24 * m;
 double GlueXPhotonBeamGenerator::fBeamDiameter = 0.5 * cm;
 double GlueXPhotonBeamGenerator::fBeamVelocity = 2.99792e8 * m/s;
 double GlueXPhotonBeamGenerator::fBeamOffset[2] = {0,0};
+double GlueXPhotonBeamGenerator::fBeamOuterLimits[2] = {5 * m, 5 * m};
 
 int GlueXPhotonBeamGenerator::fForceFixedPolarization = false;
 double GlueXPhotonBeamGenerator::fFixedPolarization = 0;
 double GlueXPhotonBeamGenerator::fFixedPolarization_phi = 0;
+
+#define ALLOWED_DISTANCE_FROM_BEAM_AXIS 5000 
 
 // This utility function is useful in the debugger,
 // but do not use it for actual simulation operatons.
@@ -278,6 +281,7 @@ void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
    event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
    hddm_s::HDDM *record = event_info->getOutputRecord();
    hddm_s::BeamList beams = record->getBeams();
+   assert(beams.size() == 1);
    hddm_s::ReactionList reactions = record->getReactions();
    hddm_s::VertexList vertices = reactions(0).getVertices();
    t0 = 0;
@@ -297,12 +301,12 @@ void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
                bmom(0).setPz(pmom(0).getPz());
                bmom(0).setE(pmom(0).getE());
                bpro(0).setCharge(-1);
-               bpro(0).setMass(electron_mass_c2);
+               bpro(0).setMass(electron_mass_c2 / GeV);
             }
             ++electron_count;
          }
          else if (prods(ip).getType() == 1) { // gamma
-	    ++gamma_count;
+            ++gamma_count;
          }
       }
       if (electron_count > 0) {
@@ -317,15 +321,15 @@ void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
          else {
             orig(0).setT(t0);
          }
-	 hddm_s::MomentumList mom = prods(0).getMomenta();
-	 if (mom(0).getE() > Emin) {
+         hddm_s::MomentumList mom = prods(0).getMomenta();
+         if (mom(0).getE() > Emin) {
             vertices(iv).getProduct(0).setId(iv + 1);
             ++iv;
-	 }
-	 else {
+         }
+         else {
             reactions(0).deleteVertices(1, iv);
             vertices = reactions(0).getVertices();
-	 }
+         }
       }
       else {
          std::cerr << "GlueXPhotonBeamGenerator::GeneratePrimaryVertex error - "
@@ -653,8 +657,10 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    if (t0 == 0) {
       tvtx = (vtx[2] - targetCenterZ) / fBeamVelocity;
       tvtx -= GenerateTriggerTime(anEvent);
-      if (fGenerateNotSimulate == 0) {
-         event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
+      if (fabs(vtx[0]) < fBeamOuterLimits[0] && fabs(vtx[1]) < fBeamOuterLimits[1]) {
+         if (fGenerateNotSimulate == 0) {
+            event_info->AddBeamParticle(1, tvtx, vtx, mom, pol);
+         }
       }
       bg = 0;
    }
@@ -673,8 +679,10 @@ void GlueXPhotonBeamGenerator::GenerateBeamPhoton(G4Event* anEvent, double t0)
    G4PrimaryParticle* photon = new G4PrimaryParticle(part, px, py, pz);
    photon->SetPolarization(pol);
    vertex->SetPrimary(photon);
-   if (fGenerateNotSimulate < 1) {
-      anEvent->AddPrimaryVertex(vertex);
+   if (fabs(vtx[0]) < fBeamOuterLimits[0] && fabs(vtx[1]) < fBeamOuterLimits[1]) {
+      if (fGenerateNotSimulate < 1) {
+         anEvent->AddPrimaryVertex(vertex);
+      }
    }
 
    // Include information about the radiating electron, but do not track it
