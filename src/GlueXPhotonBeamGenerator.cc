@@ -242,7 +242,7 @@ void GlueXPhotonBeamGenerator::prepareImportanceSamplingPDFs()
    }
 
 #ifdef MULTIPLE_BEAM_GAMMAS_PER_ELECTRON
-   fIncoherentPDFy.Pcut *= 10;
+   fIncoherentPDFy.Pcut *= 15;
 #endif
 }
 
@@ -251,8 +251,6 @@ void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
 #ifdef MULTIPLE_BEAM_GAMMAS_PER_ELECTRON
    double endpoint_GeV = fCobrems->getBeamEnergy();
    double Emin = fCobrems->getPhotonEnergyMin();
-   double emittance_mrad = fCobrems->getBeamEmittance();
-   double spotsize_m = fCobrems->getCollimatorSpotrms();
    double raddz_m = fCobrems->getTargetThickness();
    int ngammas = CLHEP::RandPoisson::shoot(1 / fIncoherentPDFmeanx);
    std::vector<double> uz;
@@ -261,10 +259,8 @@ void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
    std::sort(uz.begin(), uz.end());
    double t0(0);
    double Ebeam(endpoint_GeV);
-   double emit(emittance_mrad);
    for (int igamma=0; igamma < ngammas; ++igamma) {
-      double dz = (igamma > 0)? uz[igamma] - uz[igamma-1] : uz[igamma];
-      fCobrems->setTargetThickness(raddz_m * dz);
+      fCobrems->setTargetThickness(raddz_m * uz[igamma]);
       GenerateBeamPhoton(anEvent, t0);
       int nvertex = anEvent->GetNumberOfPrimaryVertex();
       G4PrimaryVertex *vertex = anEvent->GetPrimaryVertex(nvertex - 1);
@@ -273,9 +269,6 @@ void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
       G4PrimaryParticle *gamma = vertex->GetPrimary(nprimary - 1);
       Ebeam -= gamma->GetTotalEnergy() / GeV;
       fCobrems->setBeamEnergy(Ebeam);
-      double sigma2ms = fCobrems->Sigma2MS(raddz_m * dz);
-      emit = sqrt(emit*emit + spotsize_m*spotsize_m*sigma2ms);
-      fCobrems->setBeamEmittance(emit);
    }
    GlueXUserEventInformation *event_info;
    event_info = (GlueXUserEventInformation*)anEvent->GetUserInformation();
@@ -339,7 +332,6 @@ void GlueXPhotonBeamGenerator::GeneratePrimaryVertex(G4Event* anEvent)
       }
    }
    fCobrems->setBeamEnergy(endpoint_GeV);
-   fCobrems->setBeamEmittance(emittance_mrad);
    fCobrems->setTargetThickness(raddz_m);
 #else
    GenerateBeamPhoton(anEvent, 0);
