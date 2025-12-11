@@ -134,6 +134,8 @@ EXTRALIBS += -lG4fixes -lGLU
 all: hdds cobrems G4fixes_symlink g4fixes sharedlib exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
+LOADLIBS := -lCLHEP -L/usr/lib64 -lexpat -lm -lstdc++
+GDMLLIBS := -L/usr/lib64 -lxerces-c
 
 cobrems: $(G4TMPDIR)/libcobrems.so
 hdds:  $(G4TMPDIR)/libhdds.so
@@ -260,7 +262,7 @@ show_env:
 	@echo PYTHON_GE_3 = $(PYTHON_GE_3)
 
 diff:
-	diff -q -r ../jlab . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
+	diff -q -r ../alma9-MT . -x ".[a-z]*" -x tmp -x bin -x "*.pyc" -x "*.so" -x test -x "*-orig"
 
 check_flags:
 	@echo CPPFLAGS=$(CPPFLAGS)
