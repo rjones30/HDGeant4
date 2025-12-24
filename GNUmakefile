@@ -71,7 +71,7 @@ HDDS_sources := $(HDDS_HOME)/XString.cpp $(HDDS_HOME)/XParsers.cpp $(HDDS_HOME)/
 
 ROOTLIBS = $(shell root-config --libs) -lGeom -lTMVA -lTreePlayer
 ifeq ($(shell test -s $(ROOTSYS)/lib/libtbb.so && echo -n yes),yes)
-    ROOTLIBS += $(ROOTSYS)/lib/libtbb.so.2
+    ROOTLIBS += $(ROOTSYS)/lib/libtbb.so
 endif
 ifeq ($(shell test -s $(VDTHOME)/lib/libvdt.so && echo -n yes),yes)
     ROOTLIBS += -L$(VDTHOME)/lib -lvdt
@@ -93,9 +93,8 @@ DANALIBS = -L$(HALLD_RECON_HOME)/$(BMS_OSNAME)/lib -lHDGEOMETRY -lDANA \
            -L$(SQLITECPP_HOME)/$(SQLITECPP_LIBDIR) -lSQLiteCpp -L$(SQLITE_HOME)/lib -Wl,-rpath=$(SQLITE_HOME)/lib -lsqlite3 \
            -lxstream -lbz2 -lz \
            -L/usr/lib64/mysql -lmysqlclient\
-           -L$(JANA_HOME)/lib -lJANA \
+           -Wl,-rpath,${JANA_HOME}/lib -L$(JANA_HOME)/lib -lJANA \
            -L$(CCDB_HOME)/lib -lccdb \
-           -L$(EVIOROOT)/lib -levioxx -levio \
            -lpthread -ldl
 
 ifdef ETROOT
@@ -134,7 +133,7 @@ EXTRALIBS += -lG4fixes -lGLU
 all: hdds cobrems G4fixes_symlink g4fixes sharedlib exe lib bin g4py
 
 include $(G4INSTALL)/config/binmake.gmk
-LOADLIBS := -lCLHEP -L/usr/lib64 -lexpat -lm -lstdc++
+LOADLIBS := -L/usr/lib64 -lexpat -lm -lstdc++
 GDMLLIBS := -L/usr/lib64 -lxerces-c
 
 cobrems: $(G4TMPDIR)/libcobrems.so
@@ -144,7 +143,10 @@ g4fixes: $(G4TMPDIR)/libG4fixes.so
 CXXFLAGS = -g -O0 -fPIC -W -Wall -pedantic -Wno-non-virtual-dtor -Wno-long-long
 
 GCCVERSION = $(shell gcc --version | awk -F'[. ]*' '/gcc/{print $$3}')
-ifeq ($(shell test $(GCCVERSION) -ge 8; echo $$?),0)
+ifeq ($(shell test $(GCCVERSION) -ge 11; echo $$?),0)
+    CPPFLAGS += -std=c++20
+    CXXFLAGS += -std=c++20
+else ifeq ($(shell test $(GCCVERSION) -ge 8; echo $$?),0)
     CPPFLAGS += -std=c++17
     CXXFLAGS += -std=c++17
 else ifeq ($(shell test $(GCCVERSION) -ge 5; echo $$?),0)
